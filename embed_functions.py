@@ -5,12 +5,12 @@ from datetime import datetime
 import time
 
 import Logger
-from gs_interface import GsInterfaceFactory
+from gs_interface import GsInterfaceSingleton
 
 
 class EmbedCreator:
     def __init__(self):
-        self.gs_interface = GsInterfaceFactory.get_instance()
+        self.gs_interface = GsInterfaceSingleton.get_instance()
 
     def get_embed_funcs(self):
         embed_funcs = []
@@ -28,7 +28,7 @@ class EmbedCreator:
         embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/747840778109452480/1139912475328909332/'
                                 'Fighter_Squadron_103_US_Navy_insignia_1995.png')
 
-        embed.set_footer(text=f'Debrief Tracker bot © 2023 made by: koksem#3791')
+        embed.set_footer(text=f'Debrief Tracker bot © 2024 made by: koksem#3791')
         return embed
 
     def __make_embed_34(self):
@@ -38,5 +38,5 @@ class EmbedCreator:
         embed.set_thumbnail(
             url='https://cdn.discordapp.com/attachments/747840778109452480/1139912500943523900/SMOL_VFA-34.png')
 
-        embed.set_footer(text=f'Debrief Tracker bot © 2023 made by: koksem#3791')
+        embed.set_footer(text=f'Debrief Tracker bot © 2024 made by: koksem#3791')
         return embed

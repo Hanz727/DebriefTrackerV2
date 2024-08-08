@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands, tasks
 
 import Logger
-from config import ConfigFactory
+from config import ConfigSingleton
 
 from embed_functions import EmbedCreator
 
@@ -13,7 +13,7 @@ class StatsEmbedManager(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-        self.__config = ConfigFactory.get_instance()
+        self.__config = ConfigSingleton.get_instance()
 
         # embeds will be sent to this channel, there is only 1 server and 1 channel that this cog handles
         self.__stats_channel: discord.TextChannel | None = None

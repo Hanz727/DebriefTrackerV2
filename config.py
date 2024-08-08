@@ -14,7 +14,7 @@ class Config:
     spreadsheet_url: str
 
 
-class ConfigFactory:
+class ConfigSingleton:
     __instance = None
 
     @classmethod

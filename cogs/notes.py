@@ -3,14 +3,14 @@ from discord.ext import commands, tasks
 
 import Logger
 import constants
-from config import ConfigFactory
+from config import ConfigSingleton
 
 
 class NotesEmbedManager(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-        self.config = ConfigFactory.get_instance()
+        self.config = ConfigSingleton.get_instance()
 
     @commands.Cog.listener()
     async def on_ready(self):

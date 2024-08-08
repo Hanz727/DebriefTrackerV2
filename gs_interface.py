@@ -8,7 +8,7 @@ import constants
 
 from constants import safe_execute
 from dataclasses import dataclass, field
-from config import ConfigFactory
+from config import ConfigSingleton
 
 
 @dataclass
@@ -39,7 +39,7 @@ class GsInterface:
     def __init__(self):
         self.__gs_api = gspread.service_account("keys/gspread_api_key.json")
 
-        self.__config = ConfigFactory.get_instance()
+        self.__config = ConfigSingleton.get_instance()
 
         self.__spreadsheet = self.__gs_api.open_by_url(self.__config.spreadsheet_url)
         self.__db_sheet = self.__spreadsheet.worksheet("DATABASE")
@@ -59,7 +59,7 @@ class GsInterface:
         return values
 
 
-class GsInterfaceFactory:
+class GsInterfaceSingleton:
     __instance = None
 
     @classmethod
