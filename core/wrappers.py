@@ -1,15 +1,8 @@
 import asyncio
 from functools import wraps
-import Logger
 
-DISCORD_TOKEN_PATH = "keys/discord.token"
-GSPREAD_KEY_PATH = "keys/gspread_api_key.json"
-CONFIG_PATH = "config.json"
+from services import Logger
 
-DATA_PULL_INFO = {
-    "database": "DATABASE!A1:AA",
-    "entry_msn_number": "ENTRY1!C3"
-}
 
 def safe_execute(func):
     def wrapper(*args, **kwargs):
