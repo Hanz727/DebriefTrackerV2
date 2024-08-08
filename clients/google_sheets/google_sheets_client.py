@@ -30,6 +30,7 @@ class GoogleSheetsClient:
         data = self.__spreadsheet.values_batch_get(ranges=CVW17_RANGES)["valueRanges"]
         return {name: val["values"] for name, val in zip(DATA_PULL_INFO.keys(), data)}
 
+    @safe_execute
     def __update_local_db(self, values: dict[str, list]):
         if len(self.__db_headers) == 0:
             self.__db_headers = DataHandler.flatten(values["database_headers"])
@@ -46,7 +47,7 @@ class GoogleSheetsClient:
         # First element in LOCK column is a boolean value
         lock = db_transposed[self.__db_headers.index('LOCK')].flatten()[0] == "TRUE"
 
-        # If the db is locked, don't update it!
+        # If the db is locked, don't update the local db
         if lock:
             return
 
