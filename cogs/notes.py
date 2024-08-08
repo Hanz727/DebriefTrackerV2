@@ -1,21 +1,18 @@
-import discord
-from discord.ext import commands, tasks
+from discord.ext.commands import Cog, Bot
 
-import Logger
-import constants
-from config import ConfigSingleton
+from services import Logger
+from core.config.config import ConfigSingleton
 
 
-class NotesEmbedManager(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+class NotesEmbedManager(Cog):
+    def __init__(self, bot: Bot):
         self.bot = bot
-
         self.config = ConfigSingleton.get_instance()
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_ready(self):
         Logger.info("Ready")
 
 
-async def setup(bot: commands.Bot) -> None:
+async def setup(bot: Bot) -> None:
     await bot.add_cog(NotesEmbedManager(bot))
