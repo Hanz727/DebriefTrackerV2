@@ -53,7 +53,7 @@ class StatsEmbedManager(Cog):
             embed = embed_func()
             if not embed:
                 Logger.error("Embed func: " + embed_func.__name__ + " returned None")
-                exit(-1)
+                raise Exception()
 
             msg = await stats_channel.send(embed=embed_func())
             self.__sent_messages.append(msg)

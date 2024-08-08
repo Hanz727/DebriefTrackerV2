@@ -5,6 +5,7 @@ from discord import LoginFailure
 from bots.debrief_tracker_bot import DebriefTrackerBot
 from core.constants import DISCORD_TOKEN_PATH
 from services.file_handler import FileHandler
+from services import Logger
 
 
 def main():
@@ -16,7 +17,7 @@ def main():
     try:
         DebriefTrackerBot().run(token)  # Blocking
     except LoginFailure as lf:
-        print(f"Failed to login: {lf}")
+        Logger.error(f"Failed to login: {lf}")
 
 
 if __name__ == "__main__":

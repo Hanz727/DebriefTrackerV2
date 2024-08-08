@@ -2,5 +2,6 @@
   "stats_channel": 1139954975838060684,
   "notes_channel": 1140340850241589368,
   "stats_update_interval_seconds": 60,
-  "spreadsheet_url": "https://docs.google.com/spreadsheets/d/1OIjpfLOWZsPkOxztrFAfVVm3SyrPeHLOnitmBxtlnIw"
+  "google_sheets_update_interval_seconds": 5,
+  "spreadsheet_url": "https://docs.google.com/spreadsheets/d/1OIjpfLOWZsPkOxztrFAfVVm3SyrPeHLOnitmBxtlnIw",
 }
