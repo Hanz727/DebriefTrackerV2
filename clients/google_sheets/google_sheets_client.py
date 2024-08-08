@@ -10,6 +10,7 @@ import numpy as np
 
 
 class GoogleSheetsClient:
+    __instance = None
 
     def __init__(self):
         self.__google_sheets_api = gspread.service_account(GOOGLE_SHEET_SPREAD_API_KEY)
@@ -21,9 +22,13 @@ class GoogleSheetsClient:
         self.__entry_sheets = [self.__spreadsheet.worksheet("ENTRY1")]
 
         self.__local_db = CVW17Database()
-        self.__db_headers: list[str] = []
+        self.__local_db_size: int = 0
 
+        self.__db_headers: list[str] = []
         self.__update_local_db(self.__get_db_values())
+
+        self.__db_resize_callback_funcs = []
+
 
     @safe_execute
     def __get_db_values(self):
@@ -31,11 +36,11 @@ class GoogleSheetsClient:
         return {name: val["values"] for name, val in zip(DATA_PULL_INFO.keys(), data)}
 
     @safe_execute
-    def __update_local_db(self, values: dict[str, list]):
+    def __update_local_db(self, db_values: dict[str, list]):
         if len(self.__db_headers) == 0:
-            self.__db_headers = DataHandler.flatten(values["database_headers"])
+            self.__db_headers = DataHandler.flatten(db_values["database_headers"])
 
-        db = values["database"]
+        db = db_values["database"]
 
         # Pad all the rows to be the same length
         for row in db:
@@ -45,8 +50,7 @@ class GoogleSheetsClient:
         db_transposed = np.array(db).T
 
         # First element in LOCK column is a boolean value
-        lock = db_transposed[self.__db_headers.index('LOCK')].flatten()[0] == "TRUE"
-
+        lock = db_transposed[self.__db_headers.index('LOCK')][0] == "TRUE"
         # If the db is locked, don't update the local db
         if lock:
             return
@@ -71,3 +75,18 @@ class GoogleSheetsClient:
         self.__local_db.msn_name = db_transposed[self.__db_headers.index('MSN NAME')]
         self.__local_db.event = db_transposed[self.__db_headers.index('EVENT')]
         self.__local_db.notes = db_transposed[self.__db_headers.index('NOTES')]
+
+        if self.__local_db_size != len(self.__local_db.date):
+            self.__local_db_size = self.__local_db.date
+            for func in self.__db_resize_callback_funcs:
+                func()
+            # Add a callback for
+
+    def add_db_resize_callback(self, func):
+        self.__db_resize_callback_funcs.append(func)
+
+    @classmethod
+    def get_instance(cls):
+        if cls.__instance is None:
+            cls.__instance = cls()
+        return cls.__instance
