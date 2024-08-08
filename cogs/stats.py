@@ -1,35 +1,32 @@
 import asyncio
 
-import discord
-from discord.ext import commands, tasks
+from discord import TextChannel, Message
+from discord.ext import tasks
+from discord.ext.commands import Bot, Cog
 
-import Logger
-from config import ConfigSingleton
+from services import Logger
+from core.config.config import ConfigSingleton
+from services.embed.embed_creator import EmbedCreator
 
-from embed_functions import EmbedCreator
 
-
-class StatsEmbedManager(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+class StatsEmbedManager(Cog):
+    def __init__(self, bot: Bot):
         self.bot = bot
 
         self.__config = ConfigSingleton.get_instance()
 
         # embeds will be sent to this channel, there is only 1 server and 1 channel that this cog handles
-        self.__stats_channel: discord.TextChannel | None = None
+        self.__stats_channel: TextChannel | None = None
 
         self.__embed_creator = EmbedCreator()
         self.__embed_funcs = self.__embed_creator.get_embed_funcs()
-        self.__sent_messages: list[discord.Message] = []
+        self.__sent_messages: list[Message] = []
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_ready(self):
         await self.__load_stats_channel()
-
         await self.__clear_channel(self.__stats_channel)
-
         await self.__populate_channel(self.__stats_channel)
-
         await self.__restart_tasks()
 
         Logger.info("Ready")
@@ -45,12 +42,13 @@ class StatsEmbedManager(commands.Cog):
     async def __load_stats_channel(self):
         self.__stats_channel = self.bot.get_channel(self.__config.stats_channel)
 
-    async def __clear_channel(self, channel: discord.TextChannel):
+    @staticmethod
+    async def __clear_channel(channel: TextChannel):
         async for msg in channel.history(limit=10):
             if msg:
                 await msg.delete()
 
-    async def __populate_channel(self, stats_channel: discord.TextChannel):
+    async def __populate_channel(self, stats_channel: TextChannel):
         for embed_func in self.__embed_funcs:
             embed = embed_func()
             if not embed:
@@ -74,5 +72,5 @@ class StatsEmbedManager(commands.Cog):
             Logger.error(err)
 
 
-async def setup(bot: commands.Bot) -> None:
+async def setup(bot: Bot) -> None:
     await bot.add_cog(StatsEmbedManager(bot))
