@@ -24,16 +24,15 @@ class GoogleSheetsClient:
         self.__local_db = CVW17Database()
         self.__local_db_size: int = 0
 
+        self.__db_on_resize_callback_funcs = []
+
         self.__db_headers: list[str] = []
         self.__update_local_db(self.__get_db_values())
-
-        self.__db_resize_callback_funcs = []
-
 
     @safe_execute
     def __get_db_values(self):
         data = self.__spreadsheet.values_batch_get(ranges=CVW17_RANGES)["valueRanges"]
-        return {name: val["values"] for name, val in zip(DATA_PULL_INFO.keys(), data)}
+        return {name: val.get('values', [['']]) for name, val in zip(DATA_PULL_INFO.keys(), data)}
 
     @safe_execute
     def __update_local_db(self, db_values: dict[str, list]):
@@ -76,14 +75,14 @@ class GoogleSheetsClient:
         self.__local_db.event = db_transposed[self.__db_headers.index('EVENT')]
         self.__local_db.notes = db_transposed[self.__db_headers.index('NOTES')]
 
+        # run the on_resize callback
         if self.__local_db_size != len(self.__local_db.date):
             self.__local_db_size = self.__local_db.date
-            for func in self.__db_resize_callback_funcs:
+            for func in self.__db_on_resize_callback_funcs:
                 func()
-            # Add a callback for
 
-    def add_db_resize_callback(self, func):
-        self.__db_resize_callback_funcs.append(func)
+    def add_db_on_resize_callback(self, func):
+        self.__db_on_resize_callback_funcs.append(func)
 
     @classmethod
     def get_instance(cls):
