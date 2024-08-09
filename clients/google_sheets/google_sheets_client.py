@@ -2,6 +2,7 @@ import gspread
 
 from clients.google_sheets.constants import GOOGLE_SHEET_SPREAD_API_KEY, DATA_PULL_INFO, CVW17_RANGES
 from clients.google_sheets.contracts import CVW17Database
+from core.constants import ON_DB_INSERT_CALLBACK
 from core.config.config import ConfigSingleton
 from core.wrappers import safe_execute
 from services.data_handler import DataHandler
@@ -22,7 +23,7 @@ class GoogleSheetsClient:
         self.__local_db = CVW17Database()
         self.__local_db_size: int = 0
 
-        self.__db_on_insert_callback_funcs = []
+        self.__calbacks = {ON_DB_INSERT_CALLBACK: []}
 
         self.__db_headers: list[str] = []
         self.__update_local_db(self.__get_db_values())
@@ -76,17 +77,22 @@ class GoogleSheetsClient:
         # run the on_resize callback
         if self.__local_db_size != len(self.__local_db.date):
             self.__local_db_size = len(self.__local_db.date)
-            for func in self.__db_on_insert_callback_funcs:
+            for func in self.__calbacks[ON_DB_INSERT_CALLBACK]:
                 func()
 
     @safe_execute
     def update(self):
-        print("updatin")
         values = self.__get_db_values()
         if not values:
             return
 
         self.__update_local_db(values)
 
-    def add_db_on_insert_callback(self, func):
-        self.__db_on_insert_callback_funcs.append(func)
+    def add_listener(self, func, callback=None):
+        if not callback:
+            callback = func.__name__
+
+        if callback not in self.__calbacks:
+            self.__calbacks[callback] = []
+
+        self.__calbacks[callback].append(func)
