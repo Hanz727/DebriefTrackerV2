@@ -3,19 +3,24 @@ from typing import override
 import discord
 from discord.ext.commands import Bot
 
+from clients.google_sheets.google_sheets_client import GoogleSheetsClient
 from core.constants import DISCORD_COGS_DIRECTORY
 from services.file_handler import FileHandler
+
+from cogs import notes, stats
 
 
 class DebriefTrackerBot(Bot):
     def __init__(self):
         super().__init__(intents=discord.Intents.all(), command_prefix='!')
 
+        self.__google_sheets_client = GoogleSheetsClient()
+
     @override
     async def setup_hook(self) -> None:
-        for file in FileHandler.get_files_from_directory(DISCORD_COGS_DIRECTORY):
-            if file.suffix == ".py":
-                await self.load_extension(f"{DISCORD_COGS_DIRECTORY}.{file.stem}")
+        await notes.setup(self, self.__google_sheets_client)
+        await stats.setup(self, self.__google_sheets_client)
+
         await self.tree.sync()
 
     async def on_ready(self):

@@ -8,8 +8,8 @@ from services.embed.constants import VF_103_LOGO_URL, VFA_34_LOGO_URL, AUTHOR_FO
 
 
 class EmbedCreator:
-    def __init__(self):
-        self.__google_sheets_client = GoogleSheetsClient.get_instance()
+    def __init__(self, google_sheets_client: GoogleSheetsClient):
+        self.__google_sheets_client = google_sheets_client
 
     def get_embed_funcs(self):
         embed_funcs = []

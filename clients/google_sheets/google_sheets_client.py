@@ -10,8 +10,6 @@ import numpy as np
 
 
 class GoogleSheetsClient:
-    __instance = None
-
     def __init__(self):
         self.__google_sheets_api = gspread.service_account(GOOGLE_SHEET_SPREAD_API_KEY)
 
@@ -83,9 +81,3 @@ class GoogleSheetsClient:
 
     def add_db_on_resize_callback(self, func):
         self.__db_on_resize_callback_funcs.append(func)
-
-    @classmethod
-    def get_instance(cls):
-        if cls.__instance is None:
-            cls.__instance = cls()
-        return cls.__instance
