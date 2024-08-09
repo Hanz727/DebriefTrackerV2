@@ -12,13 +12,13 @@ class NotesEmbedManager(Cog):
         self.__config = ConfigSingleton.get_instance()
 
         self.__google_sheets_client = google_sheets_client
-        self.__google_sheets_client.add_db_on_resize_callback(self.on_resize)
+        self.__google_sheets_client.add_db_on_insert_callback(self.on_db_insert)
 
     @Cog.listener()
     async def on_ready(self):
         Logger.info("Ready")
 
-    def on_resize(self):
+    def on_db_insert(self):
         print("elo")
 
 
