@@ -23,3 +23,5 @@ class CVW17Database:
     msn_name: list[str] = field(default_factory=list)
     event: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+
+
