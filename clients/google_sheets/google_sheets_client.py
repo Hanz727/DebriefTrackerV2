@@ -1,6 +1,12 @@
-import gspread
+import os
+from importlib.metadata import files
+from pathlib import Path
 
-from clients.google_sheets.constants import GOOGLE_SHEET_SPREAD_API_KEY, DATA_PULL_INFO, CVW17_RANGES
+import gspread
+from gspread.utils import Dimension
+
+from clients.google_sheets.constants import GOOGLE_SHEET_SPREAD_API_KEY, CVW17_RANGES, MSN_DATA_FILES_PATH, \
+    GoogleSheetsRanges
 from clients.google_sheets.contracts import CVW17Database
 from core.constants import ON_DB_INSERT_CALLBACK
 from core.config.config import ConfigSingleton
@@ -10,6 +16,7 @@ from services.data_handler import DataHandler
 import numpy as np
 
 from services.database.db_handler import DbHandler
+from services.file_handler import FileHandler
 
 
 class GoogleSheetsClient:
@@ -21,37 +28,34 @@ class GoogleSheetsClient:
         self.__spreadsheet = self.__google_sheets_api.open_by_url(self.__config.spreadsheet_url)
         self.__db_sheet = self.__spreadsheet.worksheet("DATABASE")
         self.__entry_sheets = [self.__spreadsheet.worksheet("ENTRY1")]
+        self.__misc_sheets = [self.__spreadsheet.worksheet("MISC1")]
 
         self.__local_db = CVW17Database()
-        self.__local_db_size: int = 0
 
         self.__callbacks = {ON_DB_INSERT_CALLBACK: []}
 
         self.__db_headers: list[str] = []
         self.__update_local_db(self.__get_db_values())
 
+
     @safe_execute
-    def __get_db_values(self):
+    def __get_db_values(self) -> dict[GoogleSheetsRanges, list]:
         data = self.__spreadsheet.values_batch_get(ranges=CVW17_RANGES)["valueRanges"]
-        return {name: val.get('values', [['']]) for name, val in zip(DATA_PULL_INFO.keys(), data)}
+        return {enum_item: val.get('values', [[]]) for enum_item, val in zip(GoogleSheetsRanges, data)}
 
     @safe_execute
-    def __update_local_db(self, values: dict[str, list]):
+    def __update_local_db(self, values: dict[GoogleSheetsRanges, list]):
         if len(self.__db_headers) == 0:
-            self.__db_headers = DataHandler.flatten(values["database_headers"])
+            self.__db_headers = DataHandler.flatten(values[GoogleSheetsRanges.database_headers])
 
-        db = values["database"]
+        db = values[GoogleSheetsRanges.database]
 
-        # Pad all the rows to be the same length
         for row in db:
             DataHandler.pad(row, len(self.__db_headers), '')
 
-        # transpose to have an array by columns not rows
         db_transposed = np.array(db).T
 
-        # First element in LOCK column is a boolean value
         lock = db_transposed[self.__db_headers.index('LOCK')][0] == "TRUE"
-        # If the db is locked, don't update the local db
         if lock:
             return
 
@@ -76,11 +80,39 @@ class GoogleSheetsClient:
         self.__local_db.event = db_transposed[self.__db_headers.index('EVENT')]
         self.__local_db.notes = db_transposed[self.__db_headers.index('NOTES')]
 
-        # run the on_resize callback
-        if self.__local_db_size != len(self.__local_db.date):
-            self.__local_db_size = len(self.__local_db.date)
+        if self.__local_db.size != len(self.__local_db.date):
+            self.__local_db.size = len(self.__local_db.date)
             for func in self.__callbacks[ON_DB_INSERT_CALLBACK]:
                 func()
+
+    def __update_data_files(self, values: dict[GoogleSheetsRanges, list]):
+        remote_msn_data_files = DataHandler.flatten(values[GoogleSheetsRanges.msn_data_files])[:5]
+
+        local_msn_data_paths: list[Path] = FileHandler.sort_files_by_date_created(Path(MSN_DATA_FILES_PATH))[:5]
+        local_msn_data_files: list[str] = DataHandler.pad([str(x.with_suffix('')) for x in local_msn_data_paths],
+                                                          5, '')
+
+        if remote_msn_data_files == local_msn_data_files:
+            return
+
+        files_range = GoogleSheetsRanges.msn_data_files.value.split('!')[1]
+
+        self.__misc_sheets[0].update(
+            range_name= files_range,
+            major_dimension=Dimension.cols,
+            values=[local_msn_data_files]
+        )
+
+        if (local_msn_data_files[0] == remote_msn_data_files[0] or
+            values[GoogleSheetsRanges.msn_data_file][0][0] == local_msn_data_files[0]):
+            return
+
+        file_range = GoogleSheetsRanges.msn_data_file.value.split('!')[1]
+
+        self.__entry_sheets[0].update(
+            range_name= file_range,
+            values=[[local_msn_data_files[0]]]
+        )
 
     @safe_execute
     def update(self):
@@ -88,6 +120,7 @@ class GoogleSheetsClient:
         if not values:
             return
 
+        self.__update_data_files(values)
         self.__update_local_db(values)
 
     def get_db(self):

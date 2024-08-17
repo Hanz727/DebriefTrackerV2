@@ -35,16 +35,14 @@ class DbHandler:
     def __get_all_player_names(db: CVW17Database, squadron: Squadrons | None) -> set[str]:
         players_filter = (db.squadron == squadron.value) if squadron else ()
 
-        # Get unique player names (both pilots and RIOs)
         players = list(set(db.plt_name[players_filter]) | set(db.rio_name[players_filter]))
-
-        # Remove empty strings
         return {player for player in players if player}
 
     @classmethod
     def get_leaderboard(cls, db: CVW17Database, squadron: Squadrons) -> dict[str, PlayerStats]:
         players = cls.__get_all_player_names(db, squadron)
         unsorted_leaderboard = {player: cls.get_player_stats(db, player, squadron) for player in players}
+        # the sorting is based on a point system where A/A kill is worth 2 points and A/G drop 1 point.
         return dict(sorted(unsorted_leaderboard.items(), key=lambda k: (k[1].aa_kills * 2 + k[1].ag_drops), reverse=True))
 
     @staticmethod

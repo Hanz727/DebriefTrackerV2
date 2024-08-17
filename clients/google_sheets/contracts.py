@@ -3,6 +3,7 @@ import numpy as np
 
 @dataclass
 class CVW17Database:
+    size: int = field(default=0)
     date: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     fl_name: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     squadron: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
