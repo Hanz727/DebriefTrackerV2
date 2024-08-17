@@ -1,27 +1,25 @@
 from dataclasses import dataclass, field
-
+import numpy as np
 
 @dataclass
 class CVW17Database:
-    date: list[str] = field(default_factory=list)
-    fl_name: list[str] = field(default_factory=list)
-    squadron: list[str] = field(default_factory=list)
-    rio_name: list[str] = field(default_factory=list)
-    plt_name: list[str] = field(default_factory=list)
-    tail_number: list[str] = field(default_factory=list)
-    weapon_type: list[str] = field(default_factory=list)
-    weapon: list[str] = field(default_factory=list)
-    target: list[str] = field(default_factory=list)
-    target_angels: list[str] = field(default_factory=list)
-    angels: list[str] = field(default_factory=list)
-    speed: list[str] = field(default_factory=list)
-    range: list[str] = field(default_factory=list)
-    hit: list[str] = field(default_factory=list)
-    destroyed: list[str] = field(default_factory=list)
-    qty: list[str] = field(default_factory=list)
-    msn_nr: list[str] = field(default_factory=list)
-    msn_name: list[str] = field(default_factory=list)
-    event: list[str] = field(default_factory=list)
-    notes: list[str] = field(default_factory=list)
-
-
+    date: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    fl_name: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    squadron: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    rio_name: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    plt_name: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    tail_number: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    weapon_type: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    weapon: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    target: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    target_angels: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    angels: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    speed: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    range: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    hit: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    destroyed: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    qty: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    msn_nr: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    msn_name: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    event: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    notes: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
