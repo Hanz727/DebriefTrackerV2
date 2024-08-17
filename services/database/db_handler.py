@@ -2,22 +2,34 @@ from clients.google_sheets.contracts import CVW17Database
 from services.database.constants import Squadrons, Weapons
 import numpy as np
 
-from services.database.contracts import PlayerStats, WeaponStats, PartialDebrief, Debrief
+from services.database.contracts import PlayerStats, WeaponStats, PartialDebrief, Debrief, SquadronStats
 from dataclasses import asdict
 
 class DbHandler:
     @staticmethod
-    def get_player_stats(db: CVW17Database, player: str, squadron: Squadrons) -> PlayerStats:
-        stats = PlayerStats(0,0,'')
-        player_filter = ( (db.plt_name == player) | (db.rio_name == player) ) & (db.squadron == squadron.value)
+    def get_player_stats(db: CVW17Database, player: str, squadron: Squadrons | None = None, additional_filter = None) -> PlayerStats:
+        additional_filter = np.ones(db.plt_name.shape, np.bool) if additional_filter is None else additional_filter
+        squadron_filter = db.squadron == squadron.value if squadron else np.ones(db.plt_name.shape, np.bool)
+
+        player_filter = ( (db.plt_name == player) | (db.rio_name == player) ) & squadron_filter & additional_filter
         aa_filter = player_filter & (db.weapon_type == 'A/A') & (db.hit == 'TRUE')
         ag_filter = player_filter & (db.weapon_type == 'A/G')
 
-        stats.player_name = player
-        stats.aa_kills = sum(db.qty.astype(int)[aa_filter])
-        stats.ag_drops = sum(db.qty.astype(int)[ag_filter])
+        aa_kills = sum(db.qty.astype(int)[aa_filter])
+        ag_drops = sum(db.qty.astype(int)[ag_filter])
 
-        return stats
+        return PlayerStats(aa_kills=aa_kills, ag_drops=ag_drops, player_name=player)
+
+    @staticmethod
+    def get_squadron_stats(db: CVW17Database, squadron: Squadrons):
+        squadron_filter = ( db.squadron == squadron.value )
+        aa_filter = ( db.weapon_type == 'A/A' ) & ( ( db.hit == 'TRUE' ) | ( db.destroyed == 'TRUE' ) )
+        ag_filter = squadron_filter & ( db.weapon_type == 'A/G' )
+
+        aa_kills = sum(db.qty.astype(int)[squadron_filter & aa_filter])
+        ag_drops = sum(db.qty.astype(int)[squadron_filter & ag_filter])
+
+        return SquadronStats(aa_kills=aa_kills, ag_drops=ag_drops)
 
     @staticmethod
     def __get_all_player_names(db: CVW17Database, squadron: Squadrons | None) -> set[str]:
@@ -55,8 +67,9 @@ class DbHandler:
 
     @staticmethod
     def __get_latest_entry(db: CVW17Database):
-        return PartialDebrief(msn_name=db.msn_name[-1], msn_nr=db.msn_nr[-1], posted_by=db.fl_name[-1],
-                              event_nr=db.event[-1], notes=db.notes[-1])
+        idx = -1 # for testing, keep at -1
+        return PartialDebrief(msn_name=db.msn_name[idx], msn_nr=db.msn_nr[idx], posted_by=db.fl_name[idx],
+                              event_nr=db.event[idx], notes=db.notes[idx])
 
     @classmethod
     def get_latest_debrief(cls, db: CVW17Database):
@@ -73,8 +86,8 @@ class DbHandler:
         player_stats = {}
 
         for modex, pilot, rio in zip(modexes, pilot_names, rio_names):
-            player_stats[modex] = cls.get_player_stats(db, pilot, rio)
-            player_stats[modex].player_name = f'{pilot} | {rio}'
+            player_stats[modex] = cls.get_player_stats(db, pilot, None, debrief_filter)
+            player_stats[modex].player_name = f'{pilot} | {rio}' if rio else pilot
 
         debrief = Debrief(**asdict(latest_entry), player_stats=player_stats)
 
