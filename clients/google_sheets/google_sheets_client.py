@@ -86,7 +86,7 @@ class GoogleSheetsClient:
                 func()
 
     def __update_data_files(self, values: dict[GoogleSheetsRanges, list]):
-        remote_msn_data_files = DataHandler.flatten(values[GoogleSheetsRanges.msn_data_files])[:5]
+        remote_msn_data_files: list[str] = DataHandler.flatten(values[GoogleSheetsRanges.msn_data_files])[:5]
 
         local_msn_data_paths: list[Path] = FileHandler.sort_files_by_date_created(Path(MSN_DATA_FILES_PATH))[:5]
         local_msn_data_files: list[str] = DataHandler.pad([str(x.with_suffix('')) for x in local_msn_data_paths],
@@ -95,7 +95,7 @@ class GoogleSheetsClient:
         if remote_msn_data_files == local_msn_data_files:
             return
 
-        files_range = GoogleSheetsRanges.msn_data_files.value.split('!')[1]
+        files_range: str = GoogleSheetsRanges.msn_data_files.value.split('!')[1]
 
         self.__misc_sheets[0].update(
             range_name= files_range,
@@ -107,7 +107,7 @@ class GoogleSheetsClient:
             values[GoogleSheetsRanges.msn_data_file][0][0] == local_msn_data_files[0]):
             return
 
-        file_range = GoogleSheetsRanges.msn_data_file.value.split('!')[1]
+        file_range: str = GoogleSheetsRanges.msn_data_file.value.split('!')[1]
 
         self.__entry_sheets[0].update(
             range_name= file_range,
