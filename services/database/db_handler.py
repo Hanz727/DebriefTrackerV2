@@ -1,10 +1,10 @@
 from audioop import reverse
 
 from clients.google_sheets.contracts import CVW17Database
-from services.database.constants import Squadrons
+from services.database.constants import Squadrons, Weapons
 import numpy as np
 
-from services.database.contracts import PlayerStats
+from services.database.contracts import PlayerStats, WeaponStats
 
 
 class DbHandler:
@@ -37,4 +37,19 @@ class DbHandler:
         unsorted_leaderboard = {player: cls.get_player_stats(db, player, squadron) for player in players}
         return dict(sorted(unsorted_leaderboard.items(), key=lambda k: (k[1].aa_kills * 2 + k[1].ag_drops), reverse=True))
 
+    @staticmethod
+    def get_weapon_stats(db: CVW17Database, weapon: Weapons):
+        weapon_filter = ( db.weapon == weapon )
+        hit_filter = weapon_filter & ((db.hit == 'TRUE') | (db.destroyed == 'TRUE'))
 
+        hits = sum(db.qty.astype(int)[hit_filter])
+        shots = sum(db.qty.astype(int)[weapon_filter])
+
+        misses = shots - hits
+
+        if shots > 0:
+            pk = hits/shots
+        else:
+            pk = 0
+
+        return WeaponStats(hits=hits, misses=misses, pk=pk)
