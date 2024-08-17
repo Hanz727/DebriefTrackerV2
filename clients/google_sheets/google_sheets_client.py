@@ -93,6 +93,8 @@ class GoogleSheetsClient:
         print(DbHandler.get_latest_debrief(self.__local_db))
         #print(DbHandler.get_leaderboard(self.__local_db, Squadrons.VF103))
 
+    def get_db(self):
+        return self.__local_db
 
     def add_listener(self, func, callback=None):
         if not callback:

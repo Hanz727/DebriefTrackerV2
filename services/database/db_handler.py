@@ -54,13 +54,13 @@ class DbHandler:
         return WeaponStats(hits=hits, misses=misses, pk=pk, shots=shots)
 
     @staticmethod
-    def get_latest_entry(db: CVW17Database):
+    def __get_latest_entry(db: CVW17Database):
         return PartialDebrief(msn_name=db.msn_name[-1], msn_nr=db.msn_nr[-1], posted_by=db.fl_name[-1],
                               event_nr=db.event[-1], notes=db.notes[-1])
 
     @classmethod
     def get_latest_debrief(cls, db: CVW17Database):
-        latest_entry = cls.get_latest_entry(db)
+        latest_entry = cls.__get_latest_entry(db)
 
         debrief_filter = (( db.notes == latest_entry.notes ) & ( db.msn_nr == latest_entry.msn_nr ) &
                           ( db.msn_name == latest_entry.msn_name) & ( db.event == latest_entry.event_nr) &
