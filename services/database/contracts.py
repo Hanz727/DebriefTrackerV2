@@ -4,6 +4,7 @@ from dataclasses import dataclass
 class WeaponStats:
     hits: int
     misses: int
+    shots: int
     pk: float
 
 @dataclass
@@ -16,10 +17,13 @@ class PlayerStats(SquadronStats):
     player_name: str
 
 @dataclass
-class Debrief:
+class PartialDebrief:
     msn_name: str
-    msn_nr: int
+    msn_nr: str
     posted_by: str
     event_nr: str
     notes: str
+
+@dataclass
+class Debrief(PartialDebrief):
     player_stats: dict[str, PlayerStats]

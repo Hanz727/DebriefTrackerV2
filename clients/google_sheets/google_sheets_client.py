@@ -9,7 +9,7 @@ from services.data_handler import DataHandler
 
 import numpy as np
 
-from services.database.constants import Squadrons
+from services.database.constants import Squadrons, Weapons
 from services.database.db_handler import DbHandler
 
 
@@ -90,8 +90,8 @@ class GoogleSheetsClient:
             return
 
         self.__update_local_db(values)
-
-        print(DbHandler.get_leaderboard(self.__local_db, Squadrons.VF103))
+        print(DbHandler.get_latest_debrief(self.__local_db))
+        #print(DbHandler.get_leaderboard(self.__local_db, Squadrons.VF103))
 
 
     def add_listener(self, func, callback=None):
