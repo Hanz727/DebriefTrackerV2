@@ -9,6 +9,8 @@ from services.data_handler import DataHandler
 
 import numpy as np
 
+from services.database.db_handler import DbHandler
+
 
 class GoogleSheetsClient:
     def __init__(self):
@@ -88,6 +90,8 @@ class GoogleSheetsClient:
 
         self.__update_local_db(values)
 
+    def get_db(self):
+        return self.__local_db
 
     def add_listener(self, func, callback=None):
         if not callback:

@@ -10,4 +10,9 @@ VFA_34_LOGO_URL: Final[str] = (
     "SMOL_VFA-34.png"
 )
 
+CVW_17_LOGO_URL: Final[str] = (
+    'https://cdn.discordapp.com/attachments/957965678281904148/1139978288207515658/'
+    'CVW-17_LOGO_V2_Big.png'
+)
+
 AUTHOR_FOOTER: Final[str] = "Debrief Tracker bot © 2024 made by: koksem#3791"
