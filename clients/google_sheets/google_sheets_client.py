@@ -23,7 +23,7 @@ class GoogleSheetsClient:
         self.__local_db = CVW17Database()
         self.__local_db_size: int = 0
 
-        self.__calbacks = {ON_DB_INSERT_CALLBACK: []}
+        self.__callbacks = {ON_DB_INSERT_CALLBACK: []}
 
         self.__db_headers: list[str] = []
         self.__update_local_db(self.__get_db_values())
@@ -34,11 +34,11 @@ class GoogleSheetsClient:
         return {name: val.get('values', [['']]) for name, val in zip(DATA_PULL_INFO.keys(), data)}
 
     @safe_execute
-    def __update_local_db(self, db_values: dict[str, list]):
+    def __update_local_db(self, values: dict[str, list]):
         if len(self.__db_headers) == 0:
-            self.__db_headers = DataHandler.flatten(db_values["database_headers"])
+            self.__db_headers = DataHandler.flatten(values["database_headers"])
 
-        db = db_values["database"]
+        db = values["database"]
 
         # Pad all the rows to be the same length
         for row in db:
@@ -77,7 +77,7 @@ class GoogleSheetsClient:
         # run the on_resize callback
         if self.__local_db_size != len(self.__local_db.date):
             self.__local_db_size = len(self.__local_db.date)
-            for func in self.__calbacks[ON_DB_INSERT_CALLBACK]:
+            for func in self.__callbacks[ON_DB_INSERT_CALLBACK]:
                 func()
 
     @safe_execute
@@ -88,11 +88,12 @@ class GoogleSheetsClient:
 
         self.__update_local_db(values)
 
+
     def add_listener(self, func, callback=None):
         if not callback:
             callback = func.__name__
 
-        if callback not in self.__calbacks:
-            self.__calbacks[callback] = []
+        if callback not in self.__callbacks:
+            self.__callbacks[callback] = []
 
-        self.__calbacks[callback].append(func)
+        self.__callbacks[callback].append(func)

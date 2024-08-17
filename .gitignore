@@ -1,4 +1,11 @@
 .venv/
+
 keys/
+
 logs/
+
 .idea/
+
+planning.txt
+
+**/__pycache__/
