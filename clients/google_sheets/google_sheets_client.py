@@ -3,11 +3,12 @@ from importlib.metadata import files
 from pathlib import Path
 
 import gspread
+from gspread import Worksheet
 from gspread.utils import Dimension
 
 from clients.google_sheets.constants import GOOGLE_SHEET_SPREAD_API_KEY, CVW17_RANGES, MSN_DATA_FILES_PATH, \
     GoogleSheetsRanges
-from clients.google_sheets.contracts import CVW17Database
+from clients.google_sheets.contracts import CVW17Database, MsnDataEntry
 from core.constants import ON_DB_INSERT_CALLBACK
 from core.config.config import ConfigSingleton
 from core.wrappers import safe_execute
@@ -114,6 +115,14 @@ class GoogleSheetsClient:
             values=[[local_msn_data_files[0]]]
         )
 
+
+    def __update_entry_sheet(self, values: dict[GoogleSheetsRanges, list], sheet: Worksheet):
+        msn_data_file_path = Path(MSN_DATA_FILES_PATH + values[GoogleSheetsRanges.msn_data_file][0][0] + ".json")
+        entries = FileHandler.load_entries_from_file(msn_data_file_path)
+
+        #WIP
+
+
     @safe_execute
     def update(self):
         values = self.__get_db_values()
@@ -121,6 +130,7 @@ class GoogleSheetsClient:
             return
 
         self.__update_data_files(values)
+        self.__update_entry_sheet(values, self.__entry_sheets[0])
         self.__update_local_db(values)
 
     def get_db(self):
