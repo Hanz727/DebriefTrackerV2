@@ -3,17 +3,15 @@ import discord
 from datetime import datetime
 import time
 
-from pyasn1_modules.rfc2985 import dateOfBirth
-
-from clients.google_sheets.google_sheets_client import GoogleSheetsClient
+from clients.database_client import DatabaseClient
 from services.database.constants import Squadrons, Weapons
 from services.database.db_handler import DbHandler
 from services.embed.constants import VF_103_LOGO_URL, VFA_34_LOGO_URL, AUTHOR_FOOTER, CVW_17_LOGO_URL
 
 
 class EmbedCreator:
-    def __init__(self, google_sheets_client: GoogleSheetsClient):
-        self.__google_sheets_client = google_sheets_client
+    def __init__(self, database_client: DatabaseClient):
+        self.__database_client = database_client
 
         self.__embed_funcs = [
             self.make_embed_103, self.make_embed_34, self.make_embed_17, self.make_embed_phoenix,
@@ -33,7 +31,7 @@ class EmbedCreator:
         aa_kills = ""
         ag_drops = ""
 
-        leaderboard = DbHandler.get_leaderboard(self.__google_sheets_client.get_db(), Squadrons.VF103)
+        leaderboard = DbHandler.get_leaderboard(self.__database_client.get_db(), Squadrons.VF103)
         for player, player_stats in leaderboard.items():
             names += player + "\n"
             aa_kills += str(player_stats.aa_kills) + "\n"
@@ -59,7 +57,7 @@ class EmbedCreator:
         aa_kills = ""
         ag_drops = ""
 
-        leaderboard = DbHandler.get_leaderboard(self.__google_sheets_client.get_db(), Squadrons.VFA34)
+        leaderboard = DbHandler.get_leaderboard(self.__database_client.get_db(), Squadrons.VFA34)
         for player, player_stats in leaderboard.items():
             names += player + "\n"
             aa_kills += str(player_stats.aa_kills) + "\n"
@@ -81,14 +79,14 @@ class EmbedCreator:
         )
         embed.set_thumbnail(url=CVW_17_LOGO_URL)
 
-        stats_103 = DbHandler.get_squadron_stats(self.__google_sheets_client.get_db(), Squadrons.VF103)
+        stats_103 = DbHandler.get_squadron_stats(self.__database_client.get_db(), Squadrons.VF103)
         embed.add_field(name="VF-103", value=f"Jolly Rogers", inline=True)
         embed.add_field(name='A/A kills', value=str(stats_103.aa_kills), inline=True)
         embed.add_field(name='A/G drops', value=str(stats_103.ag_drops), inline=True)
 
         embed.add_field(name='▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬', value=" ", inline=False)
 
-        stats_34 = DbHandler.get_squadron_stats(self.__google_sheets_client.get_db(), Squadrons.VFA34)
+        stats_34 = DbHandler.get_squadron_stats(self.__database_client.get_db(), Squadrons.VFA34)
         embed.add_field(name="VFA-34", value=f"Blue Blasters", inline=True)
         embed.add_field(name='A/A kills', value=str(stats_34.aa_kills), inline=True)
         embed.add_field(name='A/G drops', value=str(stats_34.ag_drops), inline=True)
@@ -109,7 +107,7 @@ class EmbedCreator:
             timestamp=datetime.fromtimestamp(time.time())
         )
 
-        weapons_stats = DbHandler.get_weapon_stats(self.__google_sheets_client.get_db(), Weapons.phoenix)
+        weapons_stats = DbHandler.get_weapon_stats(self.__database_client.get_db(), Weapons.phoenix)
         embed.add_field(name="Shots", value=str(weapons_stats.shots), inline=True)
         embed.add_field(name='Hits', value=str(weapons_stats.hits), inline=True)
         embed.add_field(name='PK%', value=str(weapons_stats.pk) + "%", inline=True)
@@ -124,7 +122,7 @@ class EmbedCreator:
             timestamp=datetime.fromtimestamp(time.time())
         )
 
-        weapons_stats = DbHandler.get_weapon_stats(self.__google_sheets_client.get_db(), Weapons.amraam)
+        weapons_stats = DbHandler.get_weapon_stats(self.__database_client.get_db(), Weapons.amraam)
         embed.add_field(name="Shots", value=str(weapons_stats.shots), inline=True)
         embed.add_field(name='Hits', value=str(weapons_stats.hits), inline=True)
         embed.add_field(name='PK%', value=str(weapons_stats.pk) + "%", inline=True)
@@ -139,7 +137,7 @@ class EmbedCreator:
             timestamp=datetime.fromtimestamp(time.time())
         )
 
-        weapons_stats = DbHandler.get_weapon_stats(self.__google_sheets_client.get_db(), Weapons.sparrow)
+        weapons_stats = DbHandler.get_weapon_stats(self.__database_client.get_db(), Weapons.sparrow)
         embed.add_field(name="Shots", value=str(weapons_stats.shots), inline=True)
         embed.add_field(name='Hits', value=str(weapons_stats.hits), inline=True)
         embed.add_field(name='PK%', value=str(weapons_stats.pk) + "%", inline=True)
@@ -154,7 +152,7 @@ class EmbedCreator:
             timestamp=datetime.fromtimestamp(time.time())
         )
 
-        weapons_stats = DbHandler.get_weapon_stats(self.__google_sheets_client.get_db(), Weapons.sidewinder)
+        weapons_stats = DbHandler.get_weapon_stats(self.__database_client.get_db(), Weapons.sidewinder)
         embed.add_field(name="Shots", value=str(weapons_stats.shots), inline=True)
         embed.add_field(name='Hits', value=str(weapons_stats.hits), inline=True)
         embed.add_field(name='PK%', value=str(weapons_stats.pk) + "%", inline=True)
@@ -163,7 +161,7 @@ class EmbedCreator:
         return embed
 
     def make_embed_notes(self):
-        debrief = DbHandler.get_latest_debrief(self.__google_sheets_client.get_db())
+        debrief = DbHandler.get_latest_debrief(self.__database_client.get_db())
 
         embed = discord.Embed(title=f"{debrief.msn_name}  |  {debrief.msn_nr}  |  {debrief.posted_by}  |  "
                                     f"{debrief.event_nr}",

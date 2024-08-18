@@ -3,7 +3,9 @@ from pathlib import Path
 import gspread
 from gspread import Worksheet
 from gspread.utils import Dimension
+from typing_extensions import override
 
+from clients.database_client import DatabaseClient
 from clients.google_sheets.constants import GOOGLE_SHEET_SPREAD_API_KEY, CVW17_RANGES, MSN_DATA_FILES_PATH, \
     GoogleSheetsRanges
 from clients.google_sheets.contracts import CVW17Database, MsnDataEntry
@@ -18,7 +20,7 @@ import numpy as np
 from services.file_handler import FileHandler
 
 
-class GoogleSheetsClient:
+class GoogleSheetsClient(DatabaseClient):
     def __init__(self):
         self.__google_sheets_api = gspread.service_account(GOOGLE_SHEET_SPREAD_API_KEY)
 
@@ -82,7 +84,7 @@ class GoogleSheetsClient:
         fetched_db.notes = db_transposed[self.__db_headers.index('NOTES')]
         fetched_db.size = len(fetched_db.date)
 
-        if self.__db_snapshot.size != fetched_db.size:
+        if self.__db_snapshot.size > fetched_db.size:
             try:
                 for func in self.__callbacks[ON_DB_INSERT_CALLBACK]:
                     func()
@@ -183,7 +185,7 @@ class GoogleSheetsClient:
         self.__update_entry_id_table(values, sheet, entries)
         self.__update_entry_dataview(values, sheet, entries)
 
-
+    @override
     @safe_execute
     def update(self):
         cell_values = self.__get_cell_values()
@@ -195,9 +197,11 @@ class GoogleSheetsClient:
             self.__update_entry_sheet(cell_values, self.__entry_sheets[0])
         self.__fetch_db(cell_values)
 
+    @override
     def get_db(self):
         return self.__db_snapshot
 
+    @override
     def add_listener(self, func, callback=None):
         if not callback:
             callback = func.__name__
@@ -206,8 +210,3 @@ class GoogleSheetsClient:
             self.__callbacks[callback] = []
 
         self.__callbacks[callback].append(func)
-
-
-if __name__ == '__main__':
-    gs = GoogleSheetsClient()
-    gs.update()

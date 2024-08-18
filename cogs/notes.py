@@ -1,25 +1,24 @@
 import asyncio
 
 from discord.ext.commands import Cog, Bot
-from discord import TextChannel, Message, Embed
+from discord import TextChannel
 
-from clients.google_sheets.google_sheets_client import GoogleSheetsClient
+from clients.database_client import DatabaseClient
 from core.constants import ON_DB_INSERT_CALLBACK
 from services import Logger
 from core.config.config import ConfigSingleton
-from services.database.db_handler import DbHandler
 from services.embed.embed_creator import EmbedCreator
 
 
 class NotesEmbedManager(Cog):
-    def __init__(self, bot: Bot, google_sheets_client: GoogleSheetsClient):
+    def __init__(self, bot: Bot, database_client: DatabaseClient):
         self.__bot = bot
         self.__config = ConfigSingleton.get_instance()
 
-        self.__google_sheets_client = google_sheets_client
-        self.__google_sheets_client.add_listener(self.on_db_insert, ON_DB_INSERT_CALLBACK)
+        self.__database_client = database_client
+        self.__database_client.add_listener(self.on_db_insert, ON_DB_INSERT_CALLBACK)
 
-        self.__embed_creator = EmbedCreator(google_sheets_client)
+        self.__embed_creator = EmbedCreator(database_client)
 
         self.__notes_channel: TextChannel | None = None
 
@@ -36,5 +35,5 @@ class NotesEmbedManager(Cog):
                                          self.__bot.loop)
 
 
-async def setup(bot, google_sheets_client: GoogleSheetsClient) -> None:
-    await bot.add_cog(NotesEmbedManager(bot, google_sheets_client))
+async def setup(bot, database_client: DatabaseClient) -> None:
+    await bot.add_cog(NotesEmbedManager(bot, database_client))

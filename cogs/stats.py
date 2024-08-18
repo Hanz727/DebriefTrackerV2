@@ -4,14 +4,14 @@ from discord import TextChannel, Message
 from discord.ext import tasks
 from discord.ext.commands import Bot, Cog
 
-from clients.google_sheets.google_sheets_client import GoogleSheetsClient
+from clients.database_client import DatabaseClient
 from services import Logger
 from core.config.config import ConfigSingleton
 from services.embed.embed_creator import EmbedCreator
 
 
 class StatsEmbedManager(Cog):
-    def __init__(self, bot: Bot, google_sheets_client: GoogleSheetsClient):
+    def __init__(self, bot: Bot, database_client: DatabaseClient):
         self.__bot = bot
 
         self.__config = ConfigSingleton.get_instance()
@@ -19,7 +19,7 @@ class StatsEmbedManager(Cog):
         # embeds will be sent to this channel, there is only 1 server and 1 channel that this cog handles
         self.__stats_channel: TextChannel | None = None
 
-        self.__embed_creator = EmbedCreator(google_sheets_client)
+        self.__embed_creator = EmbedCreator(database_client)
         self.__embed_funcs = self.__embed_creator.get_embed_funcs()
         self.__sent_messages: list[Message] = []
 
@@ -73,5 +73,5 @@ class StatsEmbedManager(Cog):
             Logger.error(err)
 
 
-async def setup(bot: Bot, google_sheets_client: GoogleSheetsClient) -> None:
-    await bot.add_cog(StatsEmbedManager(bot, google_sheets_client))
+async def setup(bot: Bot, database_client: DatabaseClient) -> None:
+    await bot.add_cog(StatsEmbedManager(bot, database_client))

@@ -16,14 +16,14 @@ class DebriefTrackerBot(Bot):
 
         self.__config = ConfigSingleton.get_instance()
 
-        self.__google_sheets_client = GoogleSheetsClient()
-        ThreadPoolClient.create_task_loop(self.__google_sheets_client.update,
+        self.__database_client = GoogleSheetsClient()
+        ThreadPoolClient.create_task_loop(self.__database_client.update,
                                           self.__config.google_sheets_update_interval_seconds)
 
     @override
     async def setup_hook(self) -> None:
-        await notes.setup(self, self.__google_sheets_client)
-        await stats.setup(self, self.__google_sheets_client)
+        await notes.setup(self, self.__database_client)
+        await stats.setup(self, self.__database_client)
 
         await self.tree.sync()
 
