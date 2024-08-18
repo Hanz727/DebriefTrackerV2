@@ -1,5 +1,3 @@
-import os
-from importlib.metadata import files
 from pathlib import Path
 
 import gspread
@@ -13,10 +11,10 @@ from core.constants import ON_DB_INSERT_CALLBACK
 from core.config.config import ConfigSingleton
 from core.wrappers import safe_execute
 from services.data_handler import DataHandler
+import services.Logger as Logger
 
 import numpy as np
 
-from services.database.db_handler import DbHandler
 from services.file_handler import FileHandler
 
 
@@ -31,21 +29,21 @@ class GoogleSheetsClient:
         self.__entry_sheets = [self.__spreadsheet.worksheet("ENTRY1")]
         self.__misc_sheets = [self.__spreadsheet.worksheet("MISC1")]
 
-        self.__local_db = CVW17Database()
+        self.__db_snapshot = CVW17Database()
 
         self.__callbacks = {ON_DB_INSERT_CALLBACK: []}
 
         self.__db_headers: list[str] = []
-        self.__update_local_db(self.__get_db_values())
+        self.__fetch_db(self.__get_cell_values())
 
 
     @safe_execute
-    def __get_db_values(self) -> dict[GoogleSheetsRanges, list]:
+    def __get_cell_values(self) -> dict[GoogleSheetsRanges, list]:
         data = self.__spreadsheet.values_batch_get(ranges=CVW17_RANGES)["valueRanges"]
         return {enum_item: val.get('values', [[]]) for enum_item, val in zip(GoogleSheetsRanges, data)}
 
     @safe_execute
-    def __update_local_db(self, values: dict[GoogleSheetsRanges, list]):
+    def __fetch_db(self, values: dict[GoogleSheetsRanges, list]) -> None:
         if len(self.__db_headers) == 0:
             self.__db_headers = DataHandler.flatten(values[GoogleSheetsRanges.database_headers])
 
@@ -60,33 +58,40 @@ class GoogleSheetsClient:
         if lock:
             return
 
-        self.__local_db.date = db_transposed[self.__db_headers.index('DATE')]
-        self.__local_db.fl_name = db_transposed[self.__db_headers.index('FL NAME')]
-        self.__local_db.squadron = db_transposed[self.__db_headers.index('SQUADRON')]
-        self.__local_db.rio_name = db_transposed[self.__db_headers.index('RIO NAME')]
-        self.__local_db.plt_name = db_transposed[self.__db_headers.index('PLT NAME')]
-        self.__local_db.tail_number = db_transposed[self.__db_headers.index('TAIL NUMBER')]
-        self.__local_db.weapon_type = db_transposed[self.__db_headers.index('WEAPON TYPE')]
-        self.__local_db.weapon = db_transposed[self.__db_headers.index('WEAPON')]
-        self.__local_db.target = db_transposed[self.__db_headers.index('TARGET')]
-        self.__local_db.target_angels = db_transposed[self.__db_headers.index('TARGET ANGELS')]
-        self.__local_db.angels = db_transposed[self.__db_headers.index('ANGELS')]
-        self.__local_db.speed = db_transposed[self.__db_headers.index('SPEED')]
-        self.__local_db.range = db_transposed[self.__db_headers.index('RANGE')]
-        self.__local_db.hit = db_transposed[self.__db_headers.index('HIT')]
-        self.__local_db.destroyed = db_transposed[self.__db_headers.index('DESTROYED')]
-        self.__local_db.qty = db_transposed[self.__db_headers.index('QTY')]
-        self.__local_db.msn_nr = db_transposed[self.__db_headers.index('MSN NR')]
-        self.__local_db.msn_name = db_transposed[self.__db_headers.index('MSN NAME')]
-        self.__local_db.event = db_transposed[self.__db_headers.index('EVENT')]
-        self.__local_db.notes = db_transposed[self.__db_headers.index('NOTES')]
+        fetched_db = CVW17Database()
 
-        if self.__local_db.size != len(self.__local_db.date):
-            self.__local_db.size = len(self.__local_db.date)
-            for func in self.__callbacks[ON_DB_INSERT_CALLBACK]:
-                func()
+        fetched_db.date = db_transposed[self.__db_headers.index('DATE')]
+        fetched_db.fl_name = db_transposed[self.__db_headers.index('FL NAME')]
+        fetched_db.squadron = db_transposed[self.__db_headers.index('SQUADRON')]
+        fetched_db.rio_name = db_transposed[self.__db_headers.index('RIO NAME')]
+        fetched_db.plt_name = db_transposed[self.__db_headers.index('PLT NAME')]
+        fetched_db.tail_number = db_transposed[self.__db_headers.index('TAIL NUMBER')]
+        fetched_db.weapon_type = db_transposed[self.__db_headers.index('WEAPON TYPE')]
+        fetched_db.weapon = db_transposed[self.__db_headers.index('WEAPON')]
+        fetched_db.target = db_transposed[self.__db_headers.index('TARGET')]
+        fetched_db.target_angels = db_transposed[self.__db_headers.index('TARGET ANGELS')]
+        fetched_db.angels = db_transposed[self.__db_headers.index('ANGELS')]
+        fetched_db.speed = db_transposed[self.__db_headers.index('SPEED')]
+        fetched_db.range = db_transposed[self.__db_headers.index('RANGE')]
+        fetched_db.hit = db_transposed[self.__db_headers.index('HIT')]
+        fetched_db.destroyed = db_transposed[self.__db_headers.index('DESTROYED')]
+        fetched_db.qty = db_transposed[self.__db_headers.index('QTY')]
+        fetched_db.msn_nr = db_transposed[self.__db_headers.index('MSN NR')]
+        fetched_db.msn_name = db_transposed[self.__db_headers.index('MSN NAME')]
+        fetched_db.event = db_transposed[self.__db_headers.index('EVENT')]
+        fetched_db.notes = db_transposed[self.__db_headers.index('NOTES')]
+        fetched_db.size = len(fetched_db.date)
 
-    def __update_data_files(self, values: dict[GoogleSheetsRanges, list]):
+        if self.__db_snapshot.size != fetched_db.size:
+            try:
+                for func in self.__callbacks[ON_DB_INSERT_CALLBACK]:
+                    func()
+            except Exception as err:
+                Logger.warning("failed executing callback func: " + str(err))
+
+        self.__db_snapshot = fetched_db
+
+    def __update_msn_data_files(self, values: dict[GoogleSheetsRanges, list]) -> None:
         remote_msn_data_files: list[str] = DataHandler.flatten(values[GoogleSheetsRanges.msn_data_files])[:5]
 
         local_msn_data_paths: list[Path] = FileHandler.sort_files_by_date_created(Path(MSN_DATA_FILES_PATH))[:5]
@@ -98,6 +103,7 @@ class GoogleSheetsClient:
 
         files_range: str = GoogleSheetsRanges.msn_data_files.value.split('!')[1]
 
+        # MSN DATA FILES in MISCx sheets
         self.__misc_sheets[0].update(
             range_name= files_range,
             major_dimension=Dimension.cols,
@@ -110,31 +116,87 @@ class GoogleSheetsClient:
 
         file_range: str = GoogleSheetsRanges.msn_data_file.value.split('!')[1]
 
+        # MSN DATA FILE in ENTRYx sheets
         self.__entry_sheets[0].update(
             range_name= file_range,
             values=[[local_msn_data_files[0]]]
         )
 
 
-    def __update_entry_sheet(self, values: dict[GoogleSheetsRanges, list], sheet: Worksheet):
+    def __update_entry_id_table(self, values: dict[GoogleSheetsRanges, list], sheet: Worksheet,
+                              entries: list[MsnDataEntry]):
+        searched_modexes = DataHandler.flatten(values[GoogleSheetsRanges.entry_modexes], True, '')
+        msn_modexes = [x.tail_number for x in entries]
+
+        update_values = []
+        for modex in searched_modexes:
+            # Uncorrelated modexes / not found in search
+
+            if not modex or modex not in msn_modexes:
+                update_values.append([])
+                continue
+
+            for entry in entries:
+                if entry.tail_number == modex and [entry.pilot_name, entry.rio_name] not in update_values:
+                    update_values.append([entry.pilot_name, entry.rio_name])
+
+        sheet.update(
+            range_name=GoogleSheetsRanges.id_table.get_cell_range(),
+            values=update_values,
+            major_dimension=Dimension.rows
+        )
+
+    def __update_entry_dataview(self, values: dict[GoogleSheetsRanges, list], sheet: Worksheet,
+                                entries: list[MsnDataEntry]):
+        selected_modexes = DataHandler.flatten(values[GoogleSheetsRanges.entry_modexes], True, '')
+        selected_crews = values[GoogleSheetsRanges.id_table]
+
+        modex_to_crew = {modex: crew for modex, crew in zip(selected_modexes, selected_crews) if modex}
+        uncorrelated_modexes = selected_modexes
+        updated_values = []
+
+        for entry in entries:
+            if entry.tail_number in selected_modexes and entry.tail_number:
+                weapon_type = 'A/A' if entry.type == 1 else 'A/G'
+                row = [entry.pilot_name, int(entry.tail_number), weapon_type, entry.weapon_name, entry.tgt_name,
+                       entry.angels_tgt, entry.angels, entry.speed, entry.range, entry.hit, entry.destroyed ]
+                updated_values.append(row)
+                uncorrelated_modexes.remove(entry.tail_number)
+
+        for modex in uncorrelated_modexes:
+            if modex and modex_to_crew.get(modex, []):
+                updated_values.append([modex_to_crew[modex][0], int(modex), "N/A", "NONE", "NONE", "", "", "", "", False, False])
+
+        while len(updated_values) < 122:
+            updated_values.append(DataHandler.pad([], 11, ''))
+
+        sheet.update(
+            range_name=GoogleSheetsRanges.entry_dataview.get_cell_range(),
+            values=updated_values,
+            major_dimension=Dimension.rows
+        )
+
+    def __update_entry_sheet(self, values: dict[GoogleSheetsRanges, list], sheet: Worksheet) -> None:
         msn_data_file_path = Path(MSN_DATA_FILES_PATH + values[GoogleSheetsRanges.msn_data_file][0][0] + ".json")
         entries = FileHandler.load_entries_from_file(msn_data_file_path)
 
-        #WIP
+        self.__update_entry_id_table(values, sheet, entries)
+        self.__update_entry_dataview(values, sheet, entries)
 
 
     @safe_execute
     def update(self):
-        values = self.__get_db_values()
-        if not values:
+        cell_values = self.__get_cell_values()
+        if not cell_values:
             return
 
-        self.__update_data_files(values)
-        self.__update_entry_sheet(values, self.__entry_sheets[0])
-        self.__update_local_db(values)
+        self.__update_msn_data_files(cell_values)
+        if cell_values[GoogleSheetsRanges.entry_should_update][0][0] == 'TRUE':
+            self.__update_entry_sheet(cell_values, self.__entry_sheets[0])
+        self.__fetch_db(cell_values)
 
     def get_db(self):
-        return self.__local_db
+        return self.__db_snapshot
 
     def add_listener(self, func, callback=None):
         if not callback:
@@ -144,3 +206,8 @@ class GoogleSheetsClient:
             self.__callbacks[callback] = []
 
         self.__callbacks[callback].append(func)
+
+
+if __name__ == '__main__':
+    gs = GoogleSheetsClient()
+    gs.update()
