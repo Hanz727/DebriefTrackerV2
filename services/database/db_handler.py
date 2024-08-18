@@ -57,7 +57,7 @@ class DbHandler:
         misses = shots - hits
 
         if shots > 0:
-            pk = round(hits/shots, 3) * 100
+            pk = round(hits/shots * 100, 1)
         else:
             pk = 0
 
