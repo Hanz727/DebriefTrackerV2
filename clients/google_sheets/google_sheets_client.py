@@ -22,6 +22,7 @@ from services.file_handler import FileHandler
 
 class GoogleSheetsClient(DatabaseClient):
     def __init__(self):
+        super().__init__()
         self.__google_sheets_api = gspread.service_account(GOOGLE_SHEET_SPREAD_API_KEY)
 
         self.__config = ConfigSingleton.get_instance()
@@ -32,8 +33,6 @@ class GoogleSheetsClient(DatabaseClient):
         self.__misc_sheets = [self.__spreadsheet.worksheet("MISC1")]
 
         self.__db_snapshot = CVW17Database()
-
-        self.__callbacks = {ON_DB_INSERT_CALLBACK: []}
 
         self.__db_headers: list[str] = []
         self.__fetch_db(self.__get_cell_values())
@@ -67,31 +66,33 @@ class GoogleSheetsClient(DatabaseClient):
         fetched_db.squadron = db_transposed[self.__db_headers.index('SQUADRON')]
         fetched_db.rio_name = db_transposed[self.__db_headers.index('RIO NAME')]
         fetched_db.plt_name = db_transposed[self.__db_headers.index('PLT NAME')]
-        fetched_db.tail_number = db_transposed[self.__db_headers.index('TAIL NUMBER')]
+        fetched_db.tail_number = DataHandler.safe_cast_array(db_transposed[self.__db_headers.index('TAIL NUMBER')], int, None)
         fetched_db.weapon_type = db_transposed[self.__db_headers.index('WEAPON TYPE')]
         fetched_db.weapon = db_transposed[self.__db_headers.index('WEAPON')]
         fetched_db.target = db_transposed[self.__db_headers.index('TARGET')]
-        fetched_db.target_angels = db_transposed[self.__db_headers.index('TARGET ANGELS')]
-        fetched_db.angels = db_transposed[self.__db_headers.index('ANGELS')]
-        fetched_db.speed = db_transposed[self.__db_headers.index('SPEED')]
-        fetched_db.range = db_transposed[self.__db_headers.index('RANGE')]
-        fetched_db.hit = db_transposed[self.__db_headers.index('HIT')]
-        fetched_db.destroyed = db_transposed[self.__db_headers.index('DESTROYED')]
-        fetched_db.qty = db_transposed[self.__db_headers.index('QTY')]
-        fetched_db.msn_nr = db_transposed[self.__db_headers.index('MSN NR')]
+        fetched_db.target_angels = DataHandler.safe_cast_array(db_transposed[self.__db_headers.index('TARGET ANGELS')], int, None)
+        fetched_db.angels = DataHandler.safe_cast_array(db_transposed[self.__db_headers.index('ANGELS')], int, None)
+        fetched_db.speed = DataHandler.safe_cast_array(db_transposed[self.__db_headers.index('SPEED')], float, None)
+        fetched_db.range = DataHandler.safe_cast_array(db_transposed[self.__db_headers.index('RANGE')], int, None)
+        fetched_db.hit = DataHandler.safe_cast_array(db_transposed[self.__db_headers.index('HIT')], bool, None)
+        fetched_db.destroyed = DataHandler.safe_cast_array(db_transposed[self.__db_headers.index('DESTROYED')], bool, None)
+        fetched_db.qty = DataHandler.safe_cast_array(db_transposed[self.__db_headers.index('QTY')], int, None)
+        fetched_db.msn_nr = DataHandler.safe_cast_array(db_transposed[self.__db_headers.index('MSN NR')], int, None)
         fetched_db.msn_name = db_transposed[self.__db_headers.index('MSN NAME')]
         fetched_db.event = db_transposed[self.__db_headers.index('EVENT')]
         fetched_db.notes = db_transposed[self.__db_headers.index('NOTES')]
         fetched_db.size = len(fetched_db.date)
 
-        if self.__db_snapshot.size > fetched_db.size:
+        old_db_size = self.__db_snapshot.size
+        self.__db_snapshot = fetched_db
+
+        if fetched_db.size > old_db_size > 0:
             try:
-                for func in self.__callbacks[ON_DB_INSERT_CALLBACK]:
+                for func in self.callbacks[ON_DB_INSERT_CALLBACK]:
                     func()
             except Exception as err:
                 Logger.warning("failed executing callback func: " + str(err))
 
-        self.__db_snapshot = fetched_db
 
     def __update_msn_data_files(self, values: dict[GoogleSheetsRanges, list]) -> None:
         remote_msn_data_files: list[str] = DataHandler.flatten(values[GoogleSheetsRanges.msn_data_files])[:5]
@@ -200,13 +201,3 @@ class GoogleSheetsClient(DatabaseClient):
     @override
     def get_db(self) -> CVW17Database:
         return self.__db_snapshot
-
-    @override
-    def add_listener(self, func, callback=None):
-        if not callback:
-            callback = func.__name__
-
-        if callback not in self.__callbacks:
-            self.__callbacks[callback] = []
-
-        self.__callbacks[callback].append(func)

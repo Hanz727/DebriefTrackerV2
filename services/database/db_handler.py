@@ -12,7 +12,7 @@ class DbHandler:
         squadron_filter = db.squadron == squadron.value if squadron else np.ones(db.plt_name.shape, np.bool)
 
         player_filter = ( (db.plt_name == player) | (db.rio_name == player) ) & squadron_filter & additional_filter
-        aa_filter = player_filter & (db.weapon_type == 'A/A') & (db.hit == 'TRUE')
+        aa_filter = player_filter & (db.weapon_type == 'A/A') & (db.hit == True)
         ag_filter = player_filter & (db.weapon_type == 'A/G')
 
         aa_kills = sum(db.qty.astype(int)[aa_filter])
@@ -23,7 +23,7 @@ class DbHandler:
     @staticmethod
     def get_squadron_stats(db: CVW17Database, squadron: Squadrons):
         squadron_filter = ( db.squadron == squadron.value )
-        aa_filter = ( db.weapon_type == 'A/A' ) & ( ( db.hit == 'TRUE' ) | ( db.destroyed == 'TRUE' ) )
+        aa_filter = ( db.weapon_type == 'A/A' ) & ( ( db.hit == True ) | ( db.destroyed == True ) )
         ag_filter = squadron_filter & ( db.weapon_type == 'A/G' )
 
         aa_kills = sum(db.qty.astype(int)[squadron_filter & aa_filter])
@@ -49,7 +49,7 @@ class DbHandler:
     def get_weapon_stats(db: CVW17Database, weapon: Weapons):
         weapon_filter = np.char.startswith(db.weapon, weapon.value)
 
-        hit_filter = np.array(weapon_filter) & ((db.hit == 'TRUE') | (db.destroyed == 'TRUE'))
+        hit_filter = np.array(weapon_filter) & ((db.hit == True) | (db.destroyed == True))
 
         hits = sum(db.qty.astype(int)[hit_filter])
         shots = sum(db.qty.astype(int)[weapon_filter])
