@@ -47,6 +47,3 @@ class PostGresClient(DatabaseClient):
     @override
     def get_db(self) -> CVW17Database:
         return self.__db_snapshot
-
-if __name__ == '__main__':
-    pgc = PostGresClient()
