@@ -4,6 +4,17 @@ from typing import Final, List
 GOOGLE_SHEET_SPREAD_API_KEY: Final[str] = "keys/gspread_api_key.json"
 MSN_DATA_FILES_PATH: Final[str] = "../MissionData/"
 
+class Squadrons(Enum):
+    VF103 = 'VF-103'
+    VFA34 = 'VFA-34'
+
+class Weapons(Enum):
+    # These names are prefixes and thus must match for all the weapon types, i.e. AIM-54(C-MK60/B-MK47), AIM-9(M/X/F)
+    phoenix = 'AIM-54'
+    amraam = 'AIM-120'
+    sidewinder = 'AIM-9'
+    sparrow = 'AIM-7'
+
 class GoogleSheetsRanges(Enum):
     database_headers = "DATABASE!A1:AA1"
     database = "DATABASE!A2:AA"
