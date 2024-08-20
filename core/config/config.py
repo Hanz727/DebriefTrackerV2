@@ -1,5 +1,4 @@
 import json
-from dataclasses import asdict
 
 from clients.databases.constants import DbTypes
 from core.config._constants import CONFIG_PATH

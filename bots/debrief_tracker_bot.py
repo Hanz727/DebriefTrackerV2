@@ -4,7 +4,6 @@ import discord
 from discord.ext.commands import Bot
 
 from clients.databases.database_factory import DatabaseFactory
-from clients.databases.google_sheets.google_sheets_client import GoogleSheetsClient
 from clients.thread_pool_client import ThreadPoolClient
 from core.config.config import ConfigSingleton
 

@@ -3,19 +3,22 @@ from typing import override
 import numpy as np
 from clients.databases.database_client import DatabaseClient
 from clients.databases.google_sheets.contracts import CVW17Database
-from clients.databases.postgres.constants import DB_HOST, DB_PORT, DB_NAME, DB_PASSWORD, DB_USER, DB_FETCH_QUERY
+from clients.databases.postgres.constants import DB_FETCH_QUERY
+from core.config.config import ConfigSingleton
 from core.constants import ON_DB_INSERT_CALLBACK
 
 
 class PostGresClient(DatabaseClient):
     def __init__(self):
         super().__init__()
+        self.__config = ConfigSingleton.get_instance()
+
         self.__db_connection = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            dbname=DB_NAME,
-            password=DB_PASSWORD,
-            user=DB_USER
+            host=self.__config.postgres_host,
+            port=self.__config.postgres_port,
+            dbname=self.__config.postgres_db_name,
+            password=self.__config.postgres_password,
+            user=self.__config.postgres_user
         )
         self.__cursor = self.__db_connection.cursor()
 
