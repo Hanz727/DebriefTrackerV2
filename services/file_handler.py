@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from typing import List
 
-from clients.google_sheets.contracts import MsnDataEntry
+from clients.databases.google_sheets.contracts import MsnDataEntry
 
 
 class FileHandler:

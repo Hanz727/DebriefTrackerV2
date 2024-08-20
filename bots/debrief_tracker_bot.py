@@ -3,7 +3,8 @@ from typing import override
 import discord
 from discord.ext.commands import Bot
 
-from clients.google_sheets.google_sheets_client import GoogleSheetsClient
+from clients.databases.database_factory import DatabaseFactory
+from clients.databases.google_sheets.google_sheets_client import GoogleSheetsClient
 from clients.thread_pool_client import ThreadPoolClient
 from core.config.config import ConfigSingleton
 
@@ -16,7 +17,7 @@ class DebriefTrackerBot(Bot):
 
         self.__config = ConfigSingleton.get_instance()
 
-        self.__database_client = GoogleSheetsClient()
+        self.__database_client = DatabaseFactory().create_database()
         ThreadPoolClient.create_task_loop(self.__database_client.update,
                                           self.__config.google_sheets_update_interval_seconds)
 

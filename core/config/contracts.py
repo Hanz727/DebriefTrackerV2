@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-
 @dataclass
 class Config:
     notes_channel: int
@@ -8,3 +7,4 @@ class Config:
     stats_update_interval_seconds: int
     spreadsheet_url: str
     google_sheets_update_interval_seconds: int
+    db_type: str

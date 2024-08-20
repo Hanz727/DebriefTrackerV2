@@ -3,8 +3,8 @@ import discord
 from datetime import datetime
 import time
 
-from clients.database_client import DatabaseClient
-from clients.google_sheets.constants import Squadrons, Weapons
+from clients.databases.database_client import DatabaseClient
+from clients.databases.google_sheets.constants import Squadrons, Weapons
 from services.embed.constants import VF_103_LOGO_URL, VFA_34_LOGO_URL, AUTHOR_FOOTER, CVW_17_LOGO_URL
 
 

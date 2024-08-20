@@ -5,10 +5,10 @@ from gspread import Worksheet
 from gspread.utils import Dimension
 from typing_extensions import override
 
-from clients.database_client import DatabaseClient
-from clients.google_sheets.constants import GOOGLE_SHEET_SPREAD_API_KEY, CVW17_RANGES, MSN_DATA_FILES_PATH, \
+from clients.databases.database_client import DatabaseClient
+from clients.databases.google_sheets.constants import GOOGLE_SHEET_SPREAD_API_KEY, CVW17_RANGES, MSN_DATA_FILES_PATH, \
     GoogleSheetsRanges
-from clients.google_sheets.contracts import CVW17Database, MsnDataEntry
+from clients.databases.google_sheets.contracts import CVW17Database, MsnDataEntry
 from core.constants import ON_DB_INSERT_CALLBACK
 from core.config.config import ConfigSingleton
 from core.wrappers import safe_execute

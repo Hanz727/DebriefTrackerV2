@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from clients.google_sheets.contracts import CVW17Database
+from clients.databases.google_sheets.contracts import CVW17Database
 from core.constants import ON_DB_INSERT_CALLBACK
 
 

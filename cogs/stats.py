@@ -4,7 +4,7 @@ from discord import TextChannel, Message
 from discord.ext import tasks
 from discord.ext.commands import Bot, Cog
 
-from clients.database_client import DatabaseClient
+from clients.databases.database_client import DatabaseClient
 from services import Logger
 from core.config.config import ConfigSingleton
 from services.embed.embed_creator import EmbedCreator

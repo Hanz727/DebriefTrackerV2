@@ -1,10 +1,9 @@
 import psycopg2
-from psycopg2 import sql
 from typing import override
 import numpy as np
-from clients.database_client import DatabaseClient
-from clients.google_sheets.contracts import CVW17Database
-from clients.postgres.constants import DB_HOST, DB_PORT, DB_NAME, DB_PASSWORD, DB_USER, DB_FETCH_QUERY
+from clients.databases.database_client import DatabaseClient
+from clients.databases.google_sheets.contracts import CVW17Database
+from clients.databases.postgres.constants import DB_HOST, DB_PORT, DB_NAME, DB_PASSWORD, DB_USER, DB_FETCH_QUERY
 from core.constants import ON_DB_INSERT_CALLBACK
 
 

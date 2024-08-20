@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field, asdict
 import numpy as np
 
-from clients.google_sheets.constants import Squadrons, Weapons
+from clients.databases.google_sheets.constants import Squadrons, Weapons
 
 
 @dataclass

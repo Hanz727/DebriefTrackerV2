@@ -3,7 +3,7 @@ import asyncio
 from discord.ext.commands import Cog, Bot
 from discord import TextChannel
 
-from clients.database_client import DatabaseClient
+from clients.databases.database_client import DatabaseClient
 from core.constants import ON_DB_INSERT_CALLBACK
 from services import Logger
 from core.config.config import ConfigSingleton
