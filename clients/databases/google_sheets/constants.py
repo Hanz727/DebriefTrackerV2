@@ -15,6 +15,11 @@ class Weapons(Enum):
     sidewinder = 'AIM-9'
     sparrow = 'AIM-7'
 
+class WeaponTypes(Enum):
+    AA = "A/A"
+    AG = "A/G"
+    UNKNOWN = "N/A"
+
 class GoogleSheetsRanges(Enum):
     database_headers = "DATABASE!A1:AA1"
     database = "DATABASE!A2:AA"
