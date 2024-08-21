@@ -75,7 +75,7 @@ class DataManager:
         weapon_filter = self.__get_weapon_filter(weapon)
         killed_filter = self.__get_killed_filter()
 
-        hits = sum(self.__db.qty.astype(int)[killed_filter])
+        hits = sum(self.__db.qty.astype(int)[weapon_filter & killed_filter])
         shots = sum(self.__db.qty.astype(int)[weapon_filter])
 
         misses = shots - hits
