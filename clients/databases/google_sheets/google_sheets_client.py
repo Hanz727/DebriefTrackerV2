@@ -199,5 +199,5 @@ class GoogleSheetsClient(DatabaseClient):
         self.__fetch_db(cell_values)
 
     @override
-    def get_db(self) -> CVW17Database:
+    def _get_db(self) -> CVW17Database:
         return self.__db_snapshot
