@@ -18,7 +18,7 @@ class DebriefTrackerBot(Bot):
 
         self.__database_client = DatabaseFactory().create_database()
         ThreadPoolClient.create_task_loop(self.__database_client.update,
-                                          self.__config.google_sheets_update_interval_seconds)
+                                          self.__config.db_update_interval_seconds)
 
     @override
     async def setup_hook(self) -> None:

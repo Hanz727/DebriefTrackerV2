@@ -65,7 +65,7 @@ class GoogleSheetsClient(DatabaseClient):
         fetched_db.fl_name = db_transposed[self.__db_headers.index('FL NAME')]
         fetched_db.squadron = db_transposed[self.__db_headers.index('SQUADRON')]
         fetched_db.rio_name = db_transposed[self.__db_headers.index('RIO NAME')]
-        fetched_db.plt_name = db_transposed[self.__db_headers.index('PLT NAME')]
+        fetched_db.pilot_name = db_transposed[self.__db_headers.index('PLT NAME')]
         fetched_db.tail_number = DataHandler.safe_cast_array(db_transposed[self.__db_headers.index('TAIL NUMBER')], int, None)
         fetched_db.weapon_type = db_transposed[self.__db_headers.index('WEAPON TYPE')]
         fetched_db.weapon = db_transposed[self.__db_headers.index('WEAPON')]
@@ -199,5 +199,5 @@ class GoogleSheetsClient(DatabaseClient):
         self.__fetch_db(cell_values)
 
     @override
-    def get_db(self) -> CVW17Database:
+    def _get_db(self) -> CVW17Database:
         return self.__db_snapshot

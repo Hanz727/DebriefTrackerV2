@@ -30,7 +30,7 @@ class EmbedCreator:
         aa_kills = ""
         ag_drops = ""
 
-        leaderboard = self.__database_client.get_db().get_leaderboard(Squadrons.VF103)
+        leaderboard = self.__database_client.get_data_manager().get_leaderboard(Squadrons.VF103)
         for player, player_stats in leaderboard.items():
             names += player + "\n"
             aa_kills += str(player_stats.aa_kills) + "\n"
@@ -56,7 +56,7 @@ class EmbedCreator:
         aa_kills = ""
         ag_drops = ""
 
-        leaderboard = self.__database_client.get_db().get_leaderboard(Squadrons.VFA34)
+        leaderboard = self.__database_client.get_data_manager().get_leaderboard(Squadrons.VFA34)
         for player, player_stats in leaderboard.items():
             names += player + "\n"
             aa_kills += str(player_stats.aa_kills) + "\n"
@@ -78,14 +78,14 @@ class EmbedCreator:
         )
         embed.set_thumbnail(url=CVW_17_LOGO_URL)
 
-        stats_103 = self.__database_client.get_db().get_squadron_stats(Squadrons.VF103)
+        stats_103 = self.__database_client.get_data_manager().get_squadron_stats(Squadrons.VF103)
         embed.add_field(name="VF-103", value=f"Jolly Rogers", inline=True)
         embed.add_field(name='A/A kills', value=str(stats_103.aa_kills), inline=True)
         embed.add_field(name='A/G drops', value=str(stats_103.ag_drops), inline=True)
 
         embed.add_field(name='▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬', value=" ", inline=False)
 
-        stats_34 = self.__database_client.get_db().get_squadron_stats(Squadrons.VFA34)
+        stats_34 = self.__database_client.get_data_manager().get_squadron_stats(Squadrons.VFA34)
         embed.add_field(name="VFA-34", value=f"Blue Blasters", inline=True)
         embed.add_field(name='A/A kills', value=str(stats_34.aa_kills), inline=True)
         embed.add_field(name='A/G drops', value=str(stats_34.ag_drops), inline=True)
@@ -106,7 +106,7 @@ class EmbedCreator:
             timestamp=datetime.fromtimestamp(time.time())
         )
 
-        weapons_stats = self.__database_client.get_db().get_weapon_stats(Weapons.phoenix)
+        weapons_stats = self.__database_client.get_data_manager().get_weapon_stats(Weapons.phoenix)
         embed.add_field(name="Shots", value=str(weapons_stats.shots), inline=True)
         embed.add_field(name='Hits', value=str(weapons_stats.hits), inline=True)
         embed.add_field(name='PK%', value=str(weapons_stats.pk) + "%", inline=True)
@@ -121,7 +121,7 @@ class EmbedCreator:
             timestamp=datetime.fromtimestamp(time.time())
         )
 
-        weapons_stats = self.__database_client.get_db().get_weapon_stats(Weapons.amraam)
+        weapons_stats = self.__database_client.get_data_manager().get_weapon_stats(Weapons.amraam)
         embed.add_field(name="Shots", value=str(weapons_stats.shots), inline=True)
         embed.add_field(name='Hits', value=str(weapons_stats.hits), inline=True)
         embed.add_field(name='PK%', value=str(weapons_stats.pk) + "%", inline=True)
@@ -136,7 +136,7 @@ class EmbedCreator:
             timestamp=datetime.fromtimestamp(time.time())
         )
 
-        weapons_stats = self.__database_client.get_db().get_weapon_stats(Weapons.sparrow)
+        weapons_stats = self.__database_client.get_data_manager().get_weapon_stats(Weapons.sparrow)
         embed.add_field(name="Shots", value=str(weapons_stats.shots), inline=True)
         embed.add_field(name='Hits', value=str(weapons_stats.hits), inline=True)
         embed.add_field(name='PK%', value=str(weapons_stats.pk) + "%", inline=True)
@@ -151,7 +151,7 @@ class EmbedCreator:
             timestamp=datetime.fromtimestamp(time.time())
         )
 
-        weapons_stats = self.__database_client.get_db().get_weapon_stats(Weapons.sidewinder)
+        weapons_stats = self.__database_client.get_data_manager().get_weapon_stats(Weapons.sidewinder)
         embed.add_field(name="Shots", value=str(weapons_stats.shots), inline=True)
         embed.add_field(name='Hits', value=str(weapons_stats.hits), inline=True)
         embed.add_field(name='PK%', value=str(weapons_stats.pk) + "%", inline=True)
@@ -160,7 +160,7 @@ class EmbedCreator:
         return embed
 
     def make_embed_notes(self):
-        debrief = self.__database_client.get_db().get_latest_debrief()
+        debrief = self.__database_client.get_data_manager().get_latest_debrief()
 
         embed = discord.Embed(title=f"{debrief.msn_name}  |  {debrief.msn_nr}  |  {debrief.posted_by}  |  "
                                     f"{debrief.event_nr}",
