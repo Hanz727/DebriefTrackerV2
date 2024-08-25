@@ -1,56 +1,82 @@
 from dataclasses import asdict
 
-from clients.databases.google_sheets.constants import Squadrons, Weapons
-from clients.databases.google_sheets.contracts import CVW17Database, PlayerStats, SquadronStats, PartialDebrief, \
-    WeaponStats, Debrief
+from clients.databases.google_sheets.constants import Squadrons, Weapons, WeaponTypes
+from clients.databases.google_sheets.contracts import (CVW17Database, PlayerStats, SquadronStats, PartialDebrief,
+    WeaponStats, Debrief)
 import numpy as np
 
 class DataManager:
     def __init__(self, db: CVW17Database):
         self.__db = db
 
-    def get_player_stats(self, player: str, squadron: Squadrons | None = None,
-                         additional_filter=None) -> PlayerStats:
-        additional_filter = np.ones(self.__db.plt_name.shape, np.bool) if additional_filter is None else additional_filter
-        squadron_filter = self.__db.squadron == squadron.value if squadron else np.ones(self.__db.plt_name.shape, np.bool)
+    def __get_squadron_filter(self, squadron: Squadrons | None, additional_filter = None):
+        additional_filter = np.ones(self.__db.pilot_name.shape, np.bool) \
+            if additional_filter is None else additional_filter
+        squadron_filter = self.__db.squadron == squadron.value \
+            if squadron else np.ones(self.__db.pilot_name.shape, np.bool)
+        return squadron_filter & additional_filter
 
-        player_filter = ((self.__db.plt_name == player) | (self.__db.rio_name == player)) & squadron_filter & additional_filter
-        aa_filter = player_filter & (self.__db.weapon_type == 'A/A') & (self.__db.hit == True)
-        ag_filter = player_filter & (self.__db.weapon_type == 'A/G')
+    def __get_player_filter(self, player: str):
+        return (self.__db.pilot_name == player) | (self.__db.rio_name == player)
 
-        aa_kills = sum(self.__db.qty.astype(int)[aa_filter])
-        ag_drops = sum(self.__db.qty.astype(int)[ag_filter])
+    def __get_weapon_type_filter(self, weapon_type: WeaponTypes):
+        return self.__db.weapon_type == weapon_type
 
-        return PlayerStats(aa_kills=aa_kills, ag_drops=ag_drops, player_name=player)
+    def __get_killed_filter(self):
+        return ( self.__db.hit == True ) | ( self.__db.destroyed == True )
+
+    def __get_weapon_filter(self, weapon: Weapons):
+        cleaned_array = np.where(self.__db.weapon == None, 'NONE', self.__db.weapon).astype(np.str_)
+        return np.char.startswith(cleaned_array, prefix=weapon.value)
+
+    def get_player_stats(self, player: str, squadron: Squadrons | None = None, additional_filter = None) -> PlayerStats:
+            squadron_filter = self.__get_squadron_filter(squadron, additional_filter)
+            player_filter = self.__get_player_filter(player)
+            aa_filter = self.__get_weapon_type_filter(WeaponTypes.AA.value)
+            ag_filter = self.__get_weapon_type_filter(WeaponTypes.AG.value)
+            killed_filter = self.__get_killed_filter()
+
+            aa_kills_filter = squadron_filter & player_filter & aa_filter & killed_filter
+            ag_drops_filter = squadron_filter & player_filter & ag_filter
+
+            aa_kills = sum(self.__db.qty.astype(int)[aa_kills_filter])
+            ag_drops = sum(self.__db.qty.astype(int)[ag_drops_filter])
+
+            return PlayerStats(aa_kills=aa_kills, ag_drops=ag_drops, player_name=player)
 
     def get_squadron_stats(self, squadron: Squadrons):
-        squadron_filter = ( self.__db.squadron == squadron.value )
-        aa_filter = ( self.__db.weapon_type == 'A/A' ) & ( ( self.__db.hit == True ) | ( self.__db.destroyed == True ) )
-        ag_filter = squadron_filter & ( self.__db.weapon_type == 'A/G' )
+        squadron_filter = self.__get_squadron_filter(squadron)
+        aa_filter = self.__get_weapon_type_filter(WeaponTypes.AA.value)
+        ag_filter = self.__get_weapon_type_filter(WeaponTypes.AG.value)
+        killed_filter = self.__get_killed_filter()
 
-        aa_kills = sum(self.__db.qty.astype(int)[squadron_filter & aa_filter])
-        ag_drops = sum(self.__db.qty.astype(int)[squadron_filter & ag_filter])
+        aa_kills_filter = squadron_filter & aa_filter & killed_filter
+        ag_drops_filter = squadron_filter & ag_filter
+
+        aa_kills = sum(self.__db.qty.astype(int)[aa_kills_filter])
+        ag_drops = sum(self.__db.qty.astype(int)[ag_drops_filter])
 
         return SquadronStats(aa_kills=aa_kills, ag_drops=ag_drops)
 
     def __get_all_player_names(self, squadron: Squadrons | None) -> set[str]:
-        players_filter = (self.__db.squadron == squadron.value) if squadron else ()
+        squadron_filter = self.__get_squadron_filter(squadron)
 
-        players = list(set(self.__db.plt_name[players_filter]) | set(self.__db.rio_name[players_filter]))
+        players = list(set(self.__db.pilot_name[squadron_filter]) | set(self.__db.rio_name[squadron_filter]))
         return {player for player in players if player}
+
+    def __apply_leaderboard_weights(self, entry: (str, PlayerStats)):
+        return 2 * entry[1].aa_kills + entry[1].ag_drops
 
     def get_leaderboard(self, squadron: Squadrons) -> dict[str, PlayerStats]:
         players = self.__get_all_player_names(squadron)
         unsorted_leaderboard = {player: self.get_player_stats(player, squadron) for player in players}
-        # the sorting is based on a point system where A/A kill is worth 2 points and A/G drop 1 point.
-        return dict(sorted(unsorted_leaderboard.items(), key=lambda k: (k[1].aa_kills * 2 + k[1].ag_drops), reverse=True))
+        return dict(sorted(unsorted_leaderboard.items(), key=self.__apply_leaderboard_weights, reverse=True))
 
     def get_weapon_stats(self, weapon: Weapons):
-        weapon_filter = np.char.startswith(self.__db.weapon, weapon.value)
+        weapon_filter = self.__get_weapon_filter(weapon)
+        killed_filter = self.__get_killed_filter()
 
-        hit_filter = np.array(weapon_filter) & ((self.__db.hit == True) | (self.__db.destroyed == True))
-
-        hits = sum(self.__db.qty.astype(int)[hit_filter])
+        hits = sum(self.__db.qty.astype(int)[weapon_filter & killed_filter])
         shots = sum(self.__db.qty.astype(int)[weapon_filter])
 
         misses = shots - hits
@@ -63,9 +89,8 @@ class DataManager:
         return WeaponStats(hits=hits, misses=misses, pk=pk, shots=shots)
 
     def __get_latest_entry(self):
-        idx = -1 # for testing, keep at -1
-        return PartialDebrief(msn_name=self.__db.msn_name[idx], msn_nr=self.__db.msn_nr[idx], posted_by=self.__db.fl_name[idx],
-                              event_nr=self.__db.event[idx], notes=self.__db.notes[idx])
+        return PartialDebrief(msn_name=self.__db.msn_name[-1], msn_nr=self.__db.msn_nr[-1], posted_by=self.__db.fl_name[-1],
+                              event_nr=self.__db.event[-1], notes=self.__db.notes[-1])
 
     def get_latest_debrief(self):
         latest_entry = self.__get_latest_entry()
@@ -75,13 +100,13 @@ class DataManager:
                           ( self.__db.fl_name == latest_entry.posted_by ))
 
         modexes = self.__db.tail_number[debrief_filter]
-        pilot_names = self.__db.plt_name[debrief_filter]
+        pilot_names = self.__db.pilot_name[debrief_filter]
         rio_names = self.__db.rio_name[debrief_filter]
 
         player_stats = {}
 
         for modex, pilot, rio in zip(modexes, pilot_names, rio_names):
-            player_stats[modex] = self.__db.get_player_stats(pilot, None, debrief_filter)
+            player_stats[modex] = self.get_player_stats(pilot, None, debrief_filter)
             player_stats[modex].player_name = f'{pilot} | {rio}' if rio else pilot
 
         debrief = Debrief(**asdict(latest_entry), player_stats=player_stats)

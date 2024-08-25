@@ -39,7 +39,7 @@ class CVW17Database:
     fl_name: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     squadron: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     rio_name: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
-    plt_name: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    pilot_name: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     tail_number: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
     weapon_type: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     weapon: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))

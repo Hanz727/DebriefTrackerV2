@@ -32,7 +32,7 @@ class PostGresClient(DatabaseClient):
     def __fetch_db(self):
         self.__cursor.execute(DB_FETCH_QUERY)
         rows = self.__cursor.fetchall()
-        db_transposed = np.array(rows).T
+        db_transposed = np.array(rows).T[:20]
 
         fetched_db = CVW17Database(len(rows), *db_transposed)
 
@@ -47,5 +47,5 @@ class PostGresClient(DatabaseClient):
         self.__fetch_db()
 
     @override
-    def get_db(self) -> CVW17Database:
+    def _get_db(self) -> CVW17Database:
         return self.__db_snapshot
