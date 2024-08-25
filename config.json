@@ -4,7 +4,7 @@
   "stats_update_interval_seconds": 60,
   "db_update_interval_seconds": 3,
   "spreadsheet_url": "https://docs.google.com/spreadsheets/d/17tfsxC5n98qvDlEAMv6Toae90_NQSLE3RlBemG9T3mg",
-  "db_type": "google_sheets",
+  "db_type": "postgres",
   "postgres_host": "localhost",
   "postgres_port": "5432",
   "postgres_db_name": "CVW17Debriefs",

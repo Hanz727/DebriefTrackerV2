@@ -26,7 +26,8 @@ class DataManager:
         return ( self.__db.hit == True ) | ( self.__db.destroyed == True )
 
     def __get_weapon_filter(self, weapon: Weapons):
-        return np.char.startswith(self.__db.weapon, weapon.value)
+        cleaned_array = np.where(self.__db.weapon == None, 'NONE', self.__db.weapon).astype(np.str_)
+        return np.char.startswith(cleaned_array, prefix=weapon.value)
 
     def get_player_stats(self, player: str, squadron: Squadrons | None = None, additional_filter = None) -> PlayerStats:
             squadron_filter = self.__get_squadron_filter(squadron, additional_filter)

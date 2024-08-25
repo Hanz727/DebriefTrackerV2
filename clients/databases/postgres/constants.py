@@ -1,1 +1,1 @@
-DB_FETCH_QUERY = "SELECT * FROM public.debriefs"
+DB_FETCH_QUERY = "SELECT * FROM public.debriefs ORDER BY \"ID\" ASC"
