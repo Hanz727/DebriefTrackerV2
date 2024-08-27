@@ -1,8 +1,9 @@
 import psycopg2
 from typing import override
 import numpy as np
+
+from clients.databases.contracts import CVW17Database
 from clients.databases.database_client import DatabaseClient
-from clients.databases.google_sheets.contracts import CVW17Database
 from clients.databases.postgres.constants import DB_FETCH_QUERY
 from core.config.config import ConfigSingleton
 from core.constants import ON_DB_INSERT_CALLBACK

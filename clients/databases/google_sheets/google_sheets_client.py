@@ -5,11 +5,10 @@ from gspread import Worksheet
 from gspread.utils import Dimension
 from typing_extensions import override
 
+from clients.databases.contracts import CVW17Database
 from clients.databases.database_client import DatabaseClient
-from clients.databases.google_sheets.constants import GOOGLE_SHEET_SPREAD_API_KEY, CVW17_RANGES, MSN_DATA_FILES_PATH, \
-    GoogleSheetsRanges
-from clients.databases.google_sheets.contracts import CVW17Database, MsnDataEntry
-from core.constants import ON_DB_INSERT_CALLBACK
+from clients.databases.google_sheets.constants import GOOGLE_SHEETS_KEY_PATH, CVW17_RANGES, GoogleSheetsRanges
+from core.constants import ON_DB_INSERT_CALLBACK, MSN_DATA_FILES_PATH
 from core.config.config import ConfigSingleton
 from core.wrappers import safe_execute
 from services.data_handler import DataHandler
@@ -18,12 +17,14 @@ import services.Logger as Logger
 import numpy as np
 
 from services.file_handler import FileHandler
+from services.msn_data.contracts import MsnDataEntry
+from services.msn_data.msn_data_handler import MsnDataHandler
 
 
 class GoogleSheetsClient(DatabaseClient):
     def __init__(self):
         super().__init__()
-        self.__google_sheets_api = gspread.service_account(GOOGLE_SHEET_SPREAD_API_KEY)
+        self.__google_sheets_api = gspread.service_account(GOOGLE_SHEETS_KEY_PATH)
 
         self.__config = ConfigSingleton.get_instance()
 
@@ -97,7 +98,7 @@ class GoogleSheetsClient(DatabaseClient):
     def __update_msn_data_files(self, values: dict[GoogleSheetsRanges, list]) -> None:
         remote_msn_data_files: list[str] = DataHandler.flatten(values[GoogleSheetsRanges.msn_data_files])[:5]
 
-        local_msn_data_paths: list[Path] = FileHandler.sort_files_by_date_created(Path(MSN_DATA_FILES_PATH))[:5]
+        local_msn_data_paths: list[Path] = FileHandler.sort_files_by_date_created(MSN_DATA_FILES_PATH)[:5]
         local_msn_data_files: list[str] = DataHandler.pad([str(x.with_suffix('')) for x in local_msn_data_paths],
                                                           5, '')
 
@@ -180,8 +181,8 @@ class GoogleSheetsClient(DatabaseClient):
         )
 
     def __update_entry_sheet(self, values: dict[GoogleSheetsRanges, list], sheet: Worksheet) -> None:
-        msn_data_file_path = Path(MSN_DATA_FILES_PATH + values[GoogleSheetsRanges.msn_data_file][0][0] + ".json")
-        entries = FileHandler.load_entries_from_file(msn_data_file_path)
+        msn_data_file_path = Path(MSN_DATA_FILES_PATH.as_posix() + values[GoogleSheetsRanges.msn_data_file][0][0] + ".json")
+        entries = MsnDataHandler.load_entries_from_file(msn_data_file_path)
 
         self.__update_entry_id_table(values, sheet, entries)
         self.__update_entry_dataview(values, sheet, entries)

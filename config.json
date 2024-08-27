@@ -9,5 +9,6 @@
   "postgres_port": "5432",
   "postgres_db_name": "CVW17Debriefs",
   "postgres_user": "read_only",
-  "postgres_password": "publicuserpwd"
+  "postgres_password": "publicuserpwd",
+  "auto_mode": false
 }

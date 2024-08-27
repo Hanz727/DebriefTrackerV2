@@ -1,9 +1,10 @@
 from dataclasses import asdict
 
-from clients.databases.google_sheets.constants import Squadrons, Weapons, WeaponTypes
-from clients.databases.google_sheets.contracts import (CVW17Database, PlayerStats, SquadronStats, PartialDebrief,
-    WeaponStats, Debrief)
 import numpy as np
+
+from clients.databases.contracts import CVW17Database, PlayerStats, SquadronStats, WeaponStats, PartialDebrief, Debrief
+from core.constants import Squadrons, WeaponTypes, Weapons
+
 
 class DataManager:
     def __init__(self, db: CVW17Database):
