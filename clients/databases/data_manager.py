@@ -94,7 +94,6 @@ class DataManager:
 
     def get_latest_debrief(self):
         latest_entry = self.__get_latest_entry()
-
         debrief_filter = (( self.__db.notes == latest_entry.notes ) & ( self.__db.msn_nr == latest_entry.msn_nr ) &
                           ( self.__db.msn_name == latest_entry.msn_name) & ( self.__db.event == latest_entry.event_nr) &
                           ( self.__db.fl_name == latest_entry.posted_by ))
