@@ -8,7 +8,7 @@
   "postgres_host": "localhost",
   "postgres_port": "5432",
   "postgres_db_name": "CVW17Debriefs",
-  "postgres_user": "read_only",
-  "postgres_password": "publicuserpwd",
+  "postgres_user": "postgres",
+  "postgres_password": "test",
   "auto_mode": false
 }

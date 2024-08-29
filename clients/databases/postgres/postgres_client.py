@@ -44,6 +44,10 @@ class PostGresClient(DatabaseClient):
                 func()
 
     @override
+    def insert(self, rows: CVW17Database):
+        ...
+
+    @override
     def update(self) -> None:
         self.__fetch_db()
 

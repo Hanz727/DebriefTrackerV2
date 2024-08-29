@@ -10,6 +10,10 @@ class DatabaseClient(ABC):
         self.callbacks = {ON_DB_INSERT_CALLBACK: []}
 
     @abstractmethod
+    def insert(self, rows: CVW17Database):
+        ...
+
+    @abstractmethod
     def update(self) -> None:
         ...
 

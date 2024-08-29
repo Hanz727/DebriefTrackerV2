@@ -200,5 +200,9 @@ class GoogleSheetsClient(DatabaseClient):
         self.__fetch_db(cell_values)
 
     @override
+    def insert(self, rows: CVW17Database):
+        ...
+
+    @override
     def _get_db(self) -> CVW17Database:
         return self.__db_snapshot

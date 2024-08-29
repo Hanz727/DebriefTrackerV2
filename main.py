@@ -6,6 +6,7 @@ from bots.debrief_tracker_bot import DebriefTrackerBot
 from core.constants import DISCORD_TOKEN_PATH
 from services.file_handler import FileHandler
 from services import Logger
+from services.msn_data.auto_mode.msn_data_monitor import MsnDataMonitor
 
 
 def main():
@@ -21,4 +22,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
+    # TODO: DELETE AFTER DE
+    MsnDataMonitor().update()
