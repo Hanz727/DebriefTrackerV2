@@ -7,6 +7,7 @@ from clients.databases.database_client import DatabaseClient
 from clients.databases.postgres.constants import DB_FETCH_QUERY
 from core.config.config import ConfigSingleton
 from core.constants import ON_DB_INSERT_CALLBACK
+from core.wrappers import safe_execute
 
 
 class PostGresClient(DatabaseClient):
@@ -43,10 +44,12 @@ class PostGresClient(DatabaseClient):
             for func in self.callbacks[ON_DB_INSERT_CALLBACK]:
                 func()
 
+    @safe_execute
     @override
     def insert(self, rows: CVW17Database):
-        ...
+        print(rows)
 
+    @safe_execute
     @override
     def update(self) -> None:
         self.__fetch_db()

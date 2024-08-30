@@ -8,7 +8,7 @@ from typing_extensions import override
 from clients.databases.contracts import CVW17Database
 from clients.databases.database_client import DatabaseClient
 from clients.databases.google_sheets.constants import GOOGLE_SHEETS_KEY_PATH, CVW17_RANGES, GoogleSheetsRanges
-from core.constants import ON_DB_INSERT_CALLBACK, MSN_DATA_FILES_PATH
+from core.constants import ON_DB_INSERT_CALLBACK, MSN_DATA_FILES_PATH, WeaponTypes
 from core.config.config import ConfigSingleton
 from core.wrappers import safe_execute
 from services.data_handler import DataHandler
@@ -161,7 +161,7 @@ class GoogleSheetsClient(DatabaseClient):
 
         for entry in entries:
             if entry.tail_number in selected_modexes and entry.tail_number:
-                weapon_type = 'A/A' if entry.type == 1 else 'A/G'
+                weapon_type = WeaponTypes.AA.value if entry.type == 1 else WeaponTypes.AG.value
                 row = [entry.pilot_name, int(entry.tail_number), weapon_type, entry.weapon_name, entry.tgt_name,
                        entry.angels_tgt, entry.angels, entry.speed, entry.range, entry.hit, entry.destroyed ]
                 updated_values.append(row)
@@ -187,8 +187,8 @@ class GoogleSheetsClient(DatabaseClient):
         self.__update_entry_id_table(values, sheet, entries)
         self.__update_entry_dataview(values, sheet, entries)
 
-    @override
     @safe_execute
+    @override
     def update(self):
         cell_values = self.__get_cell_values()
         if not cell_values:
@@ -199,6 +199,7 @@ class GoogleSheetsClient(DatabaseClient):
             self.__update_entry_sheet(cell_values, self.__entry_sheets[0])
         self.__fetch_db(cell_values)
 
+    @safe_execute
     @override
     def insert(self, rows: CVW17Database):
         ...

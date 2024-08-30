@@ -8,6 +8,8 @@ from clients.thread_pool_client import ThreadPoolClient
 from core.config.config import ConfigSingleton
 
 from cogs import notes, stats
+from services.msn_data.auto_mode.auto_mode_handler import AutoModeHandler
+from services.msn_data.auto_mode.msn_data_monitor import MsnDataMonitor
 
 
 class DebriefTrackerBot(Bot):
@@ -19,12 +21,16 @@ class DebriefTrackerBot(Bot):
         self.__database_client = DatabaseFactory().create_database()
         ThreadPoolClient.create_task_loop(self.__database_client.update,
                                           self.__config.db_update_interval_seconds)
-        # TODO: create another task loop for auto mode
 
+        if self.__config.auto_mode:
+            self.__auto_mode_handler = AutoModeHandler(self.__database_client)
+            ThreadPoolClient.create_task_loop(self.__auto_mode_handler.update,
+                                              self.__config.db_update_interval_seconds)
 
     @override
     async def setup_hook(self) -> None:
-        await notes.setup(self, self.__database_client)
+        if not self.__config.auto_mode:
+            await notes.setup(self, self.__database_client)
         await stats.setup(self, self.__database_client)
 
         await self.tree.sync()

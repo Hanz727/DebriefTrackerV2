@@ -22,6 +22,4 @@ def main():
 
 
 if __name__ == "__main__":
-    #main()
-    # TODO: DELETE AFTER DE
-    MsnDataMonitor().update()
+    main()

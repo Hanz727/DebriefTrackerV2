@@ -1,3 +1,5 @@
+import copy
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
@@ -60,10 +62,11 @@ class MsnDataHandler:
 
     @staticmethod
     def get_difference_between_entries(entries_old: list[MsnDataEntry], entries_new: list[MsnDataEntry]) -> list[MsnDataEntry]:
-        for entry in entries_old:
-            if entry in entries_new:
-                entries_new.remove(entry)
-        return entries_new
+        rtn: list[MsnDataEntry] = copy.deepcopy(entries_new)
+        for old, new in zip(entries_old, entries_new):
+            if old == new:
+                rtn.remove(old)
+        return rtn
 
     @staticmethod
     def load_entries_from_dict(entries: list[dict]):
@@ -71,6 +74,56 @@ class MsnDataHandler:
         for entry in entries:
             rtn.append(MsnDataEntry(**{k.lower(): v for k, v in entry.items()}))
         return rtn
+
+    @classmethod
+    def validate_entries(cls, entries: list[MsnDataEntry]):
+        rtn = []
+        for entry in entries:
+            validated_entry = cls.validate_entry(entry)
+            if validated_entry:
+                rtn.append(entry)
+        return rtn
+
+    @staticmethod
+    def validate_entry(entry: MsnDataEntry):
+        if entry.tail_number == "UNKNOWN":
+            return False
+
+        try:
+            int(entry.tail_number)
+            entry.range = int(entry.range)
+            entry.speed = int(entry.speed)
+            entry.angels = int(entry.angels)
+            entry.angels_tgt = int(entry.angels_tgt)
+        except (ValueError, TypeError):
+            return False
+
+        if entry.dl_callsign == "UNKNOWN":
+            return False
+
+        if entry.pilot_name == "":
+            return False
+
+        if entry.tgt_name == "NONE":
+            entry.tgt_name = None
+
+        if entry.tgt_tname == "NONE":
+            entry.tgt_tname = None
+
+        if entry.speed == -1:
+            entry.speed = None
+
+        if entry.angels == -1:
+            entry.angels = None
+
+        if entry.angels_tgt == -1:
+            entry.angels_tgt = None
+
+        if entry.range == -1:
+            entry.range = None
+
+        return True
+
 
     @staticmethod
     def load_entries_from_file(path: Path) -> list[MsnDataEntry] :

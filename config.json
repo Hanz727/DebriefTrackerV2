@@ -10,5 +10,5 @@
   "postgres_db_name": "CVW17Debriefs",
   "postgres_user": "postgres",
   "postgres_password": "test",
-  "auto_mode": false
+  "auto_mode": true
 }
