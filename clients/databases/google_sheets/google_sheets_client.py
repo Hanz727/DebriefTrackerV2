@@ -201,7 +201,7 @@ class GoogleSheetsClient(DatabaseClient):
 
     @safe_execute
     @override
-    def insert(self, rows: CVW17Database):
+    def insert(self, to_insert: CVW17Database):
         ...
 
     @override
