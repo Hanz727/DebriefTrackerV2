@@ -1,24 +1,7 @@
 from enum import Enum
 from typing import Final, List
 
-GOOGLE_SHEET_SPREAD_API_KEY: Final[str] = "keys/gspread_api_key.json"
-MSN_DATA_FILES_PATH: Final[str] = "../MissionData/"
-
-class Squadrons(Enum):
-    VF103 = 'VF-103'
-    VFA34 = 'VFA-34'
-
-class Weapons(Enum):
-    # These names are prefixes and thus must match for all the weapon types, i.e. AIM-54(C-MK60/B-MK47), AIM-9(M/X/F)
-    phoenix = 'AIM-54'
-    amraam = 'AIM-120'
-    sidewinder = 'AIM-9'
-    sparrow = 'AIM-7'
-
-class WeaponTypes(Enum):
-    AA = "A/A"
-    AG = "A/G"
-    UNKNOWN = "N/A"
+GOOGLE_SHEETS_KEY_PATH: Final[str] = "keys/gspread_api_key.json"
 
 class GoogleSheetsRanges(Enum):
     database_headers = "DATABASE!A1:AA1"
@@ -32,7 +15,6 @@ class GoogleSheetsRanges(Enum):
 
     def get_cell_range(self):
         return self.value.split('!')[-1]
-
 
 # Must be in the same order as the DATA_PULL_INFO
 CVW17_RANGES: Final[List[str]] = [range_.value for range_ in GoogleSheetsRanges]

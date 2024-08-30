@@ -1,13 +1,17 @@
 from abc import ABC, abstractmethod
 
+from clients.databases.contracts import CVW17Database
 from clients.databases.data_manager import DataManager
-from clients.databases.google_sheets.contracts import CVW17Database
 from core.constants import ON_DB_INSERT_CALLBACK
 
 
 class DatabaseClient(ABC):
     def __init__(self):
         self.callbacks = {ON_DB_INSERT_CALLBACK: []}
+
+    @abstractmethod
+    def insert(self, to_insert: CVW17Database):
+        ...
 
     @abstractmethod
     def update(self) -> None:

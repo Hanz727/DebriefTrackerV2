@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 class DataHandler:
     @classmethod
@@ -11,6 +13,10 @@ class DataHandler:
             else:
                 flat_list.append(item)
         return flat_list
+
+    @staticmethod
+    def get_hundreth(num: int) -> int:
+        return int(math.floor(num / 100) * 100)
 
     @staticmethod
     def pad(list_: list, length: int, padding_token='') -> list:

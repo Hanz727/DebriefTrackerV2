@@ -13,3 +13,4 @@ class Config:
     postgres_db_name: str
     postgres_user: str
     postgres_password: str
+    auto_mode: bool
