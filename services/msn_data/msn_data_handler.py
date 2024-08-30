@@ -92,7 +92,7 @@ class MsnDataHandler:
         try:
             int(entry.tail_number)
             entry.range = int(entry.range)
-            entry.speed = int(entry.speed)
+            entry.speed = float(entry.speed)
             entry.angels = int(entry.angels)
             entry.angels_tgt = int(entry.angels_tgt)
         except (ValueError, TypeError):
@@ -103,6 +103,9 @@ class MsnDataHandler:
 
         if entry.pilot_name == "":
             return False
+
+        if entry.rio_name == "":
+            entry.rio_name = None
 
         if entry.tgt_name == "NONE":
             entry.tgt_name = None
