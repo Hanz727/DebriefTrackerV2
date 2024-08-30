@@ -27,6 +27,7 @@ class MsnDataMonitor:
         if self.__active_file != latest_file:
             self.__active_file = latest_file
             self.__current_msn_data = []
+            self.__old_msn_data = []
 
     def __update_msn_data(self, latest_file):
         latest_file_data = FileHandler.load_json(MSN_DATA_FILES_PATH / latest_file)
