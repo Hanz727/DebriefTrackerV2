@@ -70,15 +70,15 @@ class PostGresClient(DatabaseClient):
             Logger.error(error)
             Logger.error(row)
 
-    @safe_execute
     @override
+    @safe_execute
     def insert(self, to_insert: CVW17Database):
         rows = np.column_stack(list(asdict(to_insert).values())[1:])
         for row in rows:
             self.__insert_row(row)
 
-    @safe_execute
     @override
+    @safe_execute
     def update(self) -> None:
         if self.__db_connection.closed or self.__cursor.closed:
             self.__connect_to_db()
