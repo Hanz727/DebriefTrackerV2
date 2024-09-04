@@ -6,6 +6,7 @@ from discord.ext.commands import Bot, Cog
 
 from clients.databases.database_client import DatabaseClient
 from cogs.constants import DELAY_BETWEEN_MESSAGES_SENT_DURATION, DELAY_BETWEEN_MESSAGES_SENT
+from discord_.views.resend_view import ResendButtonView
 from services import Logger
 from core.config.config import ConfigSingleton
 from services.embed.embed_creator import EmbedCreator
@@ -63,7 +64,6 @@ class StatsEmbedManager(Cog):
             # Prevents annoying DISCORD RATE LIMIT messages
             if DELAY_BETWEEN_MESSAGES_SENT:
                 await asyncio.sleep(DELAY_BETWEEN_MESSAGES_SENT_DURATION)
-
 
     @tasks.loop()
     async def __update_sent_messages(self):
