@@ -10,7 +10,7 @@ class ThreadPoolClient:
 
     @staticmethod
     def create_async_task(func):
-        asyncio.create_task(func())
+        return asyncio.create_task(func())
 
     @staticmethod
     def task_loop(func, interval_seconds):
