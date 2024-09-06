@@ -9,8 +9,6 @@ from core.config.config import ConfigSingleton
 
 from cogs import notes, stats
 from services.msn_data.auto_mode.auto_mode_handler import AutoModeHandler
-from services.msn_data.auto_mode.msn_data_monitor import MsnDataMonitor
-
 
 class DebriefTrackerBot(Bot):
     def __init__(self):

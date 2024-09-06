@@ -94,7 +94,7 @@ class EmbedCreator:
 
         embed.add_field(name="CVW-17", value=f"Team Quicksand", inline=True)
         embed.add_field(name='A/A kills', value=str(stats_34.aa_kills + stats_103.aa_kills), inline=True)
-        embed.add_field(name='A/G drops', value=str(stats_34.ag_drops + stats_34.ag_drops), inline=True)
+        embed.add_field(name='A/G drops', value=str(stats_34.ag_drops + stats_103.ag_drops), inline=True)
 
         embed.set_footer(text=AUTHOR_FOOTER)
         return embed

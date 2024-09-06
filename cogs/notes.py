@@ -5,6 +5,7 @@ from discord import TextChannel
 
 from clients.databases.database_client import DatabaseClient
 from core.constants import ON_DB_INSERT_CALLBACK
+from discord_.views.resend_view import ResendButtonView
 from services import Logger
 from core.config.config import ConfigSingleton
 from services.embed.embed_creator import EmbedCreator
@@ -30,10 +31,13 @@ class NotesEmbedManager(Cog):
     async def load_channel(self):
         self.__notes_channel = self.__bot.get_channel(self.__config.notes_channel)
 
-    def on_db_insert(self):
-        asyncio.run_coroutine_threadsafe(self.__notes_channel.send(embed=self.__embed_creator.make_embed_notes()),
-                                         self.__bot.loop)
+    async def send_embed(self):
+        embed_func = self.__embed_creator.make_embed_notes
+        msg = await self.__notes_channel.send(embed=embed_func())
+        await msg.edit(view=ResendButtonView(embed_func, msg))
 
+    def on_db_insert(self):
+        asyncio.run_coroutine_threadsafe(self.send_embed(), self.__bot.loop)
 
 async def setup(bot, database_client: DatabaseClient) -> None:
     await bot.add_cog(NotesEmbedManager(bot, database_client))
