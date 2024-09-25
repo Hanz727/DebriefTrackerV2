@@ -1,19 +1,22 @@
+import base64
 from datetime import timedelta
 from pathlib import Path
 
 from flask import Flask, redirect, request, session, render_template, send_file, jsonify
-import os
 
 import requests
 
 from core.constants import MSN_DATA_FILES_PATH
 from services.file_handler import FileHandler
 from web._constants import CLIENT_SECRET, CLIENT_ID, REDIRECT_URI, TOKEN_URL, DISCORD_API_BASE_URL, GUILD_ID, \
-    DISCORD_BOT_TOKEN, ROLE_ID, AUTH_URL
+    DISCORD_BOT_TOKEN, ROLE_ID, AUTH_URL, FLASK_SECURE_KEY
 from web.config.config import WebConfigSingleton
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = FLASK_SECURE_KEY
+
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to the cookie
+app.config['SESSION_COOKIE_SECURE'] = True    # Use secure cookies for HTTPS only
 
 config = WebConfigSingleton.get_instance()
 
@@ -41,7 +44,7 @@ def get_access_token():
 @app.before_request
 def make_session_permanent():
     session.permanent = True
-    app.permanent_session_lifetime = timedelta(days=30)
+    app.permanent_session_lifetime = timedelta(days=365)
 
 @app.route('/')
 def home():

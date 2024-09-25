@@ -1,3 +1,4 @@
+import base64
 from pathlib import Path
 from typing import Final
 
@@ -25,3 +26,5 @@ ROLE_ID: Final[str] = __CONFIG.auth_discord_role_id
 
 DISCORD_BOT_TOKEN: Final[str] = FileHandler.read_file(DISCORD_TOKEN_PATH)
 
+FLASK_SECURE_KEY_PATH: Final[Path] = BASE_DIR / Path("keys/flask_key.txt")
+FLASK_SECURE_KEY: Final[bytes] = base64.b64decode(FileHandler.read_file(FLASK_SECURE_KEY_PATH))
