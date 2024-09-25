@@ -1,11 +1,12 @@
 import asyncio
+
+from core.config.config import ConfigSingleton
 from services import Logger
 
 import discord.ui
 from discord import Message, Button
 
 from clients.thread_pool_client import ThreadPoolClient
-from core.config.config import ConfigSingleton
 
 
 class ResendButtonView(discord.ui.View):
@@ -14,7 +15,7 @@ class ResendButtonView(discord.ui.View):
         self.__embed_func = embed_func
         self.__message = msg
 
-        self.__config = ConfigSingleton().get_instance()
+        self.__config = ConfigSingleton.get_instance()
 
         self.__remove_button_task = ThreadPoolClient.create_async_task(self.auto_remove_button)
 

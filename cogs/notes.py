@@ -4,10 +4,10 @@ from discord.ext.commands import Cog, Bot
 from discord import TextChannel
 
 from clients.databases.database_client import DatabaseClient
+from core.config.config import ConfigSingleton
 from core.constants import ON_DB_INSERT_CALLBACK
 from discord_.views.resend_view import ResendButtonView
 from services import Logger
-from core.config.config import ConfigSingleton
 from services.embed.embed_creator import EmbedCreator
 
 

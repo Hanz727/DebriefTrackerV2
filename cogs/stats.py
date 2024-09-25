@@ -6,9 +6,8 @@ from discord.ext.commands import Bot, Cog
 
 from clients.databases.database_client import DatabaseClient
 from cogs.constants import DELAY_BETWEEN_MESSAGES_SENT_DURATION, DELAY_BETWEEN_MESSAGES_SENT
-from discord_.views.resend_view import ResendButtonView
-from services import Logger
 from core.config.config import ConfigSingleton
+from services import Logger
 from services.embed.embed_creator import EmbedCreator
 
 

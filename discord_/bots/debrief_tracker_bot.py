@@ -5,9 +5,9 @@ from discord.ext.commands import Bot
 
 from clients.databases.database_factory import DatabaseFactory
 from clients.thread_pool_client import ThreadPoolClient
-from core.config.config import ConfigSingleton
 
 from cogs import notes, stats
+from core.config.config import ConfigSingleton
 from services.msn_data.auto_mode.auto_mode_handler import AutoModeHandler
 
 class DebriefTrackerBot(Bot):

@@ -2,9 +2,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Final
 
-DISCORD_COGS_DIRECTORY: Final[Path] = Path("cogs")
-DISCORD_TOKEN_PATH: Final[Path] = Path("keys/discord.token")
-MSN_DATA_FILES_PATH: Final[Path] = Path("../MissionData/")
+BASE_DIR: Final[Path] = Path(__file__).resolve().parent.parent # base dir of DebriefTracker v2/
+
+DISCORD_COGS_DIRECTORY: Final[Path] = BASE_DIR / Path("cogs")
+DISCORD_TOKEN_PATH: Final[Path] = BASE_DIR / Path("keys/discord.token")
+MSN_DATA_FILES_PATH: Final[Path] = BASE_DIR.parent / Path("MissionData")
 
 ON_DB_INSERT_CALLBACK = "on_db_insert"
 

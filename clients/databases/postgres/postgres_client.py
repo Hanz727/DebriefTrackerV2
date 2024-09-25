@@ -5,11 +5,11 @@ from typing import override
 import numpy as np
 from psycopg2._psycopg import connection, cursor
 
+from core.config.config import ConfigSingleton
 from services import Logger
 from clients.databases.contracts import CVW17Database
 from clients.databases.database_client import DatabaseClient
 from clients.databases.postgres.constants import DB_FETCH_QUERY, DB_INSERT_QUERY
-from core.config.config import ConfigSingleton
 from core.constants import ON_DB_INSERT_CALLBACK
 from core.wrappers import safe_execute
 

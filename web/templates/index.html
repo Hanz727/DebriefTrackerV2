@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" href="{{ url_for('static', filename='img/icon.png') }}" type="image/png">
+    <title>Debrief Tracker</title>
+    <link rel="stylesheet" href="../static/styles.css">
+</head>
+<body>
+    <header>
+		<img src="{{ url_for('static', filename='img/logo.png') }}" width=100 height=90>
+		<div class="text-container">
+			<h1>Debrief Tracker</h1>
+		</div>
+    </header>
+    <form method="POST" action="/submit" id="submit_form">
+        <div class="main_body">
+            <div>
+                <label for="MSN_NR">MISSION NUMBER</label>
+                <input type="number" class="input_small" id="MSN_NR" name="MSN_NR" value="" min="1000" max="9999" required>
+                <label for="MSN_NAME">MISSION NAME</label>
+                <input type="text" class="input_small" id="MSN_NAME" name="MSN_NAME" value="" required>
+                <label for="EVENT">EVENT</label>
+                <input type="text" class="input_small" id="EVENT" name="EVENT" value="" pattern="^\S+$" required>
+            </div>
+            <div>
+                <label for="NOTES">NOTES</label>
+                <textarea id="NOTES" name="NOTES" class="notes_textarea" rows="9" cols="60" required></textarea>
+            </div>
+            <div class="idtable">
+                <div>
+                    <label for="m1">MODEX</label>
+                    <input type="number" class="input_small" id="m1" name="m1" value="" min="100" max="999" oninput="updateNames()">
+                    <input type="number" class="input_small" id="m2" name="m2" value="" min="100" max="999" oninput="updateNames()">
+                    <input type="number" class="input_small" id="m3" name="m3" value="" min="100" max="999" oninput="updateNames()">
+                    <input type="number" class="input_small" id="m4" name="m4" value="" min="100" max="999" oninput="updateNames()">
+                </div>
+                <div>
+                    <label for="p1">PILOT</label>
+                    <input type="text" class="input_small" id="p1" name="p1" value="" pattern="^\S+$" title="No spaces allowed" oninput="refreshData()">
+                    <input type="text" class="input_small" id="p2" name="p2" value="" pattern="^\S+$" title="No spaces allowed" oninput="refreshData()">
+                    <input type="text" class="input_small" id="p3" name="p3" value="" pattern="^\S+$" title="No spaces allowed" oninput="refreshData()">
+                    <input type="text" class="input_small" id="p4" name="p4" value="" pattern="^\S+$" title="No spaces allowed" oninput="refreshData()">
+                </div>
+                <div>
+                    <label for="r1">RIO</label>
+                    <input type="text" class="input_small" id="r1" name="r1" value="" pattern="^\S+$" title="No spaces allowed" oninput="refreshData()">
+                    <input type="text" class="input_small" id="r2" name="r2" value="" pattern="^\S+$" title="No spaces allowed" oninput="refreshData()">
+                    <input type="text" class="input_small" id="r3" name="r3" value="" pattern="^\S+$" title="No spaces allowed" oninput="refreshData()">
+                    <input type="text" class="input_small" id="r4" name="r4" value="" pattern="^\S+$" title="No spaces allowed" oninput="refreshData()">
+                </div>
+            </div>
+        </div>
+        <div class="medium_portion">
+            <div class="medium_item">
+                <label for="use_empty_msndata">USE EMPTY DATA FILE</label>
+                <input type="checkbox" name="use_empty_msndata" id="use_empty_msndata" value="">
+            </div>
+            <div class="medium_item">
+                <label for="FL_NAME">YOUR NAME</label>
+                <input type="text" id="FL_NAME" name="FL_NAME" class="input_small" value="" pattern="^\S+$" title="No spaces allowed" required>
+            </div>
+            <div class="medium_item">
+                <button type="submit" class="submit-btn">Submit</button>
+            </div>
+        </div>
+
+		<datalist id="weapons">
+			<option value="AIM-54">
+			<option value="AIM-120">
+			<option value="AIM-9">
+			<option value="AIM-7">
+			<option value="GUN">
+		</datalist>
+
+		<datalist id="weapon_types">
+			<option value="A/A">
+			<option value="A/G">
+			<option value="N/A">
+		</datalist>
+
+		<datalist id="pilots">
+			<option value="Kroner">
+			<option value="Dave">
+			<option value="Fenrir">
+			<option value="Klapo">
+			<option value="JJ">
+			<option value="Scoops">
+			<option value="Alexandra">
+			<option value="Vincent">
+			<option value="Nakush">
+			<option value="Ivan">
+			<option value="Panny">
+			<option value="Delta">
+			<option value="AJ">
+			<option value="Jay">
+			<option value="FS">
+			<option value="Arttu">
+			<option value="Crowebar">
+			<option value="Vader">
+			<option value="Patterson">
+			<option value="Klosche">
+			<option value="Halo">
+			<option value="Martin">
+			<option value="Leka">
+		</datalist>
+
+
+		<datalist id="rios">
+			<option value="Kroner">
+			<option value="Harker">
+			<option value="Veersamy">
+			<option value="Oscar">
+			<option value="Luna">
+			<option value="Johansson">
+			<option value="Leikner">
+		</datalist>
+
+		<div class="scrollable-table-wrapper">
+            <table id="adjustable-table" class="adjustable-table">
+                <thead>
+                    <tr>
+                        <th>PLT NAME</th>
+                        <th>RIO NAME</th>
+                        <th>TAIL NUMBER</th>
+                        <th>WEAPON TYPE</th>
+                        <th>WEAPON</th>
+                        <th>TARGET</th>
+                        <th>TARGET ANGELS</th>
+                        <th>ANGELS</th>
+                        <th>SPEED</th>
+                        <th>RANGE</th>
+                        <th>HIT</th>
+                        <th>DESTROYED</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+
+                    <!-- Rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+	</form>
+
+	<div class="footer-buttons">
+		<button onclick="addCustomRow()">Add Row</button>
+		<button onclick="popCustomRow()">Remove Row</button>
+	</div>
+
+
+    <script src="../static/script.js"></script>
+</body>
+</html>

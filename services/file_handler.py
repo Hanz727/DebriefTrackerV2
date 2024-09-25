@@ -21,7 +21,7 @@ class FileHandler:
             for file in all_files
             if os.path.isfile(os.path.join(path, file))
         ]
-        return [Path(x[0]) for x in sorted(file_info, key=lambda x: x[1], reverse=True)]
+        return [path / Path(x[0]) for x in sorted(file_info, key=lambda x: x[1], reverse=True)]
 
     @staticmethod
     def load_json(path: Path):

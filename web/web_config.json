@@ -1,0 +1,4 @@
+{
+  "oauth_callback_uri": "https://debrief.VirtualCVW17.com/callback",
+  "discord_api_base_url": "https://discord.com/api/v10"
+}

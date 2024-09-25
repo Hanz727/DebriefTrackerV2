@@ -3,4 +3,4 @@ from typing import Final
 
 from core.constants import BASE_DIR
 
-CONFIG_PATH: Final[Path] = BASE_DIR / Path("config.json")
+WEB_CONFIG_PATH: Final[Path] = BASE_DIR / Path("web/web_config.json")
