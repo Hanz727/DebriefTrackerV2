@@ -12,11 +12,19 @@ from web._constants import CLIENT_SECRET, CLIENT_ID, REDIRECT_URI, TOKEN_URL, DI
     DISCORD_BOT_TOKEN, ROLE_ID, AUTH_URL, FLASK_SECURE_KEY
 from web.config.config import WebConfigSingleton
 
+import redis
+from flask_session import Session
+
 app = Flask(__name__)
 app.secret_key = FLASK_SECURE_KEY
 
-app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to the cookie
-app.config['SESSION_COOKIE_SECURE'] = True    # Use secure cookies for HTTPS only
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_REDIS'] = redis.StrictRedis(host='localhost', port=6379)
+
+server_session = Session(app)
 
 config = WebConfigSingleton.get_instance()
 
@@ -40,11 +48,6 @@ def get_access_token():
     response.raise_for_status()
     token_data = response.json()
     return token_data['access_token']
-
-@app.before_request
-def make_session_permanent():
-    session.permanent = True
-    app.permanent_session_lifetime = timedelta(days=365)
 
 @app.route('/')
 def home():
