@@ -7,7 +7,7 @@ from psycopg2._psycopg import connection, cursor
 
 from core.config.config import ConfigSingleton
 from services import Logger
-from clients.databases.contracts import CVW17Database
+from clients.databases.contracts import CVW17Database, CVW17DatabaseRow
 from clients.databases.database_client import DatabaseClient
 from clients.databases.postgres.constants import DB_FETCH_QUERY, DB_INSERT_QUERY
 from core.constants import ON_DB_INSERT_CALLBACK
@@ -72,8 +72,12 @@ class PostGresClient(DatabaseClient):
 
     @override
     @safe_execute
-    def insert(self, to_insert: CVW17Database):
-        rows = np.column_stack(list(asdict(to_insert).values())[1:])
+    def insert(self, to_insert: CVW17Database | CVW17DatabaseRow):
+        if type(to_insert) == CVW17DatabaseRow:
+            self.__insert_row(list(asdict(to_insert).values()))
+            return
+
+        rows = np.column_stack(list(asdict(to_insert).values())[1:]) # 1: to skip size param
         for row in rows:
             self.__insert_row(row)
 

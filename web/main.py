@@ -1,12 +1,15 @@
-import base64
-from datetime import timedelta
+import math
+from datetime import timedelta, datetime
 from pathlib import Path
 
 from flask import Flask, redirect, request, session, render_template, send_file, jsonify
 
 import requests
 
-from core.constants import MSN_DATA_FILES_PATH
+from clients.databases.contracts import CVW17DatabaseRow
+from clients.databases.postgres.postgres_client import PostGresClient
+from core.constants import MSN_DATA_FILES_PATH, MODEX_TO_SQUADRON, Squadrons
+from services.data_handler import DataHandler
 from services.file_handler import FileHandler
 from web._constants import CLIENT_SECRET, CLIENT_ID, REDIRECT_URI, TOKEN_URL, DISCORD_API_BASE_URL, GUILD_ID, \
     DISCORD_BOT_TOKEN, ROLE_ID, AUTH_URL, FLASK_SECURE_KEY
@@ -27,6 +30,55 @@ app.config['SESSION_REDIS'] = redis.StrictRedis(host='localhost', port=6379)
 server_session = Session(app)
 
 config = WebConfigSingleton.get_instance()
+postgres_client = PostGresClient()
+
+def get_row(entries: dict, row_id):
+    return CVW17DatabaseRow(datetime.now(),
+            entries.get('FL_NAME', '') or None,
+            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(entries.get(f'tail_number_{row_id}', -100))), Squadrons.NONE)
+                            .value or None, # noqa the .value returns str
+            entries.get(f'rio_name_{row_id}', '') or None,
+            entries.get(f'plt_name_{row_id}', None) or None,
+            entries.get(f'tail_number_{row_id}', None) or None,
+            entries.get(f'weapon_type_{row_id}', 'N/A').upper() or None,
+            entries.get(f'weapon_{row_id}', None) or None,
+            entries.get(f'target_{row_id}', None) or None,
+            entries.get(f'target_angels_{row_id}', None) or None,
+            entries.get(f'angels_{row_id}', None) or None,
+            entries.get(f'speed_{row_id}', None) or None,
+            entries.get(f'range_{row_id}', None) or None,
+            entries.get(f'hit_{row_id}', False) is not False,
+            entries.get(f'destroyed_{row_id}', False) is not False,
+            1 if entries.get(f'weapon_type_{row_id}', 'N/A').upper() in ['A/A', 'A/G'] else 0, # QTY
+            entries.get('MSN_NR', None) or None,
+            entries.get('MSN_NAME', None) or None,
+            entries.get('EVENT', "").upper() or None,
+            entries.get('NOTES', None) or None)
+
+def validate_row(row):
+    if None in [row.pilot_name, row.fl_name, row.msn_name, row.msn_nr, row.event, row.tail_number, row.hit,
+                row.destroyed, row.weapon_type, row.squadron]:
+        return False
+    if row.weapon_type not in ['A/A', 'A/G', 'N/A']:
+        return False
+
+    return True
+
+@app.route('/submit', methods=['POST'])
+def submit():
+    if not session['authed']:
+        return redirect('/login')
+    form = request.form
+    i = 0
+    while form.get(f'tail_number_{i}', None):
+        row = get_row(form, i)
+        print(row)
+        print(validate_row(row))
+        if validate_row(row):
+            postgres_client.insert(row)
+        i += 1
+
+    return 'Debrief uploaded!'
 
 def get_access_token():
     # Get the authorization code from the callback URL

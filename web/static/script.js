@@ -125,10 +125,10 @@ function generateRows(data) {
                 weapon_type: entry.TYPE === 1 ? "A/A" : entry.TYPE === 0 ? "A/G" : "N/A",
                 weapon: entry.WEAPON_NAME || "",
                 target: entry.TGT_NAME || "",
-                target_angels: entry.ANGELS_TGT > 0 || "",
-                angels: entry.ANGELS > 0 || "",
-                speed: entry.SPEED > 0 || "",
-                range: entry.RANGE > 0 || "",
+                target_angels: entry.ANGELS_TGT > 0 ? entry.ANGELS_TGT : "",
+                angels: entry.ANGELS > 0 ? entry.ANGELS : "",
+                speed: entry.SPEED > 0 ? entry.SPEED : "",
+                range: entry.RANGE > 0 ? entry.RANGE : "",
                 hit: entry.HIT || false,
                 destroyed: entry.DESTROYED || false,
                 rio_name: rios[index] || ""
@@ -156,6 +156,7 @@ function generateRows(data) {
     });
 
     gTableRows = mappedData.concat(customRows);
+    console.log(gTableRows)
 }
 
 function renderTable() {

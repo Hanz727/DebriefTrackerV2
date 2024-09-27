@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Final
+from typing import Final, override
 
 BASE_DIR: Final[Path] = Path(__file__).resolve().parent.parent # base dir of DebriefTracker v2/
 
@@ -12,11 +12,12 @@ ON_DB_INSERT_CALLBACK = "on_db_insert"
 
 
 class Squadrons(Enum):
+    NONE = ''
     VF103 = 'VF-103'
     VFA34 = 'VFA-34'
 
-
 MODEX_TO_SQUADRON: Final[dict[int, Squadrons]] = {
+    -1: Squadrons.NONE,
     100: Squadrons.VF103,
     200: Squadrons.VFA34
 }
