@@ -72,8 +72,6 @@ def submit():
     i = 0
     while form.get(f'tail_number_{i}', None):
         row = get_row(form, i)
-        print(row)
-        print(validate_row(row))
         if validate_row(row):
             postgres_client.insert(row)
         i += 1
