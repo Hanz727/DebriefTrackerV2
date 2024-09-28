@@ -3,12 +3,26 @@ from dataclasses import asdict
 import numpy as np
 
 from clients.databases.contracts import CVW17Database, PlayerStats, SquadronStats, WeaponStats, PartialDebrief, Debrief
+from core.config.config import ConfigSingleton
 from core.constants import Squadrons, WeaponTypes, Weapons
+from discord_.cogs.constants import SOFT_RESET_DATA_PATH
+from services.file_handler import FileHandler
 
 
 class DataManager:
     def __init__(self, db: CVW17Database):
         self.__db = db
+        self.__config = ConfigSingleton.get_instance()
+
+        self.__soft_reset_anchor_id = 0
+        if self.__config.auto_soft_reset:
+            self.__soft_reset_anchor_id = dict(FileHandler.load_json(SOFT_RESET_DATA_PATH)).get('id', 0)
+
+    def get_latest_entry_id(self):
+        return self.__db.id_[-1]
+
+    def __get_soft_reset_filter(self):
+        return self.__db.id_ > self.__soft_reset_anchor_id
 
     def __get_squadron_filter(self, squadron: Squadrons | None, additional_filter = None):
         additional_filter = np.ones(self.__db.pilot_name.shape, np.bool) \
@@ -31,19 +45,22 @@ class DataManager:
         return np.char.startswith(cleaned_array, prefix=weapon.value)
 
     def get_player_stats(self, player: str, squadron: Squadrons | None = None, additional_filter = None) -> PlayerStats:
-            squadron_filter = self.__get_squadron_filter(squadron, additional_filter)
-            player_filter = self.__get_player_filter(player)
-            aa_filter = self.__get_weapon_type_filter(WeaponTypes.AA.value)
-            ag_filter = self.__get_weapon_type_filter(WeaponTypes.AG.value)
-            killed_filter = self.__get_killed_filter()
+        squadron_filter = self.__get_squadron_filter(squadron, additional_filter)
+        player_filter = self.__get_player_filter(player)
+        aa_filter = self.__get_weapon_type_filter(WeaponTypes.AA.value)
+        ag_filter = self.__get_weapon_type_filter(WeaponTypes.AG.value)
+        killed_filter = self.__get_killed_filter()
 
-            aa_kills_filter = squadron_filter & player_filter & aa_filter & killed_filter
-            ag_drops_filter = squadron_filter & player_filter & ag_filter
+        # TODO: test whether this affects #notes channel, I don't think it will, but there may be a bug here
+        soft_reset_filter = self.__get_soft_reset_filter()
 
-            aa_kills = sum(self.__db.qty.astype(int)[aa_kills_filter])
-            ag_drops = sum(self.__db.qty.astype(int)[ag_drops_filter])
+        aa_kills_filter = squadron_filter & player_filter & aa_filter & killed_filter & soft_reset_filter
+        ag_drops_filter = squadron_filter & player_filter & ag_filter & soft_reset_filter
 
-            return PlayerStats(aa_kills=aa_kills, ag_drops=ag_drops, player_name=player)
+        aa_kills = sum(self.__db.qty.astype(int)[aa_kills_filter])
+        ag_drops = sum(self.__db.qty.astype(int)[ag_drops_filter])
+
+        return PlayerStats(aa_kills=aa_kills, ag_drops=ag_drops, player_name=player)
 
     def get_squadron_stats(self, squadron: Squadrons):
         squadron_filter = self.__get_squadron_filter(squadron)
@@ -77,8 +94,10 @@ class DataManager:
         weapon_filter = self.__get_weapon_filter(weapon)
         killed_filter = self.__get_killed_filter()
 
-        hits = sum(self.__db.qty.astype(int)[weapon_filter & killed_filter])
-        shots = sum(self.__db.qty.astype(int)[weapon_filter])
+        soft_reset_filter = self.__get_soft_reset_filter()
+
+        hits = sum(self.__db.qty.astype(int)[weapon_filter & killed_filter & soft_reset_filter])
+        shots = sum(self.__db.qty.astype(int)[weapon_filter & soft_reset_filter])
 
         misses = shots - hits
 

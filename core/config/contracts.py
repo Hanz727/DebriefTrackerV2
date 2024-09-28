@@ -14,3 +14,5 @@ class Config:
     postgres_user: str
     postgres_password: str
     auto_mode: bool
+    auto_soft_reset: bool
+    auto_soft_reset_interval_days: int
