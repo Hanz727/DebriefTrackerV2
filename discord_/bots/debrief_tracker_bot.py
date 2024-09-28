@@ -7,7 +7,7 @@ from clients.databases.database_factory import DatabaseFactory
 from clients.thread_pool_client import ThreadPoolClient
 from core.config.config import ConfigSingleton
 
-from cogs import notes, stats
+from discord_.cogs import stats, notes
 from services.msn_data.auto_mode.auto_mode_handler import AutoModeHandler
 
 class DebriefTrackerBot(Bot):

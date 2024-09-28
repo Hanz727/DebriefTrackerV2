@@ -28,3 +28,7 @@ class FileHandler:
         with open(path) as f:
             return json.load(f)
 
+    @staticmethod
+    def save_json(path: Path, data: dict):
+        with open(path, "w") as f:
+            return json.dump(data, f)
