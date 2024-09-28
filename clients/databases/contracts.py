@@ -55,6 +55,7 @@ class CVW17Database:
     msn_name: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     event: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     notes: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    id_: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
 
 @dataclass
 class CVW17DatabaseRow:

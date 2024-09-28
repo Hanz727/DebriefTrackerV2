@@ -1,28 +1,36 @@
 import asyncio
+from datetime import datetime, timedelta
 
 from discord import TextChannel, Message
 from discord.ext import tasks
 from discord.ext.commands import Bot, Cog
 
 from clients.databases.database_client import DatabaseClient
-from cogs.constants import DELAY_BETWEEN_MESSAGES_SENT_DURATION, DELAY_BETWEEN_MESSAGES_SENT
-from core.config.config import ConfigSingleton
+from core.config.contracts import Config
+from discord_.cogs.constants import DELAY_BETWEEN_MESSAGES_SENT_DURATION, DELAY_BETWEEN_MESSAGES_SENT, \
+    SOFT_RESET_DATA_PATH
 from services import Logger
+from core.config.config import ConfigSingleton
 from services.embed.embed_creator import EmbedCreator
+from services.file_handler import FileHandler
 
 
 class StatsEmbedManager(Cog):
     def __init__(self, bot: Bot, database_client: DatabaseClient):
         self.__bot = bot
 
-        self.__config = ConfigSingleton.get_instance()
+        self.__config: Config = ConfigSingleton.get_instance()
 
         # embeds will be sent to this channel, there is only 1 server and 1 channel that this cog handles
         self.__stats_channel: TextChannel | None = None
 
-        self.__embed_creator = EmbedCreator(database_client)
+        self.__database_client: DatabaseClient = database_client
+        self.__embed_creator = EmbedCreator(self.__database_client)
         self.__embed_funcs = self.__embed_creator.get_embed_funcs()
         self.__sent_messages: list[Message] = []
+
+        if self.__config.auto_soft_reset:
+            self.__update_soft_reset()
 
     @Cog.listener()
     async def on_ready(self):
@@ -34,12 +42,12 @@ class StatsEmbedManager(Cog):
         Logger.info("Ready")
 
     async def __restart_tasks(self):
-        self.__update_sent_messages.stop()
-        while self.__update_sent_messages.is_running():
+        self.__update_task.stop()
+        while self.__update_task.is_running():
             Logger.info("Waiting for update_sent_messages task to finish.")
             await asyncio.sleep(2)
 
-        self.__update_sent_messages.start()
+        self.__update_task.start()
 
     async def __load_stats_channel(self):
         self.__stats_channel = self.__bot.get_channel(self.__config.stats_channel)
@@ -64,9 +72,22 @@ class StatsEmbedManager(Cog):
             if DELAY_BETWEEN_MESSAGES_SENT:
                 await asyncio.sleep(DELAY_BETWEEN_MESSAGES_SENT_DURATION)
 
+    def __update_soft_reset(self):
+        soft_reset_data = dict(FileHandler.load_json(SOFT_RESET_DATA_PATH))
+        last_update = soft_reset_data.get('date', "01/01/1970 12:00:00")
+
+        if (datetime.now() - datetime.strptime(last_update,"%m/%d/%Y %H:%M:%S") >
+                timedelta(days=self.__config.auto_soft_reset_interval_days)):
+            soft_reset_data['date'] = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+            soft_reset_data['id'] = self.__database_client.get_data_manager().get_latest_entry_id()
+            FileHandler.save_json(SOFT_RESET_DATA_PATH, soft_reset_data)
+
     @tasks.loop()
-    async def __update_sent_messages(self):
+    async def __update_task(self):
         try:
+            if self.__config.auto_soft_reset:
+                self.__update_soft_reset()
+
             for msg, embed_func in zip(self.__sent_messages, self.__embed_funcs):
                 embed = embed_func()
                 if embed:
