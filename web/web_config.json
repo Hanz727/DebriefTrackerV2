@@ -3,5 +3,7 @@
   "discord_api_base_url": "https://discord.com/api/v10",
   "auth_discord_guild_id": "747489937527406673",
   "auth_discord_role_id": "747489937573806213",
-  "bypass_auth_debug": false
+  "bypass_auth_debug": true,
+  "tacview_dir": "C:\\Users\\rocks\\Desktop\\tacview",
+  "tracks_dir": "C:\\Users\\rocks\\Desktop\\tacview"
 }

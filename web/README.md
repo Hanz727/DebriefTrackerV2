@@ -2,7 +2,7 @@
 DebriefTracker web is a user interface made for adding entries to db (uploading a debrief).
 This is a separate program from the DebriefTracker and has its own main.py file. It makes use of the already existing
 framework for the base program (i.e. PostgresClient and some core definitions) to reduce code duplication.
-
+There also is a tool (currently in progress) that allows the user to view the data on the website and filter it.
 ## Requirements
 - Redis running on port 6379
 - Python 3.12

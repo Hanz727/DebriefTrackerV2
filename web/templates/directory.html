@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        /* Dark mode styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Container with margins */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .file-info {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+            padding: 10px 0;
+        }
+
+        a {
+            text-decoration: none;
+            color: #82b1ff;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
+            max-width: 300px; /* Adjust as needed */
+        }
+
+        /* Table columns with flex */
+        .file-info span {
+            color: #b0b0b0;
+            margin-left: 10px;
+        }
+
+        .file-info span.size {
+            text-align: right;
+            min-width: 100px;
+        }
+
+        /* Add more space between the file rows */
+        .file-info + .file-info {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>{{ title }}</h1>
+    <hr>
+    <div>
+        <!-- Loop through the files passed by Flask -->
+        {% for file in files %}
+            <div class="file-info">
+                <a class="truncate" href="{{ route }}/{{ file.name }}">{{ file.name }}</a>
+                <span>{{ file.date }}</span>
+                <span class="size">{{ file.size | round(2) if file.size else '-' }} KB</span>
+            </div>
+        {% endfor %}
+    </div>
+    <hr>
+</div>
+</body>
+</html>
