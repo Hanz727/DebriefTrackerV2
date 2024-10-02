@@ -43,6 +43,14 @@
             text-decoration: underline;
         }
 
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
+            width: 50%; /* Adjust as needed */
+        }
+
         /* Table columns with flex */
         .file-info span {
             color: #b0b0b0;
@@ -68,9 +76,9 @@
         <!-- Loop through the files passed by Flask -->
         {% for file in files %}
             <div class="file-info">
-                <a href="{{ route }}/{{ file.name }}">{{ file.name }}</a>
+                <a class="truncate" href="{{ route }}/{{ file.item }}">{{ file.name }}</a>
                 <span>{{ file.date }}</span>
-                <span class="size">{{ file.size | round(2) if file.size else '-' }} KB</span>
+                <span class="size">{{ file.size | round(2) if file.size else '-' }} MB</span>
             </div>
         {% endfor %}
     </div>

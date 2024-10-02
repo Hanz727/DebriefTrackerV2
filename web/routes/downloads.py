@@ -25,9 +25,19 @@ def _list_directory(path):
         item_mtime = os.path.getmtime(item_path)
         formatted_date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(item_mtime))
 
+        item_name = item
+        idx = item.find('DCS')
+        if idx != -1:
+            item_name = item[idx:]
+        item_name = item_name.replace('.zip.acmi', '').replace('.trk', '')
+
+        if item_size < 1: # 1mb min filter
+            continue
+
         # Append file information to the list
         directory_listing.append({
-            'name': item,
+            'item': item,
+            'name': item_name,
             'size': round(item_size, 1),
             'date': formatted_date,
             'is_directory': os.path.isdir(item_path)
