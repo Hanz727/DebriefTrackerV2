@@ -7,15 +7,14 @@ from web._constants import FLASK_SECURE_KEY
 import redis
 from flask_session import Session
 
-from web.app.routes.auth import auth_blueprint
-from web.app.routes.downloads import downloads_blueprint
-from web.app.routes.home import home_blueprint
-from web.app.routes.msn_data import msn_data_blueprint
+from web.routes.auth import auth_blueprint
+from web.routes.downloads import downloads_blueprint
+from web.routes.home import home_blueprint
+from web.routes.msn_data import msn_data_blueprint
 
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
-
     app.secret_key = FLASK_SECURE_KEY
 
     app.config['SESSION_TYPE'] = 'redis'

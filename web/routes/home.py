@@ -7,7 +7,7 @@ from web.tracker_ui.input_data_handler import InputDataHandler
 config = WebConfigSingleton.get_instance()
 postgres_client = PostGresClient()
 
-home_blueprint = Blueprint('main', __name__)
+home_blueprint = Blueprint('home', __name__)
 app = home_blueprint
 
 @app.route('/submit', methods=['POST'])
