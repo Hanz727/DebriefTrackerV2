@@ -10,11 +10,12 @@ const Table = ({updateState}) => {
                 const pilot_filter = document.getElementById("pilot").value;
                 const rio_filter = document.getElementById("rio").value;
                 const modex_filter = document.getElementById("modex").value;
+                const target_filter = document.getElementById("target").value;
                 const weapon_type_filter = document.getElementById("weapon_type").value;
                 const weapon_filter = document.getElementById("weapon").value;
                 const killed_filter = document.getElementById("killed").value;
 
-                const response = await fetch(`http://127.0.0.1:5000/get_db?pilot=${pilot_filter}&rio=${rio_filter}&modex=${modex_filter}&weapon_type=${weapon_type_filter}&weapon=${weapon_filter}&killed=${killed_filter}`);
+                const response = await fetch(`http://127.0.0.1:5000/get_db?pilot=${pilot_filter}&rio=${rio_filter}&modex=${modex_filter}&weapon_type=${weapon_type_filter}&weapon=${weapon_filter}&killed=${killed_filter}&target=${target_filter}`);
                 const rdata = await response.json()
                 console.log(rdata);
                 setData(rdata);
