@@ -15,10 +15,10 @@ const Table = ({updateState}) => {
                 const weapon_filter = document.getElementById("weapon").value;
                 const killed_filter = document.getElementById("killed").value;
 
-                const response = await fetch(`http://127.0.0.1:5000/get_db?pilot=${pilot_filter}&rio=${rio_filter}&modex=${modex_filter}&weapon_type=${weapon_type_filter}&weapon=${weapon_filter}&killed=${killed_filter}&target=${target_filter}`);
-                const rdata = await response.json()
-                console.log(rdata);
-                setData(rdata);
+                const response = await fetch(`https://debrief.virtualcvw17.com/get_db?pilot=${pilot_filter}&rio=${rio_filter}&modex=${modex_filter}&weapon_type=${weapon_type_filter}&weapon=${weapon_filter}&killed=${killed_filter}&target=${target_filter}`);
+
+                let rdata = await response.json()
+                setData(rdata.reverse());
             } catch (err) {
                console.log(err);
             }
