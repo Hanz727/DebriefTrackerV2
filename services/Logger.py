@@ -17,7 +17,7 @@ def _get_longest_filename_in_dir(dir_=os.getcwd()):
             continue
 
         # if is folder
-        if ext != "" or filename in ["venv"]:
+        if ext != "" or filename in ["venv", "node_modules"]:
             continue
 
         max_length_in_subdir = _get_longest_filename_in_dir(dir_ + "\\" + filename)

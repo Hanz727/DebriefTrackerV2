@@ -18,11 +18,11 @@ class DatabaseClient(ABC):
         ...
 
     @abstractmethod
-    def _get_db(self) -> CVW17Database:
+    def get_db(self) -> CVW17Database:
         return CVW17Database()
 
     def get_data_manager(self) -> DataManager:
-        return DataManager(self._get_db())
+        return DataManager(self.get_db())
 
     def add_listener(self, func, callback=None) -> None:
         if not callback:

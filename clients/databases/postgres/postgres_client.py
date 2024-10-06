@@ -90,6 +90,6 @@ class PostGresClient(DatabaseClient):
         self.__fetch_db()
 
     @override
-    def _get_db(self) -> CVW17Database:
+    def get_db(self) -> CVW17Database:
         return self.__db_snapshot
 

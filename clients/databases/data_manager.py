@@ -2,7 +2,8 @@ from dataclasses import asdict
 
 import numpy as np
 
-from clients.databases.contracts import CVW17Database, PlayerStats, SquadronStats, WeaponStats, PartialDebrief, Debrief
+from clients.databases.contracts import CVW17Database, PlayerStats, SquadronStats, WeaponStats, PartialDebrief, Debrief, \
+    CVW17DatabaseRow
 from core.config.config import ConfigSingleton
 from core.constants import Squadrons, WeaponTypes, Weapons
 from discord_.cogs.constants import SOFT_RESET_DATA_PATH
@@ -20,6 +21,14 @@ class DataManager:
 
     def get_latest_entry_id(self):
         return self.__db.id_[-1]
+
+    def get_db_rows(self) -> list[CVW17DatabaseRow]:
+        rows: list[CVW17DatabaseRow] = []
+        keys = list(asdict(self.__db).keys())[1:-1]
+        values = np.stack(list(asdict(self.__db).values())[1:], axis=1)
+        for row in values:
+            rows.append(CVW17DatabaseRow(**{key: value for key,value in zip(keys, row)}))
+        return rows
 
     def __get_soft_reset_filter(self):
         return self.__db.id_ > self.__soft_reset_anchor_id
@@ -51,7 +60,6 @@ class DataManager:
         ag_filter = self.__get_weapon_type_filter(WeaponTypes.AG.value)
         killed_filter = self.__get_killed_filter()
 
-        # TODO: test whether this affects #notes channel, I don't think it will, but there may be a bug here
         soft_reset_filter = self.__get_soft_reset_filter()
 
         aa_kills_filter = squadron_filter & player_filter & aa_filter & killed_filter & soft_reset_filter

@@ -1,0 +1,10 @@
+.App {
+  background-color: #121212;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  color: #b0b0b0;
+}

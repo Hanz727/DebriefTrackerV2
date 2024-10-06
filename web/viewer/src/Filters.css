@@ -1,0 +1,28 @@
+.App-Filters {
+    display: block;
+    margin: 10px;
+    text-align: center;
+}
+
+.Filter {
+    display: inline-block;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.App-Filters input {
+    display: block;
+    font-size: 20px;
+    padding: 4px;
+    border-radius: 4px;
+    border: 1px solid #3A3A3A;
+    color: #b0b0b0;
+    background-color: #1E1E1E;
+    max-width: 12vw;
+}
+
+.App-Filters label {
+    display: inline-block;
+    font-size: 20px;
+    max-width: 12vw;
+}

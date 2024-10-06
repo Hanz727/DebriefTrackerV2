@@ -2,7 +2,7 @@ import os
 import time
 
 from flask import Blueprint, render_template, send_from_directory
-from web.config.config import WebConfigSingleton
+from web.input.config.config import WebConfigSingleton
 
 downloads_blueprint = Blueprint('downloads', __name__)
 config = WebConfigSingleton.get_instance()

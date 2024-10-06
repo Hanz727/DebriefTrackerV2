@@ -1,20 +1,22 @@
 from datetime import timedelta
 
 from flask import Flask
+from flask_cors import CORS
 
-from web._constants import FLASK_SECURE_KEY
+from web.input._constants import FLASK_SECURE_KEY
 
 import redis
 from flask_session import Session
 
-from web.routes.auth import auth_blueprint
-from web.routes.downloads import downloads_blueprint
-from web.routes.home import home_blueprint
-from web.routes.msn_data import msn_data_blueprint
+from web.input.routes.auth import auth_blueprint
+from web.input.routes.downloads import downloads_blueprint
+from web.input.routes.home import home_blueprint
+from web.input.routes.msn_data import msn_data_blueprint
 
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
+    CORS(app)
     app.secret_key = FLASK_SECURE_KEY
 
     app.config['SESSION_TYPE'] = 'redis'

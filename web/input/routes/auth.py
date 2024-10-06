@@ -1,7 +1,7 @@
 import requests
 from flask import Blueprint, request, redirect, session
 
-from web._constants import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, TOKEN_URL, AUTH_URL, DISCORD_API_BASE_URL, GUILD_ID, \
+from web.input._constants import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, TOKEN_URL, AUTH_URL, DISCORD_API_BASE_URL, GUILD_ID, \
     DISCORD_BOT_TOKEN, ROLE_ID
 
 auth_blueprint = Blueprint('auth', __name__)

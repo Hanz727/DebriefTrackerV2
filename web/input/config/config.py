@@ -1,7 +1,7 @@
 import json
 
-from web.config._constants import WEB_CONFIG_PATH
-from web.config.contracts import WebConfig
+from web.input.config._constants import WEB_CONFIG_PATH
+from web.input.config.contracts import WebConfig
 
 
 class WebConfigSingleton:

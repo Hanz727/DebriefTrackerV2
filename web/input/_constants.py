@@ -4,7 +4,7 @@ from typing import Final
 
 from core.constants import BASE_DIR, DISCORD_TOKEN_PATH
 from services.file_handler import FileHandler
-from web.config.config import WebConfigSingleton
+from web.input.config.config import WebConfigSingleton
 
 __CONFIG = WebConfigSingleton.get_instance()
 

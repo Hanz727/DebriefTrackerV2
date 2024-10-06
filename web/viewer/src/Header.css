@@ -1,0 +1,17 @@
+.App-header {
+    background-color: #1F1F1F;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    text-align: center;
+}
+
+.App-header h1 {
+    margin: 0;
+    flex-grow: 1;
+}
+
+.App-header img {
+    height: 70px;
+    width: auto;
+}
