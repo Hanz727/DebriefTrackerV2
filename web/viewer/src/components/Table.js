@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import '../Table.css'
 
 const Table = ({updateState}) => {
-    const [data, setData] = useState({});
+    const [data, setData] = useState([{}]);
 
     useEffect(() => {
         const fetchData = async () => {
