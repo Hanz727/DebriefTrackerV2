@@ -5,8 +5,8 @@ from flask_cors import CORS
 
 from web.input._constants import FLASK_SECURE_KEY
 
-import redis
-from flask_session import Session
+#import redis
+#from flask_session import Session
 
 from web.input.routes.auth import auth_blueprint
 from web.input.routes.downloads import downloads_blueprint
@@ -22,10 +22,10 @@ def create_app():
     app.config['SESSION_TYPE'] = 'redis'
     app.config['SESSION_PERMANENT'] = True
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
-    app.config['SESSION_USE_SIGNER'] = True
-    app.config['SESSION_REDIS'] = redis.StrictRedis(host='localhost', port=6379)
+    #app.config['SESSION_USE_SIGNER'] = True
+    #app.config['SESSION_REDIS'] = redis.StrictRedis(host='localhost', port=6379)
 
-    server_session = Session(app)
+    #server_session = Session(app)
 
     app.register_blueprint(home_blueprint)
     app.register_blueprint(auth_blueprint)
