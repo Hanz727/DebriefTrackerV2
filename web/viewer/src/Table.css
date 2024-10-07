@@ -8,7 +8,7 @@
     width: 100%;
     border-collapse: collapse;
     box-sizing: border-box;
-    table-layout: fixed;
+    table-layout: auto;
 }
 
 .Db-Table th {

@@ -1,0 +1,12 @@
+.StatsBox {
+    display: inline-block;
+    background-color: #1F1F1F;
+    border-radius: 4px;
+    padding: 10px;
+    margin-right: 10px;
+}
+
+.StatsBox h4 {
+    font-size: 20px;
+    margin: 0;
+}

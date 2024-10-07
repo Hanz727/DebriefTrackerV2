@@ -1,0 +1,11 @@
+.PerWeaponTable {
+   border: 1px #3a3a3a;
+   table-layout: auto;
+   width: 100%;
+   border-collapse: collapse;
+   box-sizing: border-box;
+}
+
+.PerWeaponTable th, td {
+   padding: 3px 8px;
+}
