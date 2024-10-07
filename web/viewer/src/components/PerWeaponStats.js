@@ -5,11 +5,17 @@ const PerWeaponStats = ({data, type}) => {
     const [wpnStats, setWpnStats] = useState({});
 
     useEffect(() => {
-        //update
         let newStats = {};
         data.filter((entry) => entry.weapon !== null && entry.weapon_type === type)
             .forEach((entry) => {
-                const weapon = entry.weapon
+                let weapon = entry.weapon
+                if (weapon.startsWith("AIM-120"))
+                    weapon = "AIM-120C"
+                if (weapon.startsWith("AIM-9"))
+                    weapon = "AIM-9"
+                if (weapon.startsWith("AIM-7"))
+                    weapon = "AIM-7"
+
                 if (!(weapon in newStats))
                     newStats[weapon] = [0, 0];
 
@@ -19,7 +25,7 @@ const PerWeaponStats = ({data, type}) => {
         })
 
         const sortedStats = Object.entries(newStats).sort(([keyA, statsA], [keyB, statsB]) => {
-            return keyA.localeCompare(keyB);
+            return statsB[0] - statsA[0];
         })
 
         newStats = Object.fromEntries(sortedStats)
@@ -34,10 +40,10 @@ const PerWeaponStats = ({data, type}) => {
                     <th>Weapon</th>
                     <th>Kills</th>
                     {type === "A/A" && (
-                        <th>Shots</th>
-                    )}
-                    {type === "A/A" && (
-                        <th>PK%</th>
+                        <>
+                            <th>Shots</th>
+                            <th>PK%</th>
+                        </>
                     )}
                 </tr>
                 </thead>
@@ -48,12 +54,11 @@ const PerWeaponStats = ({data, type}) => {
                         <td>{weapon}</td>
                         <td>{kills}</td>
                         {type === "A/A" && (
-                            <td>{shots}</td>
+                            <>
+                                <td>{shots}</td>
+                                <td>{procentage(kills, shots)}</td>
+                            </>
                         )}
-                        {type === "A/A" && (
-                            <td>{procentage(kills,shots)}</td>
-                        )}
-
                       </tr>
                     ))}
                 </tbody>

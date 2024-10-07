@@ -1,0 +1,133 @@
+import React, {useEffect, useState} from "react";
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import {procentage} from "../utils";
+import '../KillChartStats.css'
+
+// Register chart.js components
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
+const processKillsData = (data) => {
+    const killsPerDate = {};
+    data.filter((item) => (item.hit || item.destroyed) && item.weapon_type === 'A/A').forEach(item => {
+        const date = new Date(item.date);
+        const month = `${date.getDay()}/${date.getMonth()+1}/${date.getFullYear()}`; // Format as MM/YYYY
+
+        if (!killsPerDate[month]) {
+            killsPerDate[month] = 0;
+        }
+        killsPerDate[month] += item.qty;
+    });
+
+    return killsPerDate;
+};
+
+const processShotsData = (data) => {
+    const shotsPerDate = {};
+    data.filter((item) => item.weapon_type === 'A/A').forEach(item => {
+        const date = new Date(item.date);
+        const month = `${date.getDay()}/${date.getMonth()+1}/${date.getFullYear()}`; // Format as MM/YYYY
+        if (!shotsPerDate[month]) {
+            shotsPerDate[month] = 0;
+        }
+        shotsPerDate[month] += item.qty;
+    });
+
+    return shotsPerDate;
+}
+
+const KillChartStats = ({data}) => {
+    const killsPerDate = processKillsData(data);
+    const labels = Object.keys(killsPerDate).reverse(); // X-axis labels (dates)
+    const killsData = Object.values(killsPerDate).reverse(); // Y-axis data (kill counts)
+
+    const shotsPerDate = processShotsData(data);
+    const shotsData = Object.values(shotsPerDate).reverse();
+
+    let accData = shotsData;
+    accData = accData.map((value, index) => {
+        return value - killsData[index];
+    })
+
+    let accpData = shotsData
+    accpData = accpData.map((value, index) => {
+        return procentage(killsData[index], value);
+    })
+
+    const chartData = {
+        labels,
+        datasets: [
+            {
+                label: 'Kills',
+                data: killsData,
+                fill: false,
+                backgroundColor: 'rgb(133,30,30)',
+                borderColor: 'rgb(255,86,86)',
+                tension: 0.1 // Makes the line smooth
+            },
+            {
+                label: 'Shots',
+                data: shotsData,
+                fill: false,
+                backgroundColor: 'rgb(30,37,133)',
+                borderColor: 'rgb(86,114,255)',
+                tension: 0.1 // Makes the line smooth
+            },
+            {
+                label: 'Misses',
+                data: accData,
+                fill: false,
+                backgroundColor: 'rgb(59,133,30)',
+                borderColor: 'rgb(97,255,86)',
+                tension: 0.1, // Makes the line smooth
+                hidden: true
+            },
+            {
+                label: 'PK%',
+                data: accpData,
+                fill: false,
+                backgroundColor: 'rgb(104,30,133)',
+                borderColor: 'rgb(235,86,255)',
+                tension: 0.1, // Makes the line smooth
+                hidden: true
+            }
+        ]
+    };
+
+
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: false,
+            }
+        },
+        scales: {
+            x: {
+                title: {
+                    display: false,
+                    text: ''
+                }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: ''
+                },
+                beginAtZero: true // Start y-axis at 0
+            }
+        }
+    };
+
+    return (
+        <div className="App-KillChart">
+            <Line data={chartData} options={options} />
+        </div>
+    );
+}
+
+export default KillChartStats

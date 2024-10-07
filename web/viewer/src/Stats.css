@@ -1,4 +1,10 @@
 .App-Stats {
     margin: 10px;
+    display: flex;
     text-align: center;
+    flex-direction: row;
+}
+
+.App-Stats hr {
+    width: 100%;
 }
