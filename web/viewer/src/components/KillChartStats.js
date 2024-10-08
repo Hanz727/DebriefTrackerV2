@@ -7,49 +7,43 @@ import '../KillChartStats.css'
 // Register chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const processKillsData = (data) => {
-    const killsPerDate = {};
-    data.filter((item) => (item.hit || item.destroyed) && item.weapon_type === 'A/A').forEach(item => {
-        const date = new Date(item.date);
-        const month = `${date.getDay()}/${date.getMonth()+1}/${date.getFullYear()}`; // Format as MM/YYYY
-
-        if (!killsPerDate[month]) {
-            killsPerDate[month] = 0;
-        }
-        killsPerDate[month] += item.qty;
-    });
-
-    return killsPerDate;
-};
-
-const processShotsData = (data) => {
+const processData = (data) => {
     const shotsPerDate = {};
+	const killsPerDate = {};
     data.filter((item) => item.weapon_type === 'A/A').forEach(item => {
         const date = new Date(item.date);
-        const month = `${date.getDay()}/${date.getMonth()+1}/${date.getFullYear()}`; // Format as MM/YYYY
-        if (!shotsPerDate[month]) {
+        const month = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`; // Format as MM/YYYY
+        
+		if (!(month in shotsPerDate)) {
             shotsPerDate[month] = 0;
         }
+		if (!(month in killsPerDate)) {
+            killsPerDate[month] = 0;
+        }
         shotsPerDate[month] += item.qty;
+		if (item.hit || item.destroyed) {
+			killsPerDate[month] += item.qty;
+		}
+
     });
 
-    return shotsPerDate;
+    return [shotsPerDate, killsPerDate];
 }
 
 const KillChartStats = ({data}) => {
-    const killsPerDate = processKillsData(data);
-    const labels = Object.keys(killsPerDate).reverse(); // X-axis labels (dates)
+    const [shotsPerDate, killsPerDate] = processData(data);
+    
+	const labels = Object.keys(shotsPerDate).reverse(); // X-axis labels (dates)
     const killsData = Object.values(killsPerDate).reverse(); // Y-axis data (kill counts)
 
-    const shotsPerDate = processShotsData(data);
-    const shotsData = Object.values(shotsPerDate).reverse();
+    const shotsData = Object.values(shotsPerDate).reverse();	
 
     let accData = shotsData;
     accData = accData.map((value, index) => {
         return value - killsData[index];
     })
 
-    let accpData = shotsData
+    let accpData = shotsData;
     accpData = accpData.map((value, index) => {
         return procentage(killsData[index], value);
     })
@@ -111,6 +105,13 @@ const KillChartStats = ({data}) => {
                 title: {
                     display: false,
                     text: ''
+                },
+				ticks: {
+                    // Customize the label display
+                    callback: function(value, index, ticks) {
+                        // Show every 2nd label (you can change the number to 3 for every third label)
+                        return index % 3 === 0 ? this.getLabelForValue(value) : '';
+                    }
                 }
             },
             y: {
