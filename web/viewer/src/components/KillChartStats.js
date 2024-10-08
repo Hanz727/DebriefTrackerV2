@@ -7,12 +7,19 @@ import '../KillChartStats.css'
 // Register chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
+function getWeekNumber(date) {
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1); // January 1st of the year
+    const pastDaysOfYear = (date - firstDayOfYear) / 86400000; // Days passed since the first day of the year
+
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+}
+
 const processData = (data) => {
     const shotsPerDate = {};
 	const killsPerDate = {};
     data.filter((item) => item.weapon_type === 'A/A').forEach(item => {
         const date = new Date(item.date);
-        const month = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`; // Format as MM/YYYY
+        const month = `Week ${getWeekNumber(date)} ${date.getFullYear()}`; // Format as MM/YYYY
 
 		if (!(month in shotsPerDate)) {
             shotsPerDate[month] = 0;
@@ -33,8 +40,8 @@ const processData = (data) => {
 const KillChartStats = ({data}) => {
     const [shotsPerDate, killsPerDate] = processData(data);
 
-	const labels = Object.keys(shotsPerDate).reverse(); // X-axis labels (dates)
-    const killsData = Object.values(killsPerDate).reverse(); // Y-axis data (kill counts)
+	const labels = Object.keys(shotsPerDate).reverse();
+    const killsData = Object.values(killsPerDate).reverse();
     const shotsData = Object.values(shotsPerDate).reverse();
 
     let accData = shotsData;
