@@ -55,6 +55,7 @@ const Table = ({updateState, data, setData}) => {
 
                 let rdata = fetchedData;
                 rdata = rdata.filter(entry => {
+                    if (entry.weapon_type === "N/A") return false;
                     if (filterEntry(pilot_filter, entry.pilot_name)) return false;
                     if (filterEntry(rio_filter, entry.rio_name)) return false;
                     if (filterEntry(modex_filter, entry.tail_number)) return false;
