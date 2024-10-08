@@ -7,41 +7,34 @@ import '../KillChartStats.css'
 // Register chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const processKillsData = (data) => {
-    const killsPerDate = {};
-    data.filter((item) => (item.hit || item.destroyed) && item.weapon_type === 'A/A').forEach(item => {
-        const date = new Date(item.date);
-        const month = `${date.getDay()}/${date.getMonth()+1}/${date.getFullYear()}`; // Format as MM/YYYY
-
-        if (!killsPerDate[month]) {
-            killsPerDate[month] = 0;
-        }
-        killsPerDate[month] += item.qty;
-    });
-
-    return killsPerDate;
-};
-
-const processShotsData = (data) => {
+const processData = (data) => {
     const shotsPerDate = {};
+	const killsPerDate = {};
     data.filter((item) => item.weapon_type === 'A/A').forEach(item => {
         const date = new Date(item.date);
-        const month = `${date.getDay()}/${date.getMonth()+1}/${date.getFullYear()}`; // Format as MM/YYYY
-        if (!shotsPerDate[month]) {
+        const month = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`; // Format as MM/YYYY
+
+		if (!(month in shotsPerDate)) {
             shotsPerDate[month] = 0;
         }
+		if (!(month in killsPerDate)) {
+            killsPerDate[month] = 0;
+        }
         shotsPerDate[month] += item.qty;
+		if (item.hit || item.destroyed) {
+			killsPerDate[month] += item.qty;
+		}
+
     });
 
-    return shotsPerDate;
+    return [shotsPerDate, killsPerDate];
 }
 
 const KillChartStats = ({data}) => {
-    const killsPerDate = processKillsData(data);
-    const labels = Object.keys(killsPerDate).reverse(); // X-axis labels (dates)
-    const killsData = Object.values(killsPerDate).reverse(); // Y-axis data (kill counts)
+    const [shotsPerDate, killsPerDate] = processData(data);
 
-    const shotsPerDate = processShotsData(data);
+	const labels = Object.keys(shotsPerDate).reverse(); // X-axis labels (dates)
+    const killsData = Object.values(killsPerDate).reverse(); // Y-axis data (kill counts)
     const shotsData = Object.values(shotsPerDate).reverse();
 
     let accData = shotsData;
@@ -49,7 +42,7 @@ const KillChartStats = ({data}) => {
         return value - killsData[index];
     })
 
-    let accpData = shotsData
+    let accpData = shotsData;
     accpData = accpData.map((value, index) => {
         return procentage(killsData[index], value);
     })
@@ -63,7 +56,7 @@ const KillChartStats = ({data}) => {
                 fill: false,
                 backgroundColor: 'rgb(133,30,30)',
                 borderColor: 'rgb(255,86,86)',
-                tension: 0.1 // Makes the line smooth
+                tension: 0.3 // Makes the line smooth
             },
             {
                 label: 'Shots',
@@ -71,7 +64,7 @@ const KillChartStats = ({data}) => {
                 fill: false,
                 backgroundColor: 'rgb(30,37,133)',
                 borderColor: 'rgb(86,114,255)',
-                tension: 0.1 // Makes the line smooth
+                tension: 0.3 // Makes the line smooth
             },
             {
                 label: 'Misses',
@@ -79,7 +72,7 @@ const KillChartStats = ({data}) => {
                 fill: false,
                 backgroundColor: 'rgb(59,133,30)',
                 borderColor: 'rgb(97,255,86)',
-                tension: 0.1, // Makes the line smooth
+                tension: 0.3, // Makes the line smooth
                 hidden: true
             },
             {
@@ -88,7 +81,7 @@ const KillChartStats = ({data}) => {
                 fill: false,
                 backgroundColor: 'rgb(104,30,133)',
                 borderColor: 'rgb(235,86,255)',
-                tension: 0.1, // Makes the line smooth
+                tension: 0.3, // Makes the line smooth
                 hidden: true
             }
         ]
@@ -111,6 +104,16 @@ const KillChartStats = ({data}) => {
                 title: {
                     display: false,
                     text: ''
+                },
+				ticks: {
+                    // Customize the label display
+                    callback: function(value, index, ticks) {
+                        // Show every 2nd label (you can change the number to 3 for every third label)
+						let d = Math.round(1/ (12 / labels.length));
+						if (d === 0)
+							d = 1;
+                        return index % d === 0 ? this.getLabelForValue(value) : '';
+                    }
                 }
             },
             y: {

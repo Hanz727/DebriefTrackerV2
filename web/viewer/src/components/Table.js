@@ -1,9 +1,46 @@
-import React, {useEffect} from "react";
+import React, {useEffect, useState} from "react";
 import '../Table.css'
 
 const Table = ({updateState, data, setData}) => {
+    const [RioToggle, setRioToggle] = useState(true);
+    const [fetchedData, setFetchedData] = useState([]);
+    const [intervalId, setIntervalId] = useState(null);
+
+    const handleRioToggle = (ndata) => {
+        for (let entry of ndata) {
+            if (entry.rio_name !== null && entry.rio_name.trim() !== '') {
+                setRioToggle(true);
+                return
+            }
+        }
+        setRioToggle(false);
+    }
+
+    const filterEntry = (filter, field) => {
+        if (filter === null)
+            return false;
+        if (field === null)
+            field = '';
+
+        if (typeof field !== 'string')
+            field = field.toString();
+        return !field.toLowerCase().startsWith(filter.toLowerCase());
+    }
+
+    const createFetchInterval = async () => {
+        const response = await fetch("https://debrief.virtualcvw17.com/get_db");
+        const fdata = await response.json();
+        setFetchedData(fdata);
+
+        setIntervalId(setInterval(async () => {
+            const response = await fetch("https://debrief.virtualcvw17.com/get_db");
+            const fdata = await response.json();
+            setFetchedData(fdata);
+        }, 30000))
+    }
+
     useEffect(() => {
-        const fetchData = async () => {
+        const filterData = async () => {
             try {
                 const pilot_filter = document.getElementById("pilot").value;
                 const rio_filter = document.getElementById("rio").value;
@@ -13,18 +50,31 @@ const Table = ({updateState, data, setData}) => {
                 const weapon_filter = document.getElementById("weapon").value;
                 const killed_filter = document.getElementById("killed").value;
 
-                const response = await fetch(`https://debrief.virtualcvw17.com/get_db?pilot=${pilot_filter}&rio=${rio_filter}&modex=${modex_filter}&weapon_type=${weapon_type_filter}&weapon=${weapon_filter}&killed=${killed_filter}&target=${target_filter}`);
+                if (intervalId === null)
+                    await createFetchInterval();
 
-                let rdata = await response.json()
+                let rdata = fetchedData;
+                rdata = rdata.filter(entry => {
+                    if (filterEntry(pilot_filter, entry.pilot_name)) return false;
+                    if (filterEntry(rio_filter, entry.rio_name)) return false;
+                    if (filterEntry(modex_filter, entry.tail_number)) return false;
+                    if (filterEntry(target_filter, entry.target)) return false;
+                    if (filterEntry(weapon_type_filter, entry.weapon_type)) return false;
+                    if (filterEntry(weapon_filter, entry.weapon)) return false;
+
+                    return !(filterEntry(killed_filter, entry.hit) || filterEntry(killed_filter, entry.destroyed));
+                })
+                handleRioToggle(rdata);
+
                 setData(rdata.reverse());
             } catch (err) {
                console.log(err);
             }
         }
 
-        fetchData();
+        filterData();
 
-    }, [updateState])
+    }, [updateState, fetchedData])
 
     return (
         <div className="App-Table">
@@ -34,7 +84,9 @@ const Table = ({updateState, data, setData}) => {
                         <th>Date</th>
                         <th>Event</th>
                         <th>Pilot</th>
-                        <th>Rio</th>
+                        {RioToggle && (
+                            <th>Rio</th>
+                        )}
                         <th>Weapon</th>
                         <th>Target</th>
                         <th>Range</th>
@@ -48,7 +100,9 @@ const Table = ({updateState, data, setData}) => {
                     <td>{entry.date}</td>
                     <td>{entry.event}</td>
                     <td>{entry.pilot_name}</td>
-                    <td>{entry.rio_name}</td>
+                    {RioToggle && (
+                        <td>{entry.rio_name}</td>
+                     )}
                     <td>{entry.weapon ? entry.weapon : ""}</td>
                     <td>{entry.target ? entry.target : ""}</td>
                     <td>{entry.range ? entry.range : ""}</td>

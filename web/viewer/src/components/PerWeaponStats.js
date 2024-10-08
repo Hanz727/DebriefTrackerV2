@@ -19,7 +19,7 @@ const PerWeaponStats = ({data, type}) => {
                 if (!(weapon in newStats))
                     newStats[weapon] = [0, 0];
 
-                if (entry.hit || entry.destroyed)
+                if ((entry.hit || entry.destroyed) || type === 'A/G')
                     newStats[weapon][0] += entry.qty;
                 newStats[weapon][1] += entry.qty;
         })
@@ -38,7 +38,12 @@ const PerWeaponStats = ({data, type}) => {
                 <thead>
                 <tr>
                     <th>Weapon</th>
-                    <th>Kills</th>
+                    {type === "A/A" ? (
+                        <th>Kills< /th>
+                    ) : (
+                        <th>Drops< /th>
+                    )}
+
                     {type === "A/A" && (
                         <>
                             <th>Shots</th>
