@@ -110,7 +110,10 @@ const KillChartStats = ({data}) => {
                     // Customize the label display
                     callback: function(value, index, ticks) {
                         // Show every 2nd label (you can change the number to 3 for every third label)
-                        return index % 3 === 0 ? this.getLabelForValue(value) : '';
+						let d = Math.round(1/ (12 / labels.length));
+						if (d == 0)
+							d = 1;
+                        return index % d === 0 ? this.getLabelForValue(value) : '';
                     }
                 }
             },
