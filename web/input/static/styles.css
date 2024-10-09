@@ -24,6 +24,26 @@ header .text-container {
     margin-right: auto; /* Pushes the text-container to the center */
 }
 
+.text-container {
+    margin: 10px;
+}
+
+header a {
+    text-decoration: none;
+    color: #3498db; /* Modern blue color */
+    position: relative;
+    display: inline-block;
+}
+
+header a:hover {
+  color: #002eac; /* Change color on hover */
+}
+
+.text-container h1 {
+    padding: 0;
+    margin: 0;
+}
+
 
 body {
     margin: 0;

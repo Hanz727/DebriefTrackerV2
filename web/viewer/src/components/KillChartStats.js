@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {} from "react";
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import {procentage} from "../utils";
@@ -15,8 +15,9 @@ function getWeekNumber(date) {
 }
 
 const processData = (data) => {
-    const shotsPerDate = {};
-	const killsPerDate = {};
+    let shotsPerDate = {};
+	let killsPerDate = {};
+
     data.filter((item) => item.weapon_type === 'A/A').forEach(item => {
         const date = new Date(item.date);
         const month = `Week ${getWeekNumber(date)} ${date.getFullYear()}`; // Format as MM/YYYY
@@ -27,6 +28,7 @@ const processData = (data) => {
 		if (!(month in killsPerDate)) {
             killsPerDate[month] = 0;
         }
+
         shotsPerDate[month] += item.qty;
 		if (item.hit || item.destroyed) {
 			killsPerDate[month] += item.qty;
