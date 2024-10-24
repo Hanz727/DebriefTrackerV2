@@ -173,10 +173,10 @@ function renderTable() {
             <td><input type="text" list="weapon_types" class="input_table" value="${row.weapon_type}" name="weapon_type_${idx}" required /></td>
             <td><input type="text" list="weapons" class="input_table" value="${row.weapon}" name="weapon_${idx}" /></td>
             <td><input type="text" class="input_table" value="${row.target}" name="target_${idx}" /></td>
-            <td><input type="text" class="input_table" value="${row.target_angels}" name="target_angels_${idx}" /></td>
-            <td><input type="text" class="input_table" value="${row.angels}" name="angels_${idx}" /></td>
-            <td><input type="text" class="input_table" value="${row.speed}" name="speed_${idx}" /></td>
-            <td><input type="text" class="input_table" value="${row.range}" name="range_${idx}" /></td>
+            <td><input type="number" class="input_table" min=0 step=1 max=99 value="${row.target_angels}"  /></td>
+            <td><input type="number" class="input_table" min=0 step=1 max=99 value="${row.angels}"  /></td>
+            <td><input type="number" class="input_table" min=0.1 max=2 step=0.01 value="${row.speed}" name="speed_${idx}" /></td>
+            <td><input type="number" class="input_table" value="${row.range}" min=1 step=1 max=150 name="range_${idx}" /></td>
             <td><input type="checkbox" class="input_table" ${row.hit ? 'checked' : ''} name="hit_${idx}" /></td>
             <td><input type="checkbox" class="input_table" ${row.destroyed ? 'checked' : ''} name="destroyed_${idx}" /></td>
         `;
