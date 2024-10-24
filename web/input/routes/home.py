@@ -25,6 +25,10 @@ def submit():
     while form.get(f'tail_number_{i}', None):
         row = InputDataHandler.get_row(form, i)
         if InputDataHandler.validate_row(row):
+            row.pilot_name = row.pilot_name.lower().strip()
+            if row.rio_name is not None:
+                row.rio_name = row.rio_name.lower().strip()
+
             postgres_client.insert(row)
         i += 1
 
