@@ -84,11 +84,22 @@ class DataManager:
 
         return SquadronStats(aa_kills=aa_kills, ag_drops=ag_drops)
 
-    def __get_all_player_names(self, squadron: Squadrons | None) -> set[str]:
-        squadron_filter = self.__get_squadron_filter(squadron)
+    def __capitalize_name(self, name):
+        if name is None:
+            return None
 
-        players = list(set(self.__db.pilot_name[squadron_filter]) | set(self.__db.rio_name[squadron_filter]))
-        return {player for player in players if player}
+        name = name.lower()
+        if len(name) == 2:
+            return name.upper()
+
+        return name[0].upper() + name[1:]
+
+
+    def __get_all_player_names(self, squadron: Squadrons | None) -> set[str]:
+        filter_ = self.__get_squadron_filter(squadron)
+
+        players = list(set(self.__db.pilot_name[filter_]) | set(self.__db.rio_name[filter_]))
+        return {self.__capitalize_name(player) for player in players if player}
 
     def __apply_leaderboard_weights(self, entry: (str, PlayerStats)):
         return 2 * entry[1].aa_kills + entry[1].ag_drops
