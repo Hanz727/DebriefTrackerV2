@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 
 import numpy as np
 
@@ -55,3 +56,26 @@ class CVW17Database:
     event: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     notes: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     id_: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
+
+@dataclass
+class CVW17DatabaseRow:
+    date: str | datetime
+    fl_name: str | None
+    squadron: str | None
+    rio_name: str | None
+    pilot_name: str | None
+    tail_number: int | None
+    weapon_type: str | None # A/A | A/G | N/A
+    weapon: str | None
+    target: str | None
+    target_angels: int | None
+    angels: int | None
+    speed: float | None
+    range: int | None
+    hit: bool | None
+    destroyed: bool | None
+    qty: int | None
+    msn_nr: str | None
+    msn_name: str | None
+    event: str | None
+    notes: str | None

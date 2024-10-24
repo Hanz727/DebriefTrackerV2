@@ -11,6 +11,6 @@
   "postgres_user": "postgres",
   "postgres_password": "test",
   "auto_mode": false,
-  "auto_soft_reset": true,
+  "auto_soft_reset": false,
   "auto_soft_reset_interval_days": 21
 }

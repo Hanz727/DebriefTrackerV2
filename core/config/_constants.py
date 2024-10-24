@@ -1,3 +1,6 @@
+from pathlib import Path
 from typing import Final
 
-CONFIG_PATH: Final[str] = "config.json"
+from core.constants import BASE_DIR
+
+CONFIG_PATH: Final[Path] = BASE_DIR / Path("config.json")

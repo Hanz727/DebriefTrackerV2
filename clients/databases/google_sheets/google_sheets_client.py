@@ -8,8 +8,8 @@ from typing_extensions import override
 from clients.databases.contracts import CVW17Database
 from clients.databases.database_client import DatabaseClient
 from clients.databases.google_sheets.constants import GOOGLE_SHEETS_KEY_PATH, CVW17_RANGES, GoogleSheetsRanges
-from core.constants import ON_DB_INSERT_CALLBACK, MSN_DATA_FILES_PATH, WeaponTypes
 from core.config.config import ConfigSingleton
+from core.constants import ON_DB_INSERT_CALLBACK, MSN_DATA_FILES_PATH, WeaponTypes
 from core.wrappers import safe_execute
 from services.data_handler import DataHandler
 import services.Logger as Logger
@@ -205,5 +205,5 @@ class GoogleSheetsClient(DatabaseClient):
         ...
 
     @override
-    def _get_db(self) -> CVW17Database:
+    def get_db(self) -> CVW17Database:
         return self.__db_snapshot

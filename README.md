@@ -80,7 +80,7 @@ python main.py
 ```
 Auto mode config attributes:
 ```json
-"auto_mode": false -- Toggle
+"auto_mode": false
 ```
 
 ## Soft Reset
@@ -95,6 +95,6 @@ embed is untouched.
 
 Soft reset has 2 config attributes:
 ```json
-"auto_soft_reset": true,            -- Toggle
-"auto_soft_reset_interval_days": 21 -- How often does the reset occur
+"auto_soft_reset": true,           
+"auto_soft_reset_interval_days": 21
 ```
