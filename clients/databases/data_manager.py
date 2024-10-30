@@ -41,7 +41,10 @@ class DataManager:
         return squadron_filter & additional_filter
 
     def __get_player_filter(self, player: str):
-        return (self.__db.pilot_name == player) | (self.__db.rio_name == player)
+        lowercase_pilots = np.char.lower(self.__db.pilot_name)
+        lowercase_rios = np.char.lower(self.__db.rio_name)
+        player = player.lower()
+        return (lowercase_pilots == player) | (lowercase_rios == player)
 
     def __get_weapon_type_filter(self, weapon_type: WeaponTypes):
         return self.__db.weapon_type == weapon_type
