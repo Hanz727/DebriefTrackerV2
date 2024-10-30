@@ -1,5 +1,6 @@
 from dataclasses import asdict
 
+import numpy
 import numpy as np
 
 from clients.databases.contracts import CVW17Database, PlayerStats, SquadronStats, WeaponStats, PartialDebrief, Debrief, \
@@ -41,8 +42,8 @@ class DataManager:
         return squadron_filter & additional_filter
 
     def __get_player_filter(self, player: str):
-        lowercase_pilots = np.char.lower(self.__db.pilot_name)
-        lowercase_rios = np.char.lower(self.__db.rio_name)
+        lowercase_pilots = numpy.array([pilot.lower() if pilot else pilot for pilot in self.__db.pilot_name])
+        lowercase_rios = numpy.array([rio.lower() if rio else rio for rio in self.__db.rio_name])
         player = player.lower()
         return (lowercase_pilots == player) | (lowercase_rios == player)
 
