@@ -3,6 +3,8 @@ from datetime import datetime
 
 import numpy as np
 
+from core.constants import Squadrons
+
 
 @dataclass
 class WeaponStats:
@@ -27,6 +29,7 @@ class PartialDebrief:
     posted_by: str
     event_nr: str
     notes: str
+    squadron: Squadrons
 
 @dataclass
 class Debrief(PartialDebrief):

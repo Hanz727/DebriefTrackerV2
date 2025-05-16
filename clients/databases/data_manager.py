@@ -20,6 +20,55 @@ class DataManager:
         if self.__config.auto_soft_reset:
             self.__soft_reset_anchor_id = dict(FileHandler.load_json(SOFT_RESET_DATA_PATH)).get('id', 0)
 
+        #self.__get_attendence()
+
+    def __get_attendence(self):
+        size = len(self.__db.date)
+        seen_debriefs = []
+
+        v103c = 0
+        v103t = 0
+        v34c = 0
+        v34t = 0
+
+        for i in range(size):
+            debrief = self.__get_debrief(self.__get_entry_by_id(i))
+            uid = str(debrief.msn_nr)+debrief.notes
+            if uid in seen_debriefs:
+                continue
+
+            seen_debriefs.append(uid)
+            if debrief.squadron == Squadrons.VF103.value:
+                v103t += len(debrief.player_stats)
+
+            if debrief.squadron == Squadrons.VFA34.value:
+                v34t += len(debrief.player_stats)
+
+        last_event = 0
+        for evt in self.__db.event[self.__db.squadron == Squadrons.VF103.value]:
+            evt = int(evt[0])
+            if evt != last_event:
+                if evt > last_event:
+                    v103c += 1
+                if evt < last_event and last_event - evt >= 5:
+                    v103c += 1
+
+            last_event = evt
+
+        last_event = 0
+        for evt in self.__db.event[self.__db.squadron == Squadrons.VFA34.value]:
+            evt = int(evt[0])
+            if evt != last_event:
+                if evt > last_event:
+                    v34c += 1
+                if evt < last_event and last_event - evt >= 4:
+                    v34c += 1
+
+            last_event = evt
+
+        print(v103c, v103t, v34c, v34t)
+        print(v103t/v103c, v34t/v34c)
+
     def get_latest_entry_id(self):
         return self.__db.id_[-1]
 
@@ -133,13 +182,17 @@ class DataManager:
 
     def __get_latest_entry(self):
         return PartialDebrief(msn_name=self.__db.msn_name[-1], msn_nr=self.__db.msn_nr[-1], posted_by=self.__db.fl_name[-1],
-                              event_nr=self.__db.event[-1], notes=self.__db.notes[-1])
+                              event_nr=self.__db.event[-1], notes=self.__db.notes[-1], squadron=self.__db.squadron[-1])
 
-    def get_latest_debrief(self):
-        latest_entry = self.__get_latest_entry()
-        debrief_filter = (( self.__db.notes == latest_entry.notes ) & ( self.__db.msn_nr == latest_entry.msn_nr ) &
-                          ( self.__db.msn_name == latest_entry.msn_name) & ( self.__db.event == latest_entry.event_nr) &
-                          ( self.__db.fl_name == latest_entry.posted_by ))
+    def __get_entry_by_id(self, id):
+        return PartialDebrief(msn_name=self.__db.msn_name[id], msn_nr=self.__db.msn_nr[id],
+                              posted_by=self.__db.fl_name[id],
+                              event_nr=self.__db.event[id], notes=self.__db.notes[id], squadron=self.__db.squadron[id])
+
+    def __get_debrief(self, entry):
+        debrief_filter = (( self.__db.notes == entry.notes ) & ( self.__db.msn_nr == entry.msn_nr ) &
+                          ( self.__db.msn_name == entry.msn_name) & ( self.__db.event == entry.event_nr) &
+                          ( self.__db.fl_name == entry.posted_by ))
 
         modexes = self.__db.tail_number[debrief_filter]
         pilot_names = self.__db.pilot_name[debrief_filter]
@@ -151,6 +204,9 @@ class DataManager:
             player_stats[modex] = self.get_player_stats(pilot, None, debrief_filter)
             player_stats[modex].player_name = f'{pilot} | {rio}' if rio else pilot
 
-        debrief = Debrief(**asdict(latest_entry), player_stats=player_stats)
-
+        debrief = Debrief(**asdict(entry), player_stats=player_stats)
         return debrief
+
+    def get_latest_debrief(self):
+        latest_entry = self.__get_latest_entry()
+        return self.__get_debrief(latest_entry)

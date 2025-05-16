@@ -77,7 +77,7 @@ class PostGresClient(DatabaseClient):
             self.__insert_row(list(asdict(to_insert).values()))
             return
 
-        rows = np.column_stack(list(asdict(to_insert).values())[1:]) # 1: to skip size param
+        rows = np.column_stack(list(asdict(to_insert).values())[1:-1]) # 1: to skip size param
         for row in rows:
             self.__insert_row(row)
 
