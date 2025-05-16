@@ -31,7 +31,7 @@ class MsnDataHandler:
             TAIL_NUMBER is a string not int like in db
         """
         db.size += 1
-        db.date = np.append(db.date, datetime.now().strftime("%m-%d-%Y %H:%M:%S"))
+        db.date = np.append(db.date, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         db.fl_name = np.append(db.fl_name, "AUTO")
         db.msn_name = np.append(db.msn_name, "AUTO MODE")
         db.event = np.append(db.event, "AUTO")
