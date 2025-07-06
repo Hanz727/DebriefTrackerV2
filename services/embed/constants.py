@@ -10,9 +10,15 @@ VFA_34_LOGO_URL: Final[str] = (
     "SMOL_VFA-34.png"
 )
 
+VFA_81_LOGO_URL: Final[str] = (
+"https://cdn.discordapp.com/attachments/957965678281904148/1391167138315894995/military_001vfa-81.png?ex=686b919c&is"
+"=686a401c&hm=74fa3e0c3ff089194b46a1ddf52fd0dc260593eadac8612f9da2eec583c110be&"
+)
+
+
 CVW_17_LOGO_URL: Final[str] = (
     'https://cdn.discordapp.com/attachments/957965678281904148/1139978288207515658/'
     'CVW-17_LOGO_V2_Big.png'
 )
 
-AUTHOR_FOOTER: Final[str] = "Debrief Tracker bot © 2024 made by: koksem#3791"
+AUTHOR_FOOTER: Final[str] = "Debrief Tracker bot © 2025 made by: hanz727"
