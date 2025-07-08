@@ -1,13 +1,13 @@
-from dataclasses import asdict, field
-
-import numpy as np
-from flask import session, redirect, request, render_template, Blueprint, jsonify
+from flask import abort, session, redirect, request, render_template, Blueprint, jsonify, send_from_directory
+from werkzeug.utils import secure_filename
 
 from clients.databases.contracts import CVW17DatabaseRow
 from clients.databases.postgres.postgres_client import PostGresClient
 from clients.thread_pool_client import ThreadPoolClient
+from web.input._constants import BDA_IMAGE_PATH
 from web.input.config.config import WebConfigSingleton
 from web.input.tracker_ui.input_data_handler import InputDataHandler
+
 
 config = WebConfigSingleton.get_instance()
 postgres_client = PostGresClient()
@@ -15,6 +15,155 @@ ThreadPoolClient.create_task_loop(postgres_client.update, 30)
 
 home_blueprint = Blueprint('home', __name__)
 app = home_blueprint
+
+
+@app.route('/bda/<int:debrief_id>/<img_name>')
+def bda_img(debrief_id, img_name):
+    # Validate debrief_id is positive
+    if debrief_id <= 0:
+        abort(404)
+
+    # Secure the filename and validate it
+    secure_name = secure_filename(img_name)
+    if not secure_name or secure_name != img_name:
+        abort(404)
+
+    # Validate file extension
+    allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+    if not any(secure_name.lower().endswith(ext) for ext in allowed_extensions):
+        abort(404)
+
+    # Construct paths securely
+    debrief_dir = BDA_IMAGE_PATH / str(debrief_id)
+    file_path = debrief_dir / secure_name
+
+    # Ensure the resolved path is within the expected directory
+    try:
+        file_path = file_path.resolve()
+        debrief_dir = debrief_dir.resolve()
+        if not str(file_path).startswith(str(debrief_dir)):
+            abort(404)
+    except (OSError, ValueError):
+        abort(404)
+
+    # Check if file exists
+    if not file_path.exists() or not file_path.is_file():
+        abort(404)
+
+    return send_from_directory(debrief_dir, secure_name)
+
+@app.route("/debrief/<int:debrief_id>")
+def show_debrief(debrief_id):
+    debrief = {
+        "debrief-id": debrief_id,
+        "mission-name": "Murmansk Strike Escort",
+        "mission-number": "5031",
+        "mission-event": "1A2",
+        "date": "08 JUL 2025",
+        "callsign": "VICTORY1",
+        "aircrew": [
+            {
+                "modex": "103",
+                "aircrew": "JJ | Scarlett"
+            },
+            {
+                "modex": "105",
+                "aircrew": "Nakush | Lilo"
+            },
+            {
+                "modex": "107",
+                "aircrew": "Alexandra | Patterson"
+            },
+            {
+                "modex": "111",
+                "aircrew": "Klapo | Oscar"
+            },
+        ],
+        "ag-drop-count": 4,
+        "bda-count": 4,
+        "ag": [
+            {
+                "modex": "103",
+                "drops": [
+                    {
+                        "weapon-name": "GBU-12 Paveway II",
+                        "DMPI": "",
+                        "tgt-name": "",
+                        "img-name": "1.png"
+                    },
+                ]
+            },
+            {
+                "modex": "105",
+                "drops": [
+                    {
+                        "weapon-name": "GBU-12 Paveway II",
+                        "DMPI": "AJDAS-0124",
+                        "tgt-name": "",
+                        "img-name": "1.png"
+                    }
+                ]
+            },
+            {
+                "modex": "107",
+                "drops": [
+                    {
+                        "weapon-name": "GBU-16 Paveway II",
+                        "DMPI": "",
+                        "tgt-name": "SA-3",
+                        "img-name": "1.png"
+                    }
+                ]
+            },
+            {
+                "modex": "111",
+                "drops": [
+                    {
+                        "weapon-name": "GBU-10 Paveway II",
+                        "DMPI": "AJDAS-0126",
+                        "tgt-name": "",
+                        "img-name": "1.png"
+                    }
+                ]
+            },
+        ],
+        "opposition": {
+            "type": "2xMIG-29",
+            "location": "g"
+        },
+        "aa": [
+            {
+                "modex": "103",
+                "weapon": "AIM-54C",
+                "target": "mig-29s",
+                "hit": "TRUE"
+            },
+            {
+                "modex": "107",
+                "weapon": "AIM-54C",
+                "target": "su-27",
+                "hit": "TRUE"
+            },
+            {
+                "modex": "105",
+                "weapon": "AIM-54C",
+                "target": "su-33",
+                "hit": "FALSE"
+            },
+            {
+                "modex": "111",
+                "weapon": "AIM-54C",
+                "target": "j-11",
+                "hit": "TRUE"
+            },
+        ],
+        "engagement-result": "1 - Enemy Destroyed",
+        "blue-casualties": "none",
+        "mission-notes": "note",
+        "restrike-recommendation": "1 - No Restrike Recommended"
+    }
+
+    return render_template("view.html", debrief=debrief)
 
 @app.route('/submit', methods=['POST'])
 def submit():

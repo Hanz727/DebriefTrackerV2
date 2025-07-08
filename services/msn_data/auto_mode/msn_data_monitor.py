@@ -18,7 +18,7 @@ class MsnDataMonitor:
         self.__old_msn_data: list[MsnDataEntry] = []
 
     def __get_latest_file(self):
-        return FileHandler.sort_files_by_date_created(MSN_DATA_FILES_PATH)[0]
+        return FileHandler.sort_files_by_date_modified(MSN_DATA_FILES_PATH)[0]
 
     def __update_msn_nr(self):
         self.__msn_nr = 40000 + len(FileHandler.get_files_from_directory(MSN_DATA_FILES_PATH))

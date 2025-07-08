@@ -98,7 +98,7 @@ class GoogleSheetsClient(DatabaseClient):
     def __update_msn_data_files(self, values: dict[GoogleSheetsRanges, list]) -> None:
         remote_msn_data_files: list[str] = DataHandler.flatten(values[GoogleSheetsRanges.msn_data_files])[:5]
 
-        local_msn_data_paths: list[Path] = FileHandler.sort_files_by_date_created(MSN_DATA_FILES_PATH)[:5]
+        local_msn_data_paths: list[Path] = FileHandler.sort_files_by_date_modified(MSN_DATA_FILES_PATH)[:5]
         local_msn_data_files: list[str] = DataHandler.pad([str(x.with_suffix('')) for x in local_msn_data_paths],
                                                           5, '')
 

@@ -14,7 +14,7 @@ class FileHandler:
             return f.read()
 
     @staticmethod
-    def sort_files_by_date_created(path: Path) -> list[Path]:
+    def sort_files_by_date_modified(path: Path) -> list[Path]:
         all_files = os.listdir(path)
         file_info = [
             (file, os.path.getmtime(os.path.join(path, file)))

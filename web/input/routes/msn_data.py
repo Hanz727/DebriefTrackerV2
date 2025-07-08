@@ -10,8 +10,8 @@ app = msn_data_blueprint
 
 @app.route('/data-labels')
 def data_labels():
-    files: list[Path] = FileHandler.sort_files_by_date_created(MSN_DATA_FILES_PATH)
-    return jsonify({str(id_): path.name for id_, path in enumerate(files)})
+    files: list[Path] = FileHandler.sort_files_by_date_modified(MSN_DATA_FILES_PATH)
+    return jsonify({int(id_): path.name for id_, path in enumerate(files)})
 
 @app.route('/data')
 def data():
@@ -20,7 +20,7 @@ def data():
     except ValueError:
         id_ = 0
 
-    files: list[Path] = FileHandler.sort_files_by_date_created(MSN_DATA_FILES_PATH)
+    files: list[Path] = FileHandler.sort_files_by_date_modified(MSN_DATA_FILES_PATH)
     if len(files) <= id_:
         id_ = 0
 

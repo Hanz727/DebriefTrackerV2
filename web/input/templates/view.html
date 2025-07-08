@@ -1,0 +1,565 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVW POST STRIKE AP REPORT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #303030;
+            color: #dcddde;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #121212;
+            border: 1px solid #202225;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .header {
+            background: #1f1f1f;
+            padding: 20px;
+            border-bottom: 1px solid #40444b;
+            text-align: center;
+            position: relative;
+        }
+
+        .squadron-logo {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 80px;
+            background: #5865f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            border: 2px solid #4f545c;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #b9bbbe;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .mission-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
+            background: #1f1f1f;
+            padding: 10px;
+            border: 1px solid #4f545c;
+        }
+        .NOTES-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+            background: #1f1f1f;
+            padding: 20px;
+            border: 1px solid #4f545c;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field-label {
+            font-weight: bold;
+            color: #b9bbbe;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-left: 2px;
+        }
+
+        .field-value {
+            background: #121212;
+            padding: 0px 12px;
+            border: 1px solid #4f545c;
+            align-content: center;
+            color: #ffffff;
+            font-size: 14px;
+            height: 37px;
+        }
+
+        .field-value-aircrew {
+            background: #121212;
+            text-align: center;
+            padding: 0px 5px;
+            align-content: center;
+            border: 1px solid #4f545c;
+            color: #ffffff;
+            font-size: clamp(10px, 1.3vw, 14px);;
+            height: 37px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 30px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #4f545c;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pilots-grid {
+            display: flex;
+            gap: 10px;
+            justify-items: center;
+            justify-content: center;
+        }
+
+        .pilot-card {
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            padding: 10px;
+            padding-top: 7px;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .callsign-name {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+        }
+
+        .pilot-details {
+            display: grid;
+            grid-template-columns: 1fr 2.8fr;
+            gap: 5px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .stat-box {
+            background: #36393f;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #4f545c;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #b9bbbe;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .notes-content {
+            background: #1f1f1f;
+            padding: 20px;
+            border: 1px solid #4a5568;
+            color: #e2e8f0;
+            line-height: 1.6;
+            font-size: 14px;
+            min-height: 120px;
+        }
+
+        .weapons-section {
+            margin-bottom: 30px;
+        }
+
+        .ag-grid {
+            display: flex;
+            gap: 10px;
+            justify-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .ag-grid-vertical {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            max-width: 300px;
+            gap: 10px;
+        }
+
+        .ag-grid-vertical-box {
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+
+            padding-top: 7px;
+            justify-items: center;
+        }
+
+        .ag-grid-header {
+            text-align: center;
+            padding-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .header img {
+            position: absolute;
+            left: 30px;
+        }
+
+        .weapon-card {
+            background: #121212;
+            border: 1px solid #4f545c;
+            height: 86px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .target-name {
+            font-size: 12px;
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .weapon-name {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+
+        .bda-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px
+        }
+
+        .bda-card {
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            padding: 15px;
+        }
+
+        .Aircraft-callsign {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .target-image {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #121212;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-top: 5px;
+            border: 1px solid #4f545c;
+        }
+
+        .aa-grid {
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            padding: 10px;
+            padding-top: 7px
+        }
+
+        .aa-table {
+            width: 100%;
+            text-align: center;
+            border-collapse: collapse;
+
+        }
+
+        .aa-table td {
+            background: #121212;
+            border: 1px solid #4f545c;
+
+        }
+
+        .aa-table th, td {
+            padding: 5px;
+        }
+        .aa-table th {
+            padding-top: 0px;
+            padding-bottom: 10px;
+        }
+
+        .signature-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #4f545c;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .signature-box {
+            background: #36393f;
+            padding: 15px 20px;
+            border: 1px solid #4f545c;
+            min-width: 200px;
+        }
+
+        .signature-label {
+            font-size: 12px;
+            color: #b9bbbe;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #b9bbbe;
+            text-align: right;
+        }
+
+        .edit-btn {
+            background: #5865f2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            text-transform: uppercase;
+            transition: background 0.3s ease;
+        }
+
+        .edit-btn:hover {
+            background: #4752c4;
+        }
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <img src="/static/img/logo2.png" width="80", height="72">
+        <div class="title">AP POST STRIKE REPORT</div>
+        <div class="subtitle">CARRIER AIR WING 17</div>
+    </div>
+
+    <div class="content">
+        <div class="mission-header">
+            <div class="field-group">
+                <div class="field-label">Mission Name</div>
+                <div class="field-value-aircrew" style="text-align: left; padding: 0px 12px;" id="mission-name">
+                    {{ debrief["mission-name"] }}
+                </div>
+
+            </div>
+            <div class="field-group">
+                <div class="field-label">Mission Number</div>
+                <div class="field-value" id="mission-number">
+                    {{ debrief["mission-number"] }}
+                </div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Event</div>
+                <div class="field-value" id="mission-event">
+                    {{ debrief["mission-event"] }}
+                </div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Date</div>
+                <div class="field-value" id="mission-date">
+                    {{ debrief["date"] }}
+                </div>
+            </div>
+        </div>
+
+        <div class="pilots-grid" id="aircrew">
+            {% for aircrew in debrief["aircrew"] %}
+            <div class="pilot-card">
+                    <div class="callsign-name">{{ debrief["callsign"] }}{{ loop.index }}</div>
+                    <div class="pilot-details">
+                        <div>
+                            <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
+                            <div class="field-value-aircrew" style="" id="m${i}">
+                                {{ aircrew["modex"] }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="field-label" style="text-align: center; padding-left: 0px;">AIRCREW</div>
+                            <div class="field-value-aircrew" id="a${i}">
+                                {{ aircrew["aircrew"] }}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if debrief["ag-drop-count"] > 0 %}
+            <div class="section-title">A/G ORDNANCE EXPENDED</div>
+            <div class="ag-grid">
+                {% for plane in debrief["ag"] %}
+                    <div class="ag-grid-vertical-box">
+                        <div class="ag-grid-vertical" id="ag-vertical-{{ loop.index }}">
+                            <div class="ag-grid-header">{{ debrief["callsign"] }}{{ loop.index }}</div>
+                            {% for drop in plane["drops"] %}
+                                <div class="weapon-card">
+                                    <div class="weapon-name">{{ drop["weapon-name"] }}</div>
+                                    {% if drop["DMPI"]|length > 0 %}
+                                        <div class="target-name">DMPI ID: {{ drop["DMPI"] }}</div>
+                                    {% elif drop["tgt-name"]|length > 0 %}
+                                        <div class="target-name">TARGET: {{ drop["tgt-name"] }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if debrief["bda-count"] > 0 %}
+            <div class="section-title">MISSION SUCCESS / BDA</div>
+            <div class="bda-grid">
+                {% for plane in debrief["ag"] %}
+                    {% set outer_loop = loop %}
+                    {% for drop in plane["drops"] if drop["img-name"] and (drop["tgt-name"] or drop["DMPI"])%}
+                        <div class="bda-card">
+                            <div class="Aircraft-callsign">{{ debrief["callsign"] }}{{ outer_loop.index }}</div>
+                            {% if drop["DMPI"]|length > 0 %}
+                                <div class="target-name">DMPI ID: {{ drop["DMPI"] }}</div>
+                            {% elif drop["tgt-name"]|length > 0 %}
+                                <div class="target-name">TARGET: {{ drop["tgt-name"] }}</div>
+                            {% endif %}
+                            <div class="weapon-name">{{ drop["weapon-name"] }}</div>
+                            <img src="/bda/{{ debrief["debrief-id"] }}/{{ drop["img-name"] }}" class="target-image" alt="Target Image">
+                        </div>
+
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if debrief["opposition"]["type"]|length > 0 or debrief["opposition"]["location"]|length > 0%}
+            <div class="section-title">OPPOSITION ENCOUNTERED</div>
+            <div class="mission-header">
+                <div class="field-group">
+                    <div class="field-label">TYPE/NUMBER</div>
+                    <div class="field-value" id="mission-name">{{ debrief["opposition"]["type"] }}</div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">LOCATION</div>
+                    <div class="field-value" id="mission-number">{{ debrief["opposition"]["location"] }}</div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if debrief["aa"]|length > 0 %}
+            <div class="section-title">A/A WEAPONS EMPLOYED</div>
+            <div class="aa-grid">
+                <table class="aa-table">
+                    <thead>
+                    <tr>
+                        <th>MODEX</th>
+                        <th>WEAPON</th>
+                        <th>TARGET</th>
+                        <th>HIT</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in debrief["aa"] %}
+                        <tr>
+                            <td>{{ row["modex"] }}</td>
+                            <td>{{ row["weapon"] }}</td>
+                            <td>{{ row["target"] }}</td>
+                            <td>{{ row["hit"] }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% if debrief["engagement-result"]|length > 0 %}
+            <div class="section-title">ENGAGEMENT RESULT</div>
+            <div class="field-value" style="margin-bottom: 12px; width: 300px; background: #1f1f1f" id="engagement-result">{{ debrief["engagement-result"] }}</div>
+        {% endif %}
+
+        {% if debrief["blue-casualties"]|length > 0 %}
+            <div class="section-title">BLUE CASUALTIES / LOCATION</div>
+            <div class="notes-content" style="min-height: 60px;">
+                {{ debrief["blue-casualties"] }}
+            </div>
+        {% endif %}
+
+        {% if debrief["mission-notes"]|length > 0 %}
+            <div class="section-title">MISSION NOTES</div>
+            <div class="notes-content" style="min-height: 60px;">
+                {{ debrief["mission-notes"] }}
+            </div>
+        {% endif %}
+
+        {% if debrief["restrike-recommendation"]|length > 0 %}
+            <div class="section-title">RESTRIKE RECOMMENDATION</div>
+            <div class="field-value" style="margin-bottom: 12px; width: 300px; background: #1f1f1f" id="restrike-recommendation">
+                {{ debrief["restrike-recommendation"] }}
+            </div>
+        {% endif %}
+
+        <div class="timestamp">
+            <button class="edit-btn" onclick="editDebrief()">Edit Debrief</button>
+        </div>
+    </div>
+</div>
+</div>
+
+</body>
+</html>
