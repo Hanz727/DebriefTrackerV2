@@ -381,6 +381,18 @@
             background: #4752c4;
         }
 
+        .footer-text {
+            text-align: center;
+        }
+
+        .footer-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
     </style>
 </head>
 <body>
@@ -475,13 +487,16 @@
                     {% for drop in plane["drops"] if drop["img-name"] and (drop["tgt-name"] or drop["DMPI"])%}
                         <div class="bda-card">
                             <div class="Aircraft-callsign">{{ debrief["callsign"] }}{{ outer_loop.index }}</div>
+                            <div class="weapon-name">{{ drop["weapon-name"] }}</div>
                             {% if drop["DMPI"]|length > 0 %}
                                 <div class="target-name">DMPI ID: {{ drop["DMPI"] }}</div>
                             {% elif drop["tgt-name"]|length > 0 %}
                                 <div class="target-name">TARGET: {{ drop["tgt-name"] }}</div>
                             {% endif %}
-                            <div class="weapon-name">{{ drop["weapon-name"] }}</div>
                             <img src="/bda/{{ debrief["debrief-id"] }}/{{ drop["img-name"] }}" class="target-image" alt="Target Image">
+                            {% if drop["bda-result"]|length > 0 %}
+                                <div class="field-value" style="margin-top: 10px;">{{ drop["bda-result"] }}</div>
+                            {% endif %}
                         </div>
 
                     {% endfor %}
@@ -557,6 +572,14 @@
 
         <div class="timestamp">
             <button class="edit-btn" onclick="editDebrief()">Edit Debrief</button>
+        </div>
+    </div>
+
+    <div class="header" style="border-bottom: none; border-top: 1px solid #40444b; height: 108px; align-content: center">
+        <img src="/static/img/logo2.png" style="top: 18px" width="80" height="72" alt="CVW-17 Logo" class="footer-logo-img">
+        <div class="footer-text">
+            <div class="footer-title">VIRTUAL CARRIER AIR WING 17</div>
+            <div class="footer-subtitle">Not associated with the Department of Defence or any of its components.</div>
         </div>
     </div>
 </div>

@@ -198,8 +198,6 @@ def submit_report():
         # Get the JSON data from the request
         data = request.get_json()
 
-        data['callsign'] = 'VICTORY1'
-
         if not data:
             return jsonify({'error': 'No data received'}), 400
 
@@ -207,10 +205,12 @@ def submit_report():
 
         if data.get('ag_weapons'):
             for i, weapon in enumerate(data['ag_weapons']):
+                data['ag_weapons'][i]['image_path'] = ""
                 if weapon.get('image_data'):
                     img_path = InputDataHandler.save_bda_image(weapon['image_data'], str(debrief_id), str(i))
                     data['ag_weapons'][i]['image_data'] = ''
-                    data['ag_weapons'][i]['image_path'] = str(img_path)
+                    data['ag_weapons'][i]['image_path'] = str(img_path.name)
+
 
         with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
             json.dump(data, f, indent=2)
@@ -223,7 +223,10 @@ def submit_report():
             "date": data['mission_date'],
             "callsign": data['callsign'],
             "aircrew": [
-                {'modex': aircrew['modex'], 'aircrew': aircrew['pilot'] + ' | ' + aircrew['rio']} for aircrew in data['aircrew']
+                {'modex': aircrew['modex'],
+                 'aircrew': aircrew['pilot'] + ' | ' + aircrew['rio'] if aircrew['rio'] else aircrew['pilot']
+                }
+                for aircrew in data['aircrew']
             ],
             "ag-drop-count": data['form_metadata']['total_ag_weapons'],
             "bda-count": data['form_metadata']['total_bdas'],
@@ -258,6 +261,7 @@ def submit_report():
         return jsonify({
             'success': True,
             'message': 'Strike report received successfully',
+            'id': str(debrief_id),
             'timestamp': datetime.now().isoformat()
         }), 200
 

@@ -118,7 +118,7 @@
         }
 
         .field-value-aircrew:disabled {
-            background: #0a0a0a; 
+            background: #0a0a0a;
             border: 1px solid #4f545c;
             cursor: not-allowed;
             opacity: 0.6;
@@ -164,7 +164,6 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
             opacity: 0;
             flex: 1;
             min-width: 0;
@@ -190,7 +189,6 @@
         .add-icon {
             font-size: 24px;
             color: #4f545c;
-            transition: all 0.3s ease;
         }
 
         .pilot-card {
@@ -198,7 +196,6 @@
             border: 1px solid #4f545c;
             padding: 10px;
             padding-top: 7px;
-            transition: all 0.3s ease;
             width: 100%;
             max-width: 300px;
             position: relative;
@@ -219,7 +216,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
             opacity: 0;
             pointer-events: none;
@@ -303,12 +299,12 @@
             justify-content: center;
             width: 100%;
         }
-        
+
         .ag-grid-vertical {
             display: flex;
             flex-direction: column;
             height: 100%;
-            width: 100%; 
+            width: 100%;
             max-width: 300px;
             gap: 10px;
         }
@@ -325,7 +321,7 @@
         }
 
         .ag-grid-header {
-            text-align: center; 
+            text-align: center;
             padding-bottom: 5px;
             font-weight: bold;
         }
@@ -339,7 +335,6 @@
             background: #121212;
             border: 1px solid #4f545c;
             padding: 15px;
-            transition: all 0.3s ease;
             position: relative;
         }
 
@@ -350,7 +345,6 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
             opacity: 0;
             height: 120px;
             width: 100%;
@@ -387,7 +381,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
             opacity: 0;
             pointer-events: none;
@@ -459,7 +452,7 @@
 
         .aa-table {
             width: 100%;
-            text-align: center; 
+            text-align: center;
             border-collapse: collapse;
             position: relative;
         }
@@ -475,10 +468,6 @@
         .aa-table th {
             padding-top: 0px;
             padding-bottom: 10px;
-        }
-
-        .aa-table tr {
-            transition: all 0.2s ease;
         }
 
         .aa-table th:last-child {
@@ -497,7 +486,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
             opacity: 0;
             pointer-events: none;
         }
@@ -555,7 +543,6 @@
             cursor: pointer;
             font-size: 12px;
             text-transform: uppercase;
-            transition: background 0.3s ease;
         }
 
         .target-dmpi-table {
@@ -579,7 +566,6 @@
             font-size: 11px;
             color: #b9bbbe;
             cursor: pointer;
-            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
         }
@@ -621,7 +607,6 @@
             padding: 8px 12px;
             font-size: 11px;
             cursor: pointer;
-            transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 500;
@@ -649,7 +634,6 @@
             flex-direction: column;
             gap: 4px;
             opacity: 0;
-            transition: opacity 0.3s ease;
         }
 
         .file-upload-area:hover .image-overlay-controls {
@@ -663,7 +647,6 @@
             padding: 4px 8px;
             font-size: 10px;
             cursor: pointer;
-            transition: all 0.2s ease;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 500;
@@ -684,161 +667,332 @@
             background: #ff4136;
             border-color: #ff4136;
         }
+
+        /* Popup overlay */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .popup-content {
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            padding: 30px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .popup-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .popup-field-group {
+            margin-bottom: 20px;
+        }
+
+        .popup-select {
+            width: 100%;
+            background: #121212;
+            border: 1px solid #4f545c;
+            color: #ffffff;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .popup-button {
+            width: 100%;
+            background: #5865f2;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .popup-button:hover {
+            background: #4752c4;
+        }
+
+        .popup-button:disabled {
+            background: #4f545c;
+            cursor: not-allowed;
+        }
+
+        .footer {
+            border-top: 2px solid #4f545c;
+            background: #1f1f1f;
+            padding: 20px;
+            position: relative;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 0 20px;
+        }
+
+        .footer-logo {
+            flex-shrink: 0;
+        }
+
+        .footer-text {
+            text-align: center;
+        }
+
+        .footer-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .footer-subtitle {
+            font-size: 12px;
+            color: #b9bbbe;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .footer-title {
+                font-size: 16px;
+            }
+
+            .footer-subtitle {
+                font-size: 11px;
+            }
+        }
+
+        textarea {
+            resize: none;
+        }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <img src="https://cdn.discordapp.com/attachments/957965678281904148/1391800880839524414/CVW-17_LOGO_White_Version_BLACK_N_WHITW.png?ex=686d3714&is=686be594&hm=cd1dab054f0b3a48908d62ca5d6a5e4ff61fca406d805ad0e8149636bf8a2acb&" width="80" height="72">
-            <div class="title">AP POST STRIKE REPORT</div>
+<!-- Callsign Selection Popup -->
+<div id="callsignPopup" class="popup-overlay">
+    <div class="popup-content">
+        <div class="popup-title">SELECT YOUR CALLSIGN</div>
+        <div class="popup-field-group">
+            <div class="field-label">CALLSIGN</div>
+            <select id="callsignSelect" class="popup-select">
+                <option value="">-- Select Callsign --</option>
+                <option value="VICTORY1">VICTORY1</option>
+                <option value="BONES2">BONES2</option>
+                <option value="SLUGGER3">SLUGGER3</option>
+                <option value="VANQUISH4">VANQUISH4</option>
+                <option value="JOKER1">JOKER1</option>
+                <option value="BLASTER2">BLASTER2</option>
+                <option value="TRICKER3">TRICKER3</option>
+                <option value="SMOKE4">SMOKE4</option>
+                <option value="LINER1">LINER1</option>
+                <option value="INFERNO2">INFERNO2</option>
+                <option value="ZAPPER3">ZAPPER3</option>
+                <option value="CRUSADER4">CRUSADER4</option>
+                <option value="ROMAN1">ROMAN1</option>
+                <option value="EMPIRE2">EMPIRE2</option>
+                <option value="CIRCUS3">CIRCUS3</option>
+                <option value="GUNFIGHTER1">GUNFIGHTER1</option>
+                <option value="GUNSLINGER2">GUNSLINGER2</option>
+                <option value="HOPPY3">HOPPY3</option>
+                <option value="TOPGUN1">TOPGUN1</option>
+                <option value="DEATH2">DEATH2</option>
+                <option value="AMBUSH3">AMBUSH3</option>
+                <option value="DEVIL4">DEVIL4</option>
+
+            </select>
+        </div>
+        <button id="confirmCallsign" class="popup-button" disabled>CONFIRM</button>
+    </div>
+</div>
+<div class="container">
+    <div class="header">
+        <img src="/static/img/logo2.png" width="80" height="72">
+        <div class="title">AP POST STRIKE REPORT</div>
             <div class="subtitle">CARRIER AIR WING 17</div>
-        </div>
-
-        <div class="content">
-            <form id="apStrikeForm" name="apStrikeForm">
-                <div class="mission-header">
-                    <div class="field-group">
-                        <div class="field-label">Mission Name</div>
-                        <input type="text" class="field-value-aircrew" style="text-align: left; padding: 0px 12px;" name="mission_name" id="mission_name">
-                    </div>
-                    <div class="field-group">
-                        <div class="field-label">Mission Number</div>
-                        <input type="text" class="field-value" name="mission_number" id="mission_number">
-                    </div>
-                    <div class="field-group">
-                        <div class="field-label">Event</div>
-                        <input type="text" class="field-value" name="mission_event" id="mission_event">
-                    </div>
-                    <div class="field-group">
-                        <div class="field-label">Date</div>
-                        <input type="date" style="color-scheme: dark;" class="field-value" name="mission_date" id="mission_date">
-                    </div>
-                </div>
-            
-                <div class="pilots-grid" id="aircrew">
-                    <button type="button" class="add-pilot-btn" onclick="addPilotCard()">
-                        <span class="add-icon">+</span>
-                    </button>
-
-                    <div class="pilot-card" data-pilot-id="1">
-                        <div class="callsign-name">CALLSIGN1</div>
-                        <div class="pilot-details">
-                            <div>
-                                <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
-                                <input type="text" class="field-value-aircrew" name="aircrew[1][modex]" id="aircrew_1_modex">
-                            </div>
-
-                            <div>
-                                <div class="field-label" style="text-align: center; padding-left: 0px;">AIRCREW</div>
-                                <div style="display: flex;">
-                                    <input type="text" class="field-value-aircrew" name="aircrew[1][pilot]" id="aircrew_1_pilot">
-                                    <input type="text" class="field-value-aircrew" name="aircrew[1][rio]" id="aircrew_1_rio">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="button" class="add-pilot-btn" onclick="addPilotCard()">
-                        <span class="add-icon">+</span>
-                    </button>
-                </div>
-
-                <div class="section-title">A/G ORDNANCE EXPENDED</div>
-                <div class="ag-grid" id="ag-grid">
-                    <div class="ag-grid-vertical-box" data-ag-pilot-id="1">
-                        <div class="ag-grid-vertical" id="ag-vertical-1">
-                            <div class="ag-grid-header">CALLSIGN1</div>
-                            <button type="button" class="add-weapon-btn" onclick="addWeaponCard(1)">
-                                <span class="add-icon">+</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section-title">MISSION SUCCESS / BDA</div>
-                <div class="bda-grid" id="bda-grid">
-                </div>
-
-                <div class="section-title">OPPOSITION ENCOUNTERED</div>
-                <div class="mission-header">
-                    <div class="field-group">
-                        <div class="field-label">TYPE/NUMBER</div>
-                        <input type="text" class="field-value" name="opposition_type_number" id="opposition_type_number">
-                    </div>
-                    <div class="field-group">
-                        <div class="field-label">LOCATION</div>
-                        <input type="text" class="field-value" name="opposition_location" id="opposition_location">
-                    </div>
-                </div>
-
-                <div class="section-title">A/A WEAPONS EMPLOYED</div>
-                <div class="aa-grid"> 
-                    <table class="aa-table">
-                        <thead>
-                            <tr>
-                                <th>MODEX</th>
-                                <th>WEAPON</th>
-                                <th>TARGET</th>
-                                <th>RANGE</th>
-                                <th>SPEED (MACH)</th>
-                                <th>OWN ALTITUDE</th>
-                                <th>TARGET ALTITUDE</th>
-                                <th>HIT</th>
-                                <th style="border: none; background: transparent; padding: 0; width: 25px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="aa-table-body">
-                            <!-- Rows will be added dynamically -->
-                        </tbody>
-                    </table>
-                    <button type="button" class="add-weapon-btn" onclick="addAARow()" style="margin-top: 10px; height: 40px; opacity: 0.6;">
-                        <span class="add-icon">+</span>
-                    </button>
-                </div>
-
-                <div class="section-title">ENGAGEMENT RESULT</div>
-                <select class="field-value" style="width: 300px; background: #1f1f1f;" name="engagement_result" id="engagement_result">
-                    <option value="">Select Result...</option>
-                    <option value="1 - Enemy Destroyed">1 - Enemy Destroyed</option>
-                    <option value="2 - Enemy Escaped">2 - Enemy Escaped</option>
-                    <option value="3 - Unknown">3 - Unknown</option>
-                    <option value="4 - Friendly Lost / Damaged">4 - Friendly Lost / Damaged</option>
-                </select>
-
-                <div class="section-title">BLUE CASUALTIES / LOCATION</div>
-                <textarea class="notes-content" style="min-height: 60px;" name="blue_casualties" id="blue_casualties"></textarea>
-
-                <div class="section-title">MISSION NOTES</div>
-                <textarea class="notes-content" style="min-height: 60px;" name="mission_notes" id="mission_notes"></textarea>
-
-                <div class="section-title">RESTRIKE RECOMMENDATION</div>
-                <select class="field-value" style="width: 300px; background: #1f1f1f;" name="restrike_recommendation" id="restrike_recommendation">
-                    <option value="">Select Recommendation...</option>
-                    <option value="1 - No Restrike Recommended">1 - No Restrike Recommended</option>
-                    <option value="2 - Possible Restrike Recommended">2 - Possible Restrike Recommended</option>
-                    <option value="3 - Restrike Recommended">3 - Restrike Recommended</option>
-                </select>
-
-                <div class="timestamp">
-                    <button type="submit" class="edit-btn">Submit Debrief</button>
-                </div>
-            </form>
-        </div>
     </div>
 
-    <script>
-        let pilotCounter = 1;
-        let weaponCounters = { 1: 0 };
-        let uploadedImages = {};
-        let aaRowCounter = 0;
+    <div class="content">
+        <form id="apStrikeForm" name="apStrikeForm">
+            <div class="mission-header">
+                <div class="field-group">
+                    <div class="field-label">Mission Name</div>
+                    <input type="text" class="field-value-aircrew" style="text-align: left; padding: 0px 12px;" name="mission_name" id="mission_name">
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Mission Number</div>
+                    <input type="text" class="field-value" name="mission_number" id="mission_number">
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Event</div>
+                    <input type="text" class="field-value" name="mission_event" id="mission_event">
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Date</div>
+                    <input type="date" style="color-scheme: dark;" class="field-value" name="mission_date" id="mission_date">
+                </div>
+            </div>
 
-        function addAARow() {
-            aaRowCounter++;
-            const tbody = document.getElementById('aa-table-body');
-            
-            const newRow = document.createElement('tr');
-            newRow.setAttribute('data-aa-row-id', aaRowCounter);
-            newRow.innerHTML = `
+            <input type="hidden" name="callsign" id="callsign" value="">
+
+            <div class="pilots-grid" id="aircrew">
+                <button type="button" class="add-pilot-btn" onclick="addPilotCard()">
+                    <span class="add-icon">+</span>
+                </button>
+
+                <div class="pilot-card" data-pilot-id="1">
+                    <div class="callsign-name">CALLSIGN1</div>
+                    <div class="pilot-details">
+                        <div>
+                            <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
+                            <input type="text" class="field-value-aircrew" name="aircrew[1][modex]" id="aircrew_1_modex">
+                        </div>
+
+                        <div>
+                            <div class="field-label" style="text-align: center; padding-left: 0px;">AIRCREW</div>
+                            <div style="display: flex;">
+                                <input type="text" class="field-value-aircrew" name="aircrew[1][pilot]" id="aircrew_1_pilot">
+                                <input type="text" class="field-value-aircrew" name="aircrew[1][rio]" id="aircrew_1_rio">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="add-pilot-btn" onclick="addPilotCard()">
+                    <span class="add-icon">+</span>
+                </button>
+            </div>
+
+            <div class="section-title">A/G ORDNANCE EXPENDED</div>
+            <div class="ag-grid" id="ag-grid">
+                <div class="ag-grid-vertical-box" data-ag-pilot-id="1">
+                    <div class="ag-grid-vertical" id="ag-vertical-1">
+                        <div class="ag-grid-header">CALLSIGN1</div>
+                        <button type="button" class="add-weapon-btn" onclick="addWeaponCard(1)">
+                            <span class="add-icon">+</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">MISSION SUCCESS / BDA</div>
+            <div class="bda-grid" id="bda-grid">
+            </div>
+
+            <div class="section-title">OPPOSITION ENCOUNTERED</div>
+            <div class="mission-header">
+                <div class="field-group">
+                    <div class="field-label">TYPE/NUMBER</div>
+                    <input type="text" class="field-value" name="opposition_type_number" id="opposition_type_number">
+                </div>
+                <div class="field-group">
+                    <div class="field-label">LOCATION</div>
+                    <input type="text" class="field-value" name="opposition_location" id="opposition_location">
+                </div>
+            </div>
+
+            <div class="section-title">A/A WEAPONS EMPLOYED</div>
+            <div class="aa-grid">
+                <table class="aa-table">
+                    <thead>
+                    <tr>
+                        <th>MODEX</th>
+                        <th>WEAPON</th>
+                        <th>TARGET</th>
+                        <th>RANGE</th>
+                        <th>SPEED (MACH)</th>
+                        <th>OWN ALTITUDE</th>
+                        <th>TARGET ALTITUDE</th>
+                        <th>HIT</th>
+                        <th style="border: none; background: transparent; padding: 0; width: 25px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody id="aa-table-body">
+                    <!-- Rows will be added dynamically -->
+                    </tbody>
+                </table>
+                <button type="button" class="add-weapon-btn" onclick="addAARow()" style="margin-top: 10px; height: 40px; opacity: 0.6;">
+                    <span class="add-icon">+</span>
+                </button>
+            </div>
+
+            <div class="section-title">ENGAGEMENT RESULT</div>
+            <select class="field-value" style="width: 300px; background: #1f1f1f;" name="engagement_result" id="engagement_result">
+                <option value="">Select Result...</option>
+                <option value="1 - Enemy Destroyed">1 - Enemy Destroyed</option>
+                <option value="2 - Enemy Escaped">2 - Enemy Escaped</option>
+                <option value="3 - Unknown">3 - Unknown</option>
+                <option value="4 - Friendly Lost / Damaged">4 - Friendly Lost / Damaged</option>
+            </select>
+
+            <div class="section-title">BLUE CASUALTIES / LOCATION</div>
+            <textarea class="notes-content" style="min-height: 60px;" name="blue_casualties" id="blue_casualties"></textarea>
+
+            <div class="section-title">MISSION NOTES</div>
+            <textarea class="notes-content" style="min-height: 60px;" name="mission_notes" id="mission_notes"></textarea>
+
+            <div class="section-title">RESTRIKE RECOMMENDATION</div>
+            <select class="field-value" style="width: 300px; background: #1f1f1f;" name="restrike_recommendation" id="restrike_recommendation">
+                <option value="">Select Recommendation...</option>
+                <option value="1 - No Restrike Recommended">1 - No Restrike Recommended</option>
+                <option value="2 - Possible Restrike Recommended">2 - Possible Restrike Recommended</option>
+                <option value="3 - Restrike Recommended">3 - Restrike Recommended</option>
+            </select>
+
+            <div class="timestamp">
+                <button type="submit" class="edit-btn">Submit Debrief</button>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="header" style="border-bottom: none; border-top: 1px solid #40444b; height: 108px; align-content: center">
+        <img src="/static/img/logo2.png" style="top: 18px" width="80" height="72" alt="CVW-17 Logo" class="footer-logo-img">
+        <div class="footer-text">
+            <div class="footer-title">VIRTUAL CARRIER AIR WING 17</div>
+            <div class="footer-subtitle">Not associated with the Department of Defence or any of its components.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let pilotCounter = 1;
+    let weaponCounters = { 1: 0 };
+    let uploadedImages = {};
+    let aaRowCounter = 0;
+
+    function addAARow() {
+        aaRowCounter++;
+        const tbody = document.getElementById('aa-table-body');
+
+        const newRow = document.createElement('tr');
+        newRow.setAttribute('data-aa-row-id', aaRowCounter);
+        newRow.innerHTML = `
                 <td><input type="text" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${aaRowCounter}][modex]"></td>
                 <td><input type="text" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${aaRowCounter}][weapon]"></td>
                 <td><input type="text" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${aaRowCounter}][target]"></td>
@@ -851,7 +1005,7 @@
                     <button type="button" class="aa-remove-btn" onclick="removeAARow(${aaRowCounter})">✕</button>
                 </td>
             `;
-            
+
             tbody.appendChild(newRow);
         }
 
@@ -867,11 +1021,11 @@
                 weaponCounters[pilotId] = 0;
             }
             weaponCounters[pilotId]++;
-            
+
             const weaponId = weaponCounters[pilotId];
             const agVertical = document.getElementById(`ag-vertical-${pilotId}`);
             const addButton = agVertical.querySelector('.add-weapon-btn');
-            
+
             const newWeaponCard = document.createElement('div');
             newWeaponCard.className = 'weapon-card';
             newWeaponCard.setAttribute('data-weapon-id', weaponId);
@@ -897,7 +1051,7 @@
                 <input type="hidden" name="ag_weapons[${pilotId}][${weaponId}][image_data]" id="image-data-${pilotId}-${weaponId}">
                 <input type="hidden" name="ag_weapons[${pilotId}][${weaponId}][bda_result]" id="bda-result-hidden-${pilotId}-${weaponId}">
             `;
-            
+
             agVertical.insertBefore(newWeaponCard, addButton);
         }
 
@@ -905,10 +1059,10 @@
             const weaponCard = document.querySelector(`[data-weapon-id="${weaponId}"][data-pilot-id="${pilotId}"]`);
             if (weaponCard) {
                 weaponCard.remove();
-                
+
                 const uploadId = `upload-${pilotId}-${weaponId}`;
                 delete uploadedImages[uploadId];
-                
+
                 updateBDACards();
             }
         }
@@ -921,15 +1075,15 @@
                 pilotCounter = 4;
                 document.querySelectorAll('button.add-pilot-btn').forEach(div => div.remove());
             }
-            
+
             document.querySelectorAll('.remove-pilot-btn').forEach(btn => btn.remove());
-            
+
             const newCard = document.createElement('div');
             newCard.className = 'pilot-card';
             newCard.setAttribute('data-pilot-id', pilotCounter);
             newCard.innerHTML = `
                 <button type="button" class="remove-pilot-btn" onclick="removePilotCard(${pilotCounter})">✕</button>
-                <div class="callsign-name">CALLSIGN${pilotCounter}</div>
+                <div class="callsign-name">${window.selectedCallsign || 'CALLSIGN'}${pilotCounter}</div>
                 <div class="pilot-details">
                     <div>
                         <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
@@ -950,9 +1104,9 @@
             const newAGCard = document.createElement('div');
             newAGCard.className = "ag-grid-vertical-box";
             newAGCard.setAttribute('data-ag-pilot-id', pilotCounter);
-            newAGCard.innerHTML = `                
+            newAGCard.innerHTML = `
                 <div class="ag-grid-vertical" id="ag-vertical-${pilotCounter}">
-                    <div class="ag-grid-header">CALLSIGN${pilotCounter}</div>
+                    <div class="ag-grid-header">${window.selectedCallsign || 'CALLSIGN'}${pilotCounter}</div>
                     <button type="button" class="add-weapon-btn" onclick="addWeaponCard(${pilotCounter})">
                         <span class="add-icon">+</span>
                     </button>
@@ -968,7 +1122,7 @@
         function updatePlaceholder(pilotId, weaponId) {
             const select = document.querySelector(`select[name="ag_weapons[${pilotId}][${weaponId}][target_type]"]`);
             const input = document.getElementById(`target-input-${pilotId}-${weaponId}`);
-            
+
             switch(select.value) {
                 case 'none':
                     input.placeholder = '';
@@ -984,13 +1138,13 @@
                     input.disabled = false;
                     break;
             }
-            
+
             updateBDACards();
         }
 
         function updateBDACards() {
             const bdaGrid = document.getElementById('bda-grid');
-            
+
             // Store current BDA results before rebuilding
             const currentBDAResults = {};
             const existingSelects = bdaGrid.querySelectorAll('select[name*="bda_result"]');
@@ -1002,19 +1156,19 @@
                     currentBDAResults[`${pilotId}-${weaponId}`] = select.value;
                 }
             });
-            
+
             bdaGrid.innerHTML = '';
-            
+
             const weaponCards = document.querySelectorAll('.weapon-card');
-            
+
             weaponCards.forEach(weaponCard => {
                 const pilotId = weaponCard.getAttribute('data-pilot-id');
                 const weaponId = weaponCard.getAttribute('data-weapon-id');
-                
+
                 const weaponNameInput = weaponCard.querySelector(`input[name="ag_weapons[${pilotId}][${weaponId}][weapon_name]"]`);
                 const targetSelect = weaponCard.querySelector(`select[name="ag_weapons[${pilotId}][${weaponId}][target_type]"]`);
                 const targetInput = document.getElementById(`target-input-${pilotId}-${weaponId}`);
-                
+
                 if (targetSelect && targetSelect.value !== 'none' && targetInput && targetInput.value.trim() !== '') {
                     const callsign = document.querySelector(`[data-pilot-id="${pilotId}"] .callsign-name`).textContent;
                     const weaponName = weaponNameInput ? weaponNameInput.value : '';
@@ -1023,7 +1177,7 @@
                     const uploadId = `upload-${pilotId}-${weaponId}`;
                     const bdaKey = `${pilotId}-${weaponId}`;
                     const savedBDAResult = currentBDAResults[bdaKey] || '';
-                    
+
                     const bdaCard = document.createElement('div');
                     bdaCard.className = 'bda-card';
                     bdaCard.innerHTML = `
@@ -1059,15 +1213,15 @@
                             <option value="7 - No Drop/Abort" ${savedBDAResult === '7 - No Drop/Abort' ? 'selected' : ''}>7 - No Drop/Abort</option>
                         </select>
                     `;
-                    
+
                     bdaGrid.appendChild(bdaCard);
-                    
+
                     // Update the hidden input with the preserved value
                     const hiddenInput = document.getElementById(`bda-result-hidden-${pilotId}-${weaponId}`);
                     if (hiddenInput && savedBDAResult) {
                         hiddenInput.value = savedBDAResult;
                     }
-                    
+
                     if (uploadedImages[uploadId]) {
                         setTimeout(() => {
                             const uploadArea = document.getElementById(uploadId);
@@ -1104,7 +1258,7 @@
         function handleDrop(e, uploadId, pilotId, weaponId) {
             e.preventDefault();
             e.currentTarget.classList.remove('dragover');
-            
+
             const files = e.dataTransfer.files;
             if (files.length > 0 && files[0].type.startsWith('image/')) {
                 displayImage(files[0], uploadId, pilotId, weaponId);
@@ -1120,13 +1274,13 @@
 
         function removeImage(uploadId, pilotId, weaponId) {
             delete uploadedImages[uploadId];
-            
+
             // Clear the hidden input
             const hiddenInput = document.getElementById(`image-data-${pilotId}-${weaponId}`);
             if (hiddenInput) {
                 hiddenInput.value = '';
             }
-            
+
             const uploadArea = document.getElementById(uploadId);
             if (uploadArea) {
                 uploadArea.innerHTML = `
@@ -1149,15 +1303,15 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const imageData = e.target.result;
-                
+
                 uploadedImages[uploadId] = imageData;
-                
+
                 // Store image data in hidden input
                 const hiddenInput = document.getElementById(`image-data-${pilotId}-${weaponId}`);
                 if (hiddenInput) {
                     hiddenInput.value = imageData;
                 }
-                
+
                 const uploadArea = document.getElementById(uploadId);
                 if (uploadArea) {
                     uploadArea.innerHTML = `
@@ -1215,7 +1369,7 @@
             if (remainingPilots.length > 1) {
                 let highestId = 1;
                 let mostRecentPilot = null;
-                
+
                 remainingPilots.forEach(pilot => {
                     const pilotId = parseInt(pilot.getAttribute('data-pilot-id'));
                     if (pilotId > highestId) {
@@ -1237,20 +1391,20 @@
             if (remainingPilots.length < 4) {
                 const pilotGrid = document.getElementById('aircrew');
                 const existingAddButtons = pilotGrid.querySelectorAll('.add-pilot-btn');
-                
+
                 if (existingAddButtons.length === 0) {
                     const addButton1 = document.createElement('button');
                     addButton1.type = 'button';
                     addButton1.className = 'add-pilot-btn';
                     addButton1.onclick = addPilotCard;
                     addButton1.innerHTML = '<span class="add-icon">+</span>';
-                    
+
                     const addButton2 = document.createElement('button');
                     addButton2.type = 'button';
                     addButton2.className = 'add-pilot-btn';
                     addButton2.onclick = addPilotCard;
                     addButton2.innerHTML = '<span class="add-icon">+</span>';
-                    
+
                     pilotGrid.insertBefore(addButton1, pilotGrid.firstChild);
                     pilotGrid.appendChild(addButton2);
                 }
@@ -1265,7 +1419,9 @@
         }
 
         // Set current date
+        // Set current date and show callsign popup
         window.onload = function () {
+            // Set current date
             const today = new Date();
             const yyyy = today.getFullYear();
             const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -1273,8 +1429,46 @@
 
             const formatted = `${yyyy}-${mm}-${dd}`;
             document.getElementById("mission_date").value = formatted;
+
+            // Setup callsign selection
+            const callsignSelect = document.getElementById('callsignSelect');
+            const confirmButton = document.getElementById('confirmCallsign');
+            const popup = document.getElementById('callsignPopup');
+
+            // Enable confirm button when callsign is selected
+            callsignSelect.addEventListener('change', function() {
+                confirmButton.disabled = !this.value;
+            });
+
+            // Handle confirm button click
+            confirmButton.addEventListener('click', function() {
+                const selectedCallsign = callsignSelect.value;
+                if (selectedCallsign) {
+                    // Update all CALLSIGN placeholders
+                    updateAllCallsigns(selectedCallsign);
+
+                    // Hide popup
+                    popup.style.display = 'none';
+                }
+            });
         }
 
+        function updateAllCallsigns(callsign) {
+            // Update pilot card callsigns
+            document.querySelectorAll('.callsign-name').forEach((element, index) => {
+                element.textContent = `${callsign}${index + 1}`;
+            });
+
+            // Update AG grid headers
+            document.querySelectorAll('.ag-grid-header').forEach((element, index) => {
+                element.textContent = `${callsign}${index + 1}`;
+            });
+
+            // Store selected callsign for future use
+            window.selectedCallsign = callsign;
+
+            document.getElementById('callsign').value = callsign;
+        }
         document.addEventListener('input', function(e) {
             if (e.target.name && (e.target.name.includes('weapon_name') || e.target.name.includes('target_value'))) {
                 updateBDACards();
@@ -1310,57 +1504,51 @@
         function getFormDataAsJSON() {
             const formData = new FormData(document.getElementById('apStrikeForm'));
             const data = {};
-            
+
             // Process all form entries
             for (let [name, value] of formData.entries()) {
                 setNestedValue(data, name, value);
             }
-            
+
             return data;
         }
-        
+
         // Helper function to set nested object values from form field names
         function setNestedValue(obj, path, value) {
             // Handle array notation like aircrew[1][modex] or aa_weapons[1][hit]
             const arrayMatch = path.match(/^(\w+)\[(\d+)\]\[(\w+)\]$/);
             if (arrayMatch) {
                 const [, arrayName, index, fieldName] = arrayMatch;
-                
+
                 if (!obj[arrayName]) obj[arrayName] = {};
                 if (!obj[arrayName][index]) obj[arrayName][index] = {};
-                
+
                 // Handle checkbox values
-                if (fieldName === 'hit' && value === '1') {
-                    obj[arrayName][index][fieldName] = true;
-                } else if (fieldName === 'hit') {
-                    obj[arrayName][index][fieldName] = false;
-                } else {
-                    obj[arrayName][index][fieldName] = value;
-                }
+                obj[arrayName][index][fieldName] = value;
                 return;
             }
-            
+
             // Handle nested array notation like ag_weapons[1][2][weapon_name]
             const nestedArrayMatch = path.match(/^(\w+)\[(\d+)\]\[(\d+)\]\[(\w+)\]$/);
             if (nestedArrayMatch) {
                 const [, arrayName, pilotId, weaponId, fieldName] = nestedArrayMatch;
-                
+
                 if (!obj[arrayName]) obj[arrayName] = {};
                 if (!obj[arrayName][pilotId]) obj[arrayName][pilotId] = {};
                 if (!obj[arrayName][pilotId][weaponId]) obj[arrayName][pilotId][weaponId] = {};
-                
+
                 obj[arrayName][pilotId][weaponId][fieldName] = value;
                 return;
             }
-            
+
             // Handle simple field names
             obj[path] = value;
         }
-        
+
         // Function to get form data with additional processing
         function getCompleteFormData() {
             const baseData = getFormDataAsJSON();
-            
+
             // Convert arrays from objects to actual arrays and clean up
             if (baseData.aircrew) {
                 baseData.aircrew = Object.values(baseData.aircrew).map(pilot => ({
@@ -1369,7 +1557,7 @@
                     rio: pilot.rio || ''
                 }));
             }
-            
+
             if (baseData.aa_weapons) {
                 baseData.aa_weapons = Object.values(baseData.aa_weapons).map(weapon => ({
                     modex: weapon.modex || '',
@@ -1379,10 +1567,10 @@
                     speed: weapon.speed ? parseFloat(weapon.speed) : null,
                     own_altitude: weapon.own_altitude ? parseFloat(weapon.own_altitude) : null,
                     target_altitude: weapon.target_altitude ? parseFloat(weapon.target_altitude) : null,
-                    hit: weapon.hit || false
+                    hit: weapon.hit === '1'  // Convert string to boolean
                 }));
             }
-            
+
             if (baseData.ag_weapons) {
                 const agWeaponsArray = [];
                 Object.keys(baseData.ag_weapons).forEach(pilotId => {
@@ -1403,7 +1591,7 @@
                 });
                 baseData.ag_weapons = agWeaponsArray;
             }
-            
+
             // Add metadata
             baseData.form_metadata = {
                 submission_time: new Date().toISOString(),
@@ -1413,10 +1601,14 @@
                 total_bdas: baseData.ag_weapons ? baseData.ag_weapons.filter(w => w.image_data && w.image_data.trim() !== '').length : 0,
                 has_images: baseData.ag_weapons ? baseData.ag_weapons.some(w => w.image_data) : false
             };
-            
+
+            if (!baseData.aircrew) baseData.aircrew = [];
+            if (!baseData.aa_weapons) baseData.aa_weapons = [];
+            if (!baseData.ag_weapons) baseData.ag_weapons = [];
+
             return baseData;
         }
-        
+
         // Function to print form data (for debugging)
         function printFormData() {
             const data = getCompleteFormData();
@@ -1424,7 +1616,7 @@
             console.log(JSON.stringify(data, null, 2));
             return data;
         }
-        
+
         // Function to download form data as JSON file
         function downloadFormDataAsJSON() {
             const data = getCompleteFormData();
@@ -1439,15 +1631,15 @@
             URL.revokeObjectURL(url);
         }
 
-        // Simple function to submit form to Flask backend
         async function submitToBackend(formData) {
+            const submitButton = document.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+
             try {
                 // Show loading state
-                const submitButton = document.querySelector('button[type="submit"]');
-                const originalText = submitButton.textContent;
                 submitButton.textContent = 'Submitting...';
                 submitButton.disabled = true;
-                
+
                 // Send to Flask backend
                 const response = await fetch('/submit-report', {
                     method: 'POST',
@@ -1456,56 +1648,45 @@
                     },
                     body: JSON.stringify(formData)
                 });
-                
+
                 if (response.ok) {
                     const result = await response.json();
-                    alert(`✅ Strike report submitted successfully!`);
-                    console.log('Server response:', result);
+
+                    if (result.id) {
+                        submitButton.textContent = 'Success! Redirecting...';
+
+                        setTimeout(() => {
+                            window.location.href = `/debrief/${result.id}`;
+                        }, 1000); // 1 second delay to show the success state
+
+                    } else {
+                        alert(`✅ Strike report submitted successfully!`);
+                        console.log('Server response:', result);
+                    }
                 } else {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
             } catch (error) {
                 console.error('Submission error:', error);
                 alert(`❌ Failed to submit strike report:\n${error.message}`);
-            } finally {
-                // Restore button state
-                const submitButton = document.querySelector('button[type="submit"]');
+
+                // Restore button state only on error
                 submitButton.textContent = originalText;
                 submitButton.disabled = false;
             }
+            // Note: We don't restore button state on success since we're redirecting
         }
-
         // Form submission handler
         document.getElementById('apStrikeForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             // Get form data as JSON
             const formData = getCompleteFormData();
 
             // Submit to backend
             submitToBackend(formData);
         });
-        
-        // Add a button to test data extraction (for debugging)
-        document.addEventListener('DOMContentLoaded', function() {
-            const debugButton = document.createElement('button');
-            debugButton.type = 'button';
-            debugButton.textContent = 'Debug: Print Form Data';
-            debugButton.className = 'edit-btn';
-            debugButton.style.marginRight = '10px';
-            debugButton.onclick = printFormData;
-            
-            const downloadButton = document.createElement('button');
-            downloadButton.type = 'button';
-            downloadButton.textContent = 'Download JSON';
-            downloadButton.className = 'edit-btn';
-            downloadButton.style.marginRight = '10px';
-            downloadButton.onclick = downloadFormDataAsJSON;
-            
-            const submitButton = document.querySelector('button[type="submit"]');
-            submitButton.parentNode.insertBefore(debugButton, submitButton);
-            submitButton.parentNode.insertBefore(downloadButton, submitButton);
-        });
+
     </script>
 </body>
 </html>
