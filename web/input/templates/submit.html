@@ -842,19 +842,19 @@
             <div class="mission-header">
                 <div class="field-group">
                     <div class="field-label">Mission Name</div>
-                    <input type="text" class="field-value-aircrew" style="text-align: left; padding: 0px 12px;" name="mission_name" id="mission_name">
+                    <input type="text" required minlength="3" maxlength="32" class="field-value-aircrew" style="text-align: left; padding: 0px 12px;" name="mission_name" id="mission_name">
                 </div>
                 <div class="field-group">
                     <div class="field-label">Mission Number</div>
-                    <input type="text" class="field-value" name="mission_number" id="mission_number">
+                    <input type="number" required min="1000" max="9999" class="field-value" name="mission_number" id="mission_number">
                 </div>
                 <div class="field-group">
                     <div class="field-label">Event</div>
-                    <input type="text" class="field-value" name="mission_event" id="mission_event">
+                    <input type="text" required minlength="3" maxlength="3" class="field-value" name="mission_event" id="mission_event">
                 </div>
                 <div class="field-group">
                     <div class="field-label">Date</div>
-                    <input type="date" style="color-scheme: dark;" class="field-value" name="mission_date" id="mission_date">
+                    <input type="date" required style="color-scheme: dark;" class="field-value" name="mission_date" id="mission_date">
                 </div>
             </div>
 
@@ -870,14 +870,14 @@
                     <div class="pilot-details">
                         <div>
                             <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
-                            <input type="text" class="field-value-aircrew" name="aircrew[1][modex]" id="aircrew_1_modex">
+                            <input type="number" required min="100" max="999" class="field-value-aircrew" name="aircrew[1][modex]" id="aircrew_1_modex">
                         </div>
 
                         <div>
                             <div class="field-label" style="text-align: center; padding-left: 0px;">AIRCREW</div>
                             <div style="display: flex;">
-                                <input type="text" class="field-value-aircrew" name="aircrew[1][pilot]" id="aircrew_1_pilot">
-                                <input type="text" class="field-value-aircrew" name="aircrew[1][rio]" id="aircrew_1_rio">
+                                <input type="text" required minlength="2" maxlength="32" class="field-value-aircrew" name="aircrew[1][pilot]" id="aircrew_1_pilot">
+                                <input type="text" minlength="2" maxlength="32" class="field-value-aircrew" name="aircrew[1][rio]" id="aircrew_1_rio">
                             </div>
                         </div>
                     </div>
@@ -1033,7 +1033,7 @@
             newWeaponCard.innerHTML = `
                 <button type="button" class="remove-weapon-btn" onclick="removeWeaponCard(${pilotId}, ${weaponId})">✕</button>
                 <div class="weapon-name">
-                    <input type="text" class="field-value-aircrew" style="text-align: left; padding: 0px 8px;" placeholder="Weapon Name" name="ag_weapons[${pilotId}][${weaponId}][weapon_name]">
+                    <input type="text" required minlength="3" maxlength="32" class="field-value-aircrew" style="text-align: left; padding: 0px 8px;" placeholder="Weapon Name" name="ag_weapons[${pilotId}][${weaponId}][weapon_name]">
                 </div>
 
                 <div class="target-dmpi-table">
@@ -1044,7 +1044,7 @@
                     </select>
 
                     <div class="weapon-name">
-                        <input type="text" class="field-value-aircrew" style="text-align: left; padding: 0px 8px;" name="ag_weapons[${pilotId}][${weaponId}][target_value]" id="target-input-${pilotId}-${weaponId}" placeholder="" disabled>
+                        <input type="text" minlength="3" maxlength="64" class="field-value-aircrew" style="text-align: left; padding: 0px 8px;" name="ag_weapons[${pilotId}][${weaponId}][target_value]" id="target-input-${pilotId}-${weaponId}" placeholder="" disabled>
                     </div>
                 </div>
 
@@ -1087,13 +1087,13 @@
                 <div class="pilot-details">
                     <div>
                         <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
-                        <input type="text" class="field-value-aircrew" name="aircrew[${pilotCounter}][modex]" id="aircrew_${pilotCounter}_modex">
+                        <input type="number" required min="100" max="999" class="field-value-aircrew" name="aircrew[${pilotCounter}][modex]" id="aircrew_${pilotCounter}_modex">
                     </div>
                     <div>
                         <div class="field-label" style="text-align: center; padding-left: 0px;">AIRCREW</div>
                         <div style="display: flex;">
-                            <input type="text" class="field-value-aircrew" name="aircrew[${pilotCounter}][pilot]" id="aircrew_${pilotCounter}_pilot">
-                            <input type="text" class="field-value-aircrew" name="aircrew[${pilotCounter}][rio]" id="aircrew_${pilotCounter}_rio">
+                            <input type="text" required minlength="2" maxlength="32" class="field-value-aircrew" name="aircrew[${pilotCounter}][pilot]" id="aircrew_${pilotCounter}_pilot">
+                            <input type="text" minlength="2" maxlength="32" class="field-value-aircrew" name="aircrew[${pilotCounter}][rio]" id="aircrew_${pilotCounter}_rio">
                         </div>
                     </div>
                 </div>
