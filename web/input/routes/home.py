@@ -1,3 +1,7 @@
+import json
+from datetime import datetime
+from pathlib import Path
+
 from flask import abort, session, redirect, request, render_template, Blueprint, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 
@@ -18,7 +22,7 @@ app = home_blueprint
 
 
 @app.route('/bda/<int:debrief_id>/<img_name>')
-def bda_img(debrief_id, img_name):
+def show_bda_img(debrief_id, img_name):
     # Validate debrief_id is positive
     if debrief_id <= 0:
         abort(404)
@@ -54,114 +58,119 @@ def bda_img(debrief_id, img_name):
 
 @app.route("/debrief/<int:debrief_id>")
 def show_debrief(debrief_id):
-    debrief = {
-        "debrief-id": debrief_id,
-        "mission-name": "Murmansk Strike Escort",
-        "mission-number": "5031",
-        "mission-event": "1A2",
-        "date": "08 JUL 2025",
-        "callsign": "VICTORY1",
-        "aircrew": [
-            {
-                "modex": "103",
-                "aircrew": "JJ | Scarlett"
-            },
-            {
-                "modex": "105",
-                "aircrew": "Nakush | Lilo"
-            },
-            {
-                "modex": "107",
-                "aircrew": "Alexandra | Patterson"
-            },
-            {
-                "modex": "111",
-                "aircrew": "Klapo | Oscar"
-            },
-        ],
-        "ag-drop-count": 4,
-        "bda-count": 4,
-        "ag": [
-            {
-                "modex": "103",
-                "drops": [
-                    {
-                        "weapon-name": "GBU-12 Paveway II",
-                        "DMPI": "",
-                        "tgt-name": "",
-                        "img-name": "1.png"
-                    },
-                ]
-            },
-            {
-                "modex": "105",
-                "drops": [
-                    {
-                        "weapon-name": "GBU-12 Paveway II",
-                        "DMPI": "AJDAS-0124",
-                        "tgt-name": "",
-                        "img-name": "1.png"
-                    }
-                ]
-            },
-            {
-                "modex": "107",
-                "drops": [
-                    {
-                        "weapon-name": "GBU-16 Paveway II",
-                        "DMPI": "",
-                        "tgt-name": "SA-3",
-                        "img-name": "1.png"
-                    }
-                ]
-            },
-            {
-                "modex": "111",
-                "drops": [
-                    {
-                        "weapon-name": "GBU-10 Paveway II",
-                        "DMPI": "AJDAS-0126",
-                        "tgt-name": "",
-                        "img-name": "1.png"
-                    }
-                ]
-            },
-        ],
-        "opposition": {
-            "type": "2xMIG-29",
-            "location": "g"
-        },
-        "aa": [
-            {
-                "modex": "103",
-                "weapon": "AIM-54C",
-                "target": "mig-29s",
-                "hit": "TRUE"
-            },
-            {
-                "modex": "107",
-                "weapon": "AIM-54C",
-                "target": "su-27",
-                "hit": "TRUE"
-            },
-            {
-                "modex": "105",
-                "weapon": "AIM-54C",
-                "target": "su-33",
-                "hit": "FALSE"
-            },
-            {
-                "modex": "111",
-                "weapon": "AIM-54C",
-                "target": "j-11",
-                "hit": "TRUE"
-            },
-        ],
-        "engagement-result": "1 - Enemy Destroyed",
-        "blue-casualties": "none",
-        "mission-notes": "note",
-        "restrike-recommendation": "1 - No Restrike Recommended"
-    }
+    '''
+     debrief = {
+         "debrief-id": debrief_id,
+         "mission-name": "Murmansk Strike Escort",
+         "mission-number": "5031",
+         "mission-event": "1A2",
+         "date": "08 JUL 2025",
+         "callsign": "VICTORY1",
+         "aircrew": [
+             {
+                 "modex": "103",
+                 "aircrew": "JJ | Scarlett"
+             },
+             {
+                 "modex": "105",
+                 "aircrew": "Nakush | Lilo"
+             },
+             {
+                 "modex": "107",
+                 "aircrew": "Alexandra | Patterson"
+             },
+             {
+                 "modex": "111",
+                 "aircrew": "Klapo | Oscar"
+             },
+         ],
+         "ag-drop-count": 4,
+         "bda-count": 4,
+         "ag": [
+             {
+                 "modex": "103",
+                 "drops": [
+                     {
+                         "weapon-name": "GBU-12 Paveway II",
+                         "DMPI": "",
+                         "tgt-name": "",
+                         "img-name": "1.png"
+                     },
+                 ]
+             },
+             {
+                 "modex": "105",
+                 "drops": [
+                     {
+                         "weapon-name": "GBU-12 Paveway II",
+                         "DMPI": "AJDAS-0124",
+                         "tgt-name": "",
+                         "img-name": "2.png"
+                     }
+                 ]
+             },
+             {
+                 "modex": "107",
+                 "drops": [
+                     {
+                         "weapon-name": "GBU-16 Paveway II",
+                         "DMPI": "",
+                         "tgt-name": "SA-3",
+                         "img-name": "3.png"
+                     }
+                 ]
+             },
+             {
+                 "modex": "111",
+                 "drops": [
+                     {
+                         "weapon-name": "GBU-10 Paveway II",
+                         "DMPI": "AJDAS-0126",
+                         "tgt-name": "",
+                         "img-name": "1.png"
+                     }
+                 ]
+             },
+         ],
+         "opposition": {
+             "type": "2xMIG-29",
+             "location": "g"
+         },
+         "aa": [
+             {
+                 "modex": "103",
+                 "weapon": "AIM-54C",
+                 "target": "mig-29s",
+                 "hit": "TRUE"
+             },
+             {
+                 "modex": "107",
+                 "weapon": "AIM-54C",
+                 "target": "su-27",
+                 "hit": "TRUE"
+             },
+             {
+                 "modex": "105",
+                 "weapon": "AIM-54C",
+                 "target": "su-33",
+                 "hit": "FALSE"
+             },
+             {
+                 "modex": "111",
+                 "weapon": "AIM-54C",
+                 "target": "j-11",
+                 "hit": "TRUE"
+             },
+         ],
+         "engagement-result": "1 - Enemy Destroyed",
+         "blue-casualties": "none",
+         "mission-notes": "note",
+         "restrike-recommendation": "1 - No Restrike Recommended"
+     }
+    '''
+    debrief = {}
+    with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path('display-data.json')) as f:
+        debrief = json.load(f)
 
     return render_template("view.html", debrief=debrief)
 
@@ -182,6 +191,79 @@ def submit():
         i += 1
 
     return 'Debrief uploaded!'
+
+@app.route('/submit-report', methods=['POST'])
+def submit_report():
+    try:
+        # Get the JSON data from the request
+        data = request.get_json()
+
+        data['callsign'] = 'VICTORY1'
+
+        if not data:
+            return jsonify({'error': 'No data received'}), 400
+
+        debrief_id = InputDataHandler.find_latest_numbered_folder(BDA_IMAGE_PATH)
+
+        if data.get('ag_weapons'):
+            for i, weapon in enumerate(data['ag_weapons']):
+                if weapon.get('image_data'):
+                    img_path = InputDataHandler.save_bda_image(weapon['image_data'], str(debrief_id), str(i))
+                    data['ag_weapons'][i]['image_data'] = ''
+                    data['ag_weapons'][i]['image_path'] = str(img_path)
+
+        with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
+            json.dump(data, f, indent=2)
+
+        view_data = {
+            "debrief-id": debrief_id,
+            "mission-name": data['mission_name'],
+            "mission-number": data['mission_number'],
+            "mission-event": data['mission_event'],
+            "date": data['mission_date'],
+            "callsign": data['callsign'],
+            "aircrew": [
+                {'modex': aircrew['modex'], 'aircrew': aircrew['pilot'] + ' | ' + aircrew['rio']} for aircrew in data['aircrew']
+            ],
+            "ag-drop-count": data['form_metadata']['total_ag_weapons'],
+            "bda-count": data['form_metadata']['total_bdas'],
+            "ag": [
+                {
+                    "modex": aircrew['modex'],
+                    "drops": [
+                        {
+                            "weapon-name": drop['weapon_name'],
+                            "DMPI": drop['target_value'] if drop['target_type'] == "dmpi" else "",
+                            "tgt-name": drop['target_value'] if drop['target_type'] == "target" else "",
+                            "img-name": drop['image_path'],
+                            "bda-result": drop['bda_result'],
+                        } for drop in data['ag_weapons'] if drop['pilot_id'] - 1 == id_
+                    ]
+                } for id_, aircrew in enumerate(data['aircrew'])
+            ],
+            "opposition": {
+                "type": data['opposition_type_number'],
+                "location": data['opposition_location'],
+            },
+            "aa": data['aa_weapons'],
+            "engagement-result": data['engagement_result'],
+            "blue-casualties": data['blue_casualties'],
+            "mission-notes": data['mission_notes'],
+            "restrike-recommendation": data['restrike_recommendation']
+        }
+
+        with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("display-data.json"), "w") as f:
+            json.dump(view_data, f, indent=2)
+
+        return jsonify({
+            'success': True,
+            'message': 'Strike report received successfully',
+            'timestamp': datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        print(f"Error processing request: {str(e)}")
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/get_db')
 def get():
@@ -223,5 +305,5 @@ def get():
 @app.route('/')
 def home():
     if session.get('authed', False) or config.bypass_auth_debug:
-        return render_template('index.html')
+        return render_template('submit.html')
     return redirect('/login')

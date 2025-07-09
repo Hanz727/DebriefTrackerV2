@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVW POST STRIKE AP REPORT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #303030;
+            color: #dcddde;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #121212;
+            border: 1px solid #202225;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .header {
+            background: #1f1f1f;
+            padding: 20px;
+            border-bottom: 1px solid #40444b;
+            text-align: center;
+            position: relative;
+        }
+
+        .squadron-logo {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 80px;
+            background: #5865f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            border: 2px solid #4f545c;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #b9bbbe;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .mission-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
+            background: #1f1f1f;
+            padding: 10px;
+            border: 1px solid #4f545c;
+        }
+		.NOTES-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+            background: #1f1f1f;
+            padding: 20px;
+            border: 1px solid #4f545c;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field-label {
+            font-weight: bold;
+            color: #b9bbbe;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-left: 2px;
+        }
+
+        .field-value {
+            background: #121212;
+            padding: 0px 12px;
+            border: 1px solid #4f545c;
+            align-content: center;
+            color: #ffffff;
+            font-size: 14px;
+            height: 37px;
+        }
+
+        .field-value-aircrew:disabled {
+            background: #0a0a0a; 
+            border: 1px solid #4f545c;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .field-value-aircrew {
+            background: #121212;
+            text-align: center;
+            padding: 0px 5px;
+            align-content: center;
+            border: 1px solid #4f545c;
+            color: #ffffff;
+            font-size: clamp(10px, 1.3vw, 14px);;
+            height: 37px;
+            width: 100%;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 30px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #4f545c;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pilots-grid {
+            display: flex;
+            gap: 10px;
+            justify-items: center;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .add-pilot-btn {
+            flex-grow: 1;
+            background: transparent;
+            border: 2px dashed transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            flex: 1;
+            min-width: 0;
+            height: 100px;
+        }
+
+        .pilots-grid:hover .add-pilot-btn {
+            opacity: 0.6;
+            border-color: #4f545c;
+        }
+
+        .add-pilot-btn:hover {
+            border-color: #00ff00 !important;
+            background: rgba(0, 255, 0, 0.1);
+            opacity: 1 !important;
+        }
+
+        .add-pilot-btn:hover .add-icon {
+            color: #00ff00;
+            transform: scale(1.2);
+        }
+
+        .add-icon {
+            font-size: 24px;
+            color: #4f545c;
+            transition: all 0.3s ease;
+        }
+
+        .pilot-card {
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            padding: 10px;
+            padding-top: 7px;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 300px;
+            position: relative;
+        }
+
+        .remove-pilot-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 16px;
+            height: 16px;
+            background: #ff5f57;
+            border: none;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pilot-card:hover .remove-pilot-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .remove-pilot-btn:hover {
+            background: #ff4136;
+            transform: scale(1.1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .remove-pilot-btn:active {
+            transform: scale(0.95);
+        }
+
+        .callsign-name {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+        }
+
+        .pilot-details {
+            display: grid;
+            grid-template-columns: 1fr 2.8fr;
+            gap: 5px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .stat-box {
+            background: #36393f;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #4f545c;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #b9bbbe;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .notes-content {
+            background: #1f1f1f;
+            padding: 20px;
+            border: 1px solid #4a5568;
+            color: #e2e8f0;
+            line-height: 1.6;
+            font-size: 14px;
+            width: 100%;
+            min-height: 120px;
+        }
+
+        .weapons-section {
+            margin-bottom: 30px;
+        }
+
+        .ag-grid {
+            display: flex;
+            gap: 10px;
+            justify-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        .ag-grid-vertical {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%; 
+            max-width: 300px;
+            gap: 10px;
+        }
+
+        .ag-grid-vertical-box {
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+            padding-top: 7px;
+            justify-items: center;
+            position: relative;
+        }
+
+        .ag-grid-header {
+            text-align: center; 
+            padding-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .header img {
+            position: absolute;
+            left: 30px;
+        }
+
+        .weapon-card {
+            background: #121212;
+            border: 1px solid #4f545c;
+            padding: 15px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .add-weapon-btn {
+            background: transparent;
+            border: 2px dashed transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            height: 120px;
+            width: 100%;
+        }
+
+        .ag-grid-vertical-box:hover .add-weapon-btn {
+            opacity: 0.6;
+            border-color: #4f545c;
+        }
+
+        .add-weapon-btn:hover {
+            border-color: #00ff00 !important;
+            background: rgba(0, 255, 0, 0.1);
+            opacity: 1 !important;
+        }
+
+        .add-weapon-btn:hover .add-icon {
+            color: #00ff00;
+            transform: scale(1.2);
+        }
+
+        .remove-weapon-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 16px;
+            height: 16px;
+            background: #ff5f57;
+            border: none;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .weapon-card:hover .remove-weapon-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .remove-weapon-btn:hover {
+            background: #ff4136;
+            transform: scale(1.1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .remove-weapon-btn:active {
+            transform: scale(0.95);
+        }
+
+        .target-name {
+            font-size: 12px;
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .weapon-name {
+			font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .bda-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px
+        }
+
+        .bda-card {
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            padding: 15px;
+        }
+
+		.Aircraft-callsign {
+			font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .target-image {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #121212;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+			margin-top: 5px;
+            border: 1px solid #4f545c;
+        }
+
+        .aa-grid {
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            padding: 10px;
+            padding-top: 7px
+        }
+
+        .aa-table {
+            width: 100%;
+            text-align: center; 
+            border-collapse: collapse;
+            position: relative;
+        }
+
+        .aa-table td {
+            background: #121212;
+            border: 1px solid #4f545c;
+        }
+
+        .aa-table th, td {
+            padding: 0 5px;
+        }
+        .aa-table th {
+            padding-top: 0px;
+            padding-bottom: 10px;
+        }
+
+        .aa-table tr {
+            transition: all 0.2s ease;
+        }
+
+        .aa-table th:last-child {
+            width: 60px;
+        }
+
+        .aa-remove-btn {
+            width: 20px;
+            height: 20px;
+            background: #ff5f57;
+            border: none;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .aa-table tr:hover .aa-remove-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .aa-remove-btn:hover {
+            background: #ff4136;
+            transform: scale(1.1);
+        }
+
+        .signature-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #4f545c;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .signature-box {
+            background: #36393f;
+            padding: 15px 20px;
+            border: 1px solid #4f545c;
+            min-width: 200px;
+        }
+
+        .signature-label {
+            font-size: 12px;
+            color: #b9bbbe;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #b9bbbe;
+            text-align: right;
+        }
+
+        .edit-btn {
+            background: #5865f2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            text-transform: uppercase;
+            transition: background 0.3s ease;
+        }
+
+        .target-dmpi-table {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+        }
+
+        .edit-btn:hover {
+            background: #4752c4;
+        }
+
+        .file-upload-area {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #121212;
+            border: 2px dashed #4f545c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #b9bbbe;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload-area:hover {
+            border-color: #5865f2;
+            background: #1a1a1a;
+        }
+
+        .file-upload-area.dragover {
+            border-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .file-upload-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .file-upload-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: center;
+            z-index: 1;
+            background: rgba(18, 18, 18, 0.85);
+            padding: 12px;
+            border: 1px solid #4f545c;
+        }
+
+        .file-upload-button {
+            background: #5865f2;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .file-upload-button:hover {
+            background: #4752c4;
+            transform: translateY(-1px);
+        }
+
+        .file-upload-button:active {
+            transform: translateY(0);
+        }
+
+        .hidden-file-input {
+            display: none;
+        }
+
+        .image-overlay-controls {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .file-upload-area:hover .image-overlay-controls {
+            opacity: 1;
+        }
+
+        .overlay-button {
+            background: rgba(18, 18, 18, 0.9);
+            color: #ffffff;
+            border: 1px solid #4f545c;
+            padding: 4px 8px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .overlay-button:hover {
+            background: #5865f2;
+            border-color: #5865f2;
+            transform: translateY(-1px);
+        }
+
+        .overlay-button.danger {
+            background: rgba(255, 95, 87, 0.9);
+            border-color: #ff5f57;
+        }
+
+        .overlay-button.danger:hover {
+            background: #ff4136;
+            border-color: #ff4136;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://cdn.discordapp.com/attachments/957965678281904148/1391800880839524414/CVW-17_LOGO_White_Version_BLACK_N_WHITW.png?ex=686d3714&is=686be594&hm=cd1dab054f0b3a48908d62ca5d6a5e4ff61fca406d805ad0e8149636bf8a2acb&" width="80" height="72">
+            <div class="title">AP POST STRIKE REPORT</div>
+            <div class="subtitle">CARRIER AIR WING 17</div>
+        </div>
+
+        <div class="content">
+            <form id="apStrikeForm" name="apStrikeForm">
+                <div class="mission-header">
+                    <div class="field-group">
+                        <div class="field-label">Mission Name</div>
+                        <input type="text" class="field-value-aircrew" style="text-align: left; padding: 0px 12px;" name="mission_name" id="mission_name">
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Mission Number</div>
+                        <input type="text" class="field-value" name="mission_number" id="mission_number">
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Event</div>
+                        <input type="text" class="field-value" name="mission_event" id="mission_event">
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Date</div>
+                        <input type="date" style="color-scheme: dark;" class="field-value" name="mission_date" id="mission_date">
+                    </div>
+                </div>
+            
+                <div class="pilots-grid" id="aircrew">
+                    <button type="button" class="add-pilot-btn" onclick="addPilotCard()">
+                        <span class="add-icon">+</span>
+                    </button>
+
+                    <div class="pilot-card" data-pilot-id="1">
+                        <div class="callsign-name">CALLSIGN1</div>
+                        <div class="pilot-details">
+                            <div>
+                                <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
+                                <input type="text" class="field-value-aircrew" name="aircrew[1][modex]" id="aircrew_1_modex">
+                            </div>
+
+                            <div>
+                                <div class="field-label" style="text-align: center; padding-left: 0px;">AIRCREW</div>
+                                <div style="display: flex;">
+                                    <input type="text" class="field-value-aircrew" name="aircrew[1][pilot]" id="aircrew_1_pilot">
+                                    <input type="text" class="field-value-aircrew" name="aircrew[1][rio]" id="aircrew_1_rio">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="add-pilot-btn" onclick="addPilotCard()">
+                        <span class="add-icon">+</span>
+                    </button>
+                </div>
+
+                <div class="section-title">A/G ORDNANCE EXPENDED</div>
+                <div class="ag-grid" id="ag-grid">
+                    <div class="ag-grid-vertical-box" data-ag-pilot-id="1">
+                        <div class="ag-grid-vertical" id="ag-vertical-1">
+                            <div class="ag-grid-header">CALLSIGN1</div>
+                            <button type="button" class="add-weapon-btn" onclick="addWeaponCard(1)">
+                                <span class="add-icon">+</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">MISSION SUCCESS / BDA</div>
+                <div class="bda-grid" id="bda-grid">
+                </div>
+
+                <div class="section-title">OPPOSITION ENCOUNTERED</div>
+                <div class="mission-header">
+                    <div class="field-group">
+                        <div class="field-label">TYPE/NUMBER</div>
+                        <input type="text" class="field-value" name="opposition_type_number" id="opposition_type_number">
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">LOCATION</div>
+                        <input type="text" class="field-value" name="opposition_location" id="opposition_location">
+                    </div>
+                </div>
+
+                <div class="section-title">A/A WEAPONS EMPLOYED</div>
+                <div class="aa-grid"> 
+                    <table class="aa-table">
+                        <thead>
+                            <tr>
+                                <th>MODEX</th>
+                                <th>WEAPON</th>
+                                <th>TARGET</th>
+                                <th>RANGE</th>
+                                <th>SPEED (MACH)</th>
+                                <th>OWN ALTITUDE</th>
+                                <th>TARGET ALTITUDE</th>
+                                <th>HIT</th>
+                                <th style="border: none; background: transparent; padding: 0; width: 25px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="aa-table-body">
+                            <!-- Rows will be added dynamically -->
+                        </tbody>
+                    </table>
+                    <button type="button" class="add-weapon-btn" onclick="addAARow()" style="margin-top: 10px; height: 40px; opacity: 0.6;">
+                        <span class="add-icon">+</span>
+                    </button>
+                </div>
+
+                <div class="section-title">ENGAGEMENT RESULT</div>
+                <select class="field-value" style="width: 300px; background: #1f1f1f;" name="engagement_result" id="engagement_result">
+                    <option value="">Select Result...</option>
+                    <option value="1 - Enemy Destroyed">1 - Enemy Destroyed</option>
+                    <option value="2 - Enemy Escaped">2 - Enemy Escaped</option>
+                    <option value="3 - Unknown">3 - Unknown</option>
+                    <option value="4 - Friendly Lost / Damaged">4 - Friendly Lost / Damaged</option>
+                </select>
+
+                <div class="section-title">BLUE CASUALTIES / LOCATION</div>
+                <textarea class="notes-content" style="min-height: 60px;" name="blue_casualties" id="blue_casualties"></textarea>
+
+                <div class="section-title">MISSION NOTES</div>
+                <textarea class="notes-content" style="min-height: 60px;" name="mission_notes" id="mission_notes"></textarea>
+
+                <div class="section-title">RESTRIKE RECOMMENDATION</div>
+                <select class="field-value" style="width: 300px; background: #1f1f1f;" name="restrike_recommendation" id="restrike_recommendation">
+                    <option value="">Select Recommendation...</option>
+                    <option value="1 - No Restrike Recommended">1 - No Restrike Recommended</option>
+                    <option value="2 - Possible Restrike Recommended">2 - Possible Restrike Recommended</option>
+                    <option value="3 - Restrike Recommended">3 - Restrike Recommended</option>
+                </select>
+
+                <div class="timestamp">
+                    <button type="submit" class="edit-btn">Submit Debrief</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let pilotCounter = 1;
+        let weaponCounters = { 1: 0 };
+        let uploadedImages = {};
+        let aaRowCounter = 0;
+
+        function addAARow() {
+            aaRowCounter++;
+            const tbody = document.getElementById('aa-table-body');
+            
+            const newRow = document.createElement('tr');
+            newRow.setAttribute('data-aa-row-id', aaRowCounter);
+            newRow.innerHTML = `
+                <td><input type="text" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${aaRowCounter}][modex]"></td>
+                <td><input type="text" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${aaRowCounter}][weapon]"></td>
+                <td><input type="text" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${aaRowCounter}][target]"></td>
+                <td><input type="number" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${aaRowCounter}][range]"></td>
+                <td><input type="number" step="0.01" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${aaRowCounter}][speed]"></td>
+                <td><input type="number" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${aaRowCounter}][own_altitude]"></td>
+                <td><input type="number" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${aaRowCounter}][target_altitude]"></td>
+                <td style="text-align: center;"><input type="checkbox" style="transform: scale(1.2);" name="aa_weapons[${aaRowCounter}][hit]" value="1"></td>
+                <td style="border: none; background: transparent; padding-left: 10px; width: 30px; text-align: center; justify-content: center">
+                    <button type="button" class="aa-remove-btn" onclick="removeAARow(${aaRowCounter})">✕</button>
+                </td>
+            `;
+            
+            tbody.appendChild(newRow);
+        }
+
+        function removeAARow(rowId) {
+            const row = document.querySelector(`[data-aa-row-id="${rowId}"]`);
+            if (row) {
+                row.remove();
+            }
+        }
+
+        function addWeaponCard(pilotId) {
+            if (!weaponCounters[pilotId]) {
+                weaponCounters[pilotId] = 0;
+            }
+            weaponCounters[pilotId]++;
+            
+            const weaponId = weaponCounters[pilotId];
+            const agVertical = document.getElementById(`ag-vertical-${pilotId}`);
+            const addButton = agVertical.querySelector('.add-weapon-btn');
+            
+            const newWeaponCard = document.createElement('div');
+            newWeaponCard.className = 'weapon-card';
+            newWeaponCard.setAttribute('data-weapon-id', weaponId);
+            newWeaponCard.setAttribute('data-pilot-id', pilotId);
+            newWeaponCard.innerHTML = `
+                <button type="button" class="remove-weapon-btn" onclick="removeWeaponCard(${pilotId}, ${weaponId})">✕</button>
+                <div class="weapon-name">
+                    <input type="text" class="field-value-aircrew" style="text-align: left; padding: 0px 8px;" placeholder="Weapon Name" name="ag_weapons[${pilotId}][${weaponId}][weapon_name]">
+                </div>
+
+                <div class="target-dmpi-table">
+                    <select class="field-value" style="color-scheme: dark" name="ag_weapons[${pilotId}][${weaponId}][target_type]" onchange="updatePlaceholder(${pilotId}, ${weaponId})">
+                        <option value="none" selected>NONE</option>
+                        <option value="dmpi">DMPI ID</option>
+                        <option value="target">TARGET</option>
+                    </select>
+
+                    <div class="weapon-name">
+                        <input type="text" class="field-value-aircrew" style="text-align: left; padding: 0px 8px;" name="ag_weapons[${pilotId}][${weaponId}][target_value]" id="target-input-${pilotId}-${weaponId}" placeholder="" disabled>
+                    </div>
+                </div>
+
+                <input type="hidden" name="ag_weapons[${pilotId}][${weaponId}][image_data]" id="image-data-${pilotId}-${weaponId}">
+                <input type="hidden" name="ag_weapons[${pilotId}][${weaponId}][bda_result]" id="bda-result-hidden-${pilotId}-${weaponId}">
+            `;
+            
+            agVertical.insertBefore(newWeaponCard, addButton);
+        }
+
+        function removeWeaponCard(pilotId, weaponId) {
+            const weaponCard = document.querySelector(`[data-weapon-id="${weaponId}"][data-pilot-id="${pilotId}"]`);
+            if (weaponCard) {
+                weaponCard.remove();
+                
+                const uploadId = `upload-${pilotId}-${weaponId}`;
+                delete uploadedImages[uploadId];
+                
+                updateBDACards();
+            }
+        }
+
+        function addPilotCard() {
+            pilotCounter++;
+            const pilotGrid = document.getElementById('aircrew');
+
+            if (pilotCounter >= 4) {
+                pilotCounter = 4;
+                document.querySelectorAll('button.add-pilot-btn').forEach(div => div.remove());
+            }
+            
+            document.querySelectorAll('.remove-pilot-btn').forEach(btn => btn.remove());
+            
+            const newCard = document.createElement('div');
+            newCard.className = 'pilot-card';
+            newCard.setAttribute('data-pilot-id', pilotCounter);
+            newCard.innerHTML = `
+                <button type="button" class="remove-pilot-btn" onclick="removePilotCard(${pilotCounter})">✕</button>
+                <div class="callsign-name">CALLSIGN${pilotCounter}</div>
+                <div class="pilot-details">
+                    <div>
+                        <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
+                        <input type="text" class="field-value-aircrew" name="aircrew[${pilotCounter}][modex]" id="aircrew_${pilotCounter}_modex">
+                    </div>
+                    <div>
+                        <div class="field-label" style="text-align: center; padding-left: 0px;">AIRCREW</div>
+                        <div style="display: flex;">
+                            <input type="text" class="field-value-aircrew" name="aircrew[${pilotCounter}][pilot]" id="aircrew_${pilotCounter}_pilot">
+                            <input type="text" class="field-value-aircrew" name="aircrew[${pilotCounter}][rio]" id="aircrew_${pilotCounter}_rio">
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            weaponCounters[pilotCounter] = 0;
+
+            const newAGCard = document.createElement('div');
+            newAGCard.className = "ag-grid-vertical-box";
+            newAGCard.setAttribute('data-ag-pilot-id', pilotCounter);
+            newAGCard.innerHTML = `                
+                <div class="ag-grid-vertical" id="ag-vertical-${pilotCounter}">
+                    <div class="ag-grid-header">CALLSIGN${pilotCounter}</div>
+                    <button type="button" class="add-weapon-btn" onclick="addWeaponCard(${pilotCounter})">
+                        <span class="add-icon">+</span>
+                    </button>
+                </div>
+            `;
+
+            const lastButton = pilotGrid.querySelector('.add-pilot-btn:last-child');
+            pilotGrid.insertBefore(newCard, lastButton);
+
+            document.getElementById('ag-grid').insertBefore(newAGCard, document.getElementById('ag-grid').lastChild);
+        }
+
+        function updatePlaceholder(pilotId, weaponId) {
+            const select = document.querySelector(`select[name="ag_weapons[${pilotId}][${weaponId}][target_type]"]`);
+            const input = document.getElementById(`target-input-${pilotId}-${weaponId}`);
+            
+            switch(select.value) {
+                case 'none':
+                    input.placeholder = '';
+                    input.disabled = true;
+                    input.value = '';
+                    break;
+                case 'dmpi':
+                    input.placeholder = 'DMPI ID';
+                    input.disabled = false;
+                    break;
+                case 'target':
+                    input.placeholder = 'TARGET';
+                    input.disabled = false;
+                    break;
+            }
+            
+            updateBDACards();
+        }
+
+        function updateBDACards() {
+            const bdaGrid = document.getElementById('bda-grid');
+            
+            // Store current BDA results before rebuilding
+            const currentBDAResults = {};
+            const existingSelects = bdaGrid.querySelectorAll('select[name*="bda_result"]');
+            existingSelects.forEach(select => {
+                const match = select.name.match(/ag_weapons\[(\d+)\]\[(\d+)\]\[bda_result\]/);
+                if (match) {
+                    const pilotId = match[1];
+                    const weaponId = match[2];
+                    currentBDAResults[`${pilotId}-${weaponId}`] = select.value;
+                }
+            });
+            
+            bdaGrid.innerHTML = '';
+            
+            const weaponCards = document.querySelectorAll('.weapon-card');
+            
+            weaponCards.forEach(weaponCard => {
+                const pilotId = weaponCard.getAttribute('data-pilot-id');
+                const weaponId = weaponCard.getAttribute('data-weapon-id');
+                
+                const weaponNameInput = weaponCard.querySelector(`input[name="ag_weapons[${pilotId}][${weaponId}][weapon_name]"]`);
+                const targetSelect = weaponCard.querySelector(`select[name="ag_weapons[${pilotId}][${weaponId}][target_type]"]`);
+                const targetInput = document.getElementById(`target-input-${pilotId}-${weaponId}`);
+                
+                if (targetSelect && targetSelect.value !== 'none' && targetInput && targetInput.value.trim() !== '') {
+                    const callsign = document.querySelector(`[data-pilot-id="${pilotId}"] .callsign-name`).textContent;
+                    const weaponName = weaponNameInput ? weaponNameInput.value : '';
+                    const targetType = targetSelect.value === 'dmpi' ? 'DMPI ID' : 'TARGET';
+                    const targetValue = targetInput.value;
+                    const uploadId = `upload-${pilotId}-${weaponId}`;
+                    const bdaKey = `${pilotId}-${weaponId}`;
+                    const savedBDAResult = currentBDAResults[bdaKey] || '';
+                    
+                    const bdaCard = document.createElement('div');
+                    bdaCard.className = 'bda-card';
+                    bdaCard.innerHTML = `
+                        <div class="Aircraft-callsign">${callsign}</div>
+                        <div class="target-name">${targetType}: ${targetValue}</div>
+                        <div class="weapon-name">${weaponName}</div>
+                        <div class="file-upload-area" id="${uploadId}" 
+                            ondrop="handleDrop(event, '${uploadId}', ${pilotId}, ${weaponId})" 
+                            ondragover="handleDragOver(event)" 
+                            ondragleave="handleDragLeave(event)">
+                            <div class="file-upload-controls">
+                                <div>Drop image here</div>
+                                <button type="button" class="file-upload-button" onclick="event.stopPropagation(); document.getElementById('file-input-${uploadId}').click()">
+                                    Browse Files
+                                </button>
+                                <button type="button" class="file-upload-button" onclick="event.stopPropagation(); pasteFromClipboard('${uploadId}', ${pilotId}, ${weaponId})">
+                                    Paste from Clipboard
+                                </button>
+                            </div>
+                            <input type="file" id="file-input-${uploadId}" class="hidden-file-input" 
+                                accept="image/*" onchange="handleFileSelect(event, '${uploadId}', ${pilotId}, ${weaponId})">
+                        </div>
+                        <select class="field-value" style="width: 100%; margin-top: 10px; background: #1f1f1f;" 
+                                name="ag_weapons[${pilotId}][${weaponId}][bda_result]" 
+                                id="bda-result-${pilotId}-${weaponId}">
+                            <option value="">Select BDA Result...</option>
+                            <option value="1 - Direct Hit Visual" ${savedBDAResult === '1 - Direct Hit Visual' ? 'selected' : ''}>1 - Direct Hit Visual</option>
+                            <option value="2 - Direct Hit Sensor" ${savedBDAResult === '2 - Direct Hit Sensor' ? 'selected' : ''}>2 - Direct Hit Sensor</option>
+                            <option value="3 - Damaged Visual" ${savedBDAResult === '3 - Damaged Visual' ? 'selected' : ''}>3 - Damaged Visual</option>
+                            <option value="4 - Damaged Sensor" ${savedBDAResult === '4 - Damaged Sensor' ? 'selected' : ''}>4 - Damaged Sensor</option>
+                            <option value="5 - Near Miss/Unknown Damage" ${savedBDAResult === '5 - Near Miss/Unknown Damage' ? 'selected' : ''}>5 - Near Miss/Unknown Damage</option>
+                            <option value="6 - Missed Target" ${savedBDAResult === '6 - Missed Target' ? 'selected' : ''}>6 - Missed Target</option>
+                            <option value="7 - No Drop/Abort" ${savedBDAResult === '7 - No Drop/Abort' ? 'selected' : ''}>7 - No Drop/Abort</option>
+                        </select>
+                    `;
+                    
+                    bdaGrid.appendChild(bdaCard);
+                    
+                    // Update the hidden input with the preserved value
+                    const hiddenInput = document.getElementById(`bda-result-hidden-${pilotId}-${weaponId}`);
+                    if (hiddenInput && savedBDAResult) {
+                        hiddenInput.value = savedBDAResult;
+                    }
+                    
+                    if (uploadedImages[uploadId]) {
+                        setTimeout(() => {
+                            const uploadArea = document.getElementById(uploadId);
+                            if (uploadArea) {
+                                uploadArea.innerHTML = `
+                                    <img src="${uploadedImages[uploadId]}" alt="Target Image">
+                                    <div class="image-overlay-controls">
+                                        <button type="button" class="overlay-button" onclick="event.stopPropagation(); document.getElementById('file-input-${uploadId}').click()">
+                                            Change
+                                        </button>
+                                        <button type="button" class="overlay-button danger" onclick="event.stopPropagation(); removeImage('${uploadId}', ${pilotId}, ${weaponId})">
+                                            Remove
+                                        </button>
+                                    </div>
+                                    <input type="file" id="file-input-${uploadId}" class="hidden-file-input" 
+                                        accept="image/*" onchange="handleFileSelect(event, '${uploadId}', ${pilotId}, ${weaponId})">
+                                `;
+                            }
+                        }, 0);
+                    }
+                }
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e, uploadId, pilotId, weaponId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                displayImage(files[0], uploadId, pilotId, weaponId);
+            }
+        }
+
+        function handleFileSelect(e, uploadId, pilotId, weaponId) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                displayImage(file, uploadId, pilotId, weaponId);
+            }
+        }
+
+        function removeImage(uploadId, pilotId, weaponId) {
+            delete uploadedImages[uploadId];
+            
+            // Clear the hidden input
+            const hiddenInput = document.getElementById(`image-data-${pilotId}-${weaponId}`);
+            if (hiddenInput) {
+                hiddenInput.value = '';
+            }
+            
+            const uploadArea = document.getElementById(uploadId);
+            if (uploadArea) {
+                uploadArea.innerHTML = `
+                    <div class="file-upload-controls">
+                        <div>Drop image here</div>
+                        <button type="button" class="file-upload-button" onclick="event.stopPropagation(); document.getElementById('file-input-${uploadId}').click()">
+                            Browse Files
+                        </button>
+                        <button type="button" class="file-upload-button" onclick="event.stopPropagation(); pasteFromClipboard('${uploadId}', ${pilotId}, ${weaponId})">
+                            Paste from Clipboard
+                        </button>
+                    </div>
+                    <input type="file" id="file-input-${uploadId}" class="hidden-file-input" 
+                        accept="image/*" onchange="handleFileSelect(event, '${uploadId}', ${pilotId}, ${weaponId})">
+                `;
+            }
+        }
+
+        function displayImage(file, uploadId, pilotId, weaponId) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageData = e.target.result;
+                
+                uploadedImages[uploadId] = imageData;
+                
+                // Store image data in hidden input
+                const hiddenInput = document.getElementById(`image-data-${pilotId}-${weaponId}`);
+                if (hiddenInput) {
+                    hiddenInput.value = imageData;
+                }
+                
+                const uploadArea = document.getElementById(uploadId);
+                if (uploadArea) {
+                    uploadArea.innerHTML = `
+                        <img src="${imageData}" alt="Target Image">
+                        <div class="image-overlay-controls">
+                            <button type="button" class="overlay-button" onclick="event.stopPropagation(); document.getElementById('file-input-${uploadId}').click()">
+                                Change
+                            </button>
+                            <button type="button" class="overlay-button danger" onclick="event.stopPropagation(); removeImage('${uploadId}', ${pilotId}, ${weaponId})">
+                                Remove
+                            </button>
+                        </div>
+                        <input type="file" id="file-input-${uploadId}" class="hidden-file-input" 
+                            accept="image/*" onchange="handleFileSelect(event, '${uploadId}', ${pilotId}, ${weaponId})">
+                    `;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function pasteFromClipboard(uploadId, pilotId, weaponId) {
+            try {
+                const clipboardItems = await navigator.clipboard.read();
+                for (const clipboardItem of clipboardItems) {
+                    for (const type of clipboardItem.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await clipboardItem.getType(type);
+                            displayImage(blob, uploadId, pilotId, weaponId);
+                            return;
+                        }
+                    }
+                }
+                alert('No image found in clipboard');
+            } catch (err) {
+                console.error('Failed to read clipboard contents: ', err);
+                alert('Failed to access clipboard. Please use drag & drop or file selection.');
+            }
+        }
+
+        function removePilotCard(pilotId) {
+            const pilotCard = document.querySelector(`[data-pilot-id="${pilotId}"]`);
+            if (pilotCard) {
+                pilotCard.remove();
+            }
+
+            const agCard = document.querySelector(`[data-ag-pilot-id="${pilotId}"]`);
+            if (agCard) {
+                agCard.remove();
+            }
+
+            delete weaponCounters[pilotId];
+            pilotCounter--;
+
+            const remainingPilots = document.querySelectorAll('.pilot-card');
+            if (remainingPilots.length > 1) {
+                let highestId = 1;
+                let mostRecentPilot = null;
+                
+                remainingPilots.forEach(pilot => {
+                    const pilotId = parseInt(pilot.getAttribute('data-pilot-id'));
+                    if (pilotId > highestId) {
+                        highestId = pilotId;
+                        mostRecentPilot = pilot;
+                    }
+                });
+
+                if (mostRecentPilot && highestId > 1) {
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'remove-pilot-btn';
+                    removeBtn.onclick = () => removePilotCard(highestId);
+                    removeBtn.innerHTML = '✕';
+                    mostRecentPilot.appendChild(removeBtn);
+                }
+            }
+
+            if (remainingPilots.length < 4) {
+                const pilotGrid = document.getElementById('aircrew');
+                const existingAddButtons = pilotGrid.querySelectorAll('.add-pilot-btn');
+                
+                if (existingAddButtons.length === 0) {
+                    const addButton1 = document.createElement('button');
+                    addButton1.type = 'button';
+                    addButton1.className = 'add-pilot-btn';
+                    addButton1.onclick = addPilotCard;
+                    addButton1.innerHTML = '<span class="add-icon">+</span>';
+                    
+                    const addButton2 = document.createElement('button');
+                    addButton2.type = 'button';
+                    addButton2.className = 'add-pilot-btn';
+                    addButton2.onclick = addPilotCard;
+                    addButton2.innerHTML = '<span class="add-icon">+</span>';
+                    
+                    pilotGrid.insertBefore(addButton1, pilotGrid.firstChild);
+                    pilotGrid.appendChild(addButton2);
+                }
+            }
+
+            Object.keys(uploadedImages).forEach(uploadId => {
+                if (uploadId.includes(`-${pilotId}-`)) {
+                    delete uploadedImages[uploadId];
+                }
+            });
+            updateBDACards();
+        }
+
+        // Set current date
+        window.onload = function () {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+
+            const formatted = `${yyyy}-${mm}-${dd}`;
+            document.getElementById("mission_date").value = formatted;
+        }
+
+        document.addEventListener('input', function(e) {
+            if (e.target.name && (e.target.name.includes('weapon_name') || e.target.name.includes('target_value'))) {
+                updateBDACards();
+            }
+        });
+
+        // Add event listener for BDA result changes
+        document.addEventListener('change', function(e) {
+            if (e.target.name && e.target.name.includes('bda_result')) {
+                // Extract pilot and weapon IDs from the select name
+                const match = e.target.name.match(/ag_weapons\[(\d+)\]\[(\d+)\]\[bda_result\]/);
+                if (match) {
+                    const pilotId = match[1];
+                    const weaponId = match[2];
+                    const hiddenInput = document.getElementById(`bda-result-hidden-${pilotId}-${weaponId}`);
+                    if (hiddenInput) {
+                        hiddenInput.value = e.target.value;
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('file-upload-area') && !e.target.querySelector('img')) {
+                const uploadId = e.target.id;
+                if (uploadId) {
+                    document.getElementById(`file-input-${uploadId}`).click();
+                }
+            }
+        });
+
+        // Function to extract all form data as JSON
+        function getFormDataAsJSON() {
+            const formData = new FormData(document.getElementById('apStrikeForm'));
+            const data = {};
+            
+            // Process all form entries
+            for (let [name, value] of formData.entries()) {
+                setNestedValue(data, name, value);
+            }
+            
+            return data;
+        }
+        
+        // Helper function to set nested object values from form field names
+        function setNestedValue(obj, path, value) {
+            // Handle array notation like aircrew[1][modex] or aa_weapons[1][hit]
+            const arrayMatch = path.match(/^(\w+)\[(\d+)\]\[(\w+)\]$/);
+            if (arrayMatch) {
+                const [, arrayName, index, fieldName] = arrayMatch;
+                
+                if (!obj[arrayName]) obj[arrayName] = {};
+                if (!obj[arrayName][index]) obj[arrayName][index] = {};
+                
+                // Handle checkbox values
+                if (fieldName === 'hit' && value === '1') {
+                    obj[arrayName][index][fieldName] = true;
+                } else if (fieldName === 'hit') {
+                    obj[arrayName][index][fieldName] = false;
+                } else {
+                    obj[arrayName][index][fieldName] = value;
+                }
+                return;
+            }
+            
+            // Handle nested array notation like ag_weapons[1][2][weapon_name]
+            const nestedArrayMatch = path.match(/^(\w+)\[(\d+)\]\[(\d+)\]\[(\w+)\]$/);
+            if (nestedArrayMatch) {
+                const [, arrayName, pilotId, weaponId, fieldName] = nestedArrayMatch;
+                
+                if (!obj[arrayName]) obj[arrayName] = {};
+                if (!obj[arrayName][pilotId]) obj[arrayName][pilotId] = {};
+                if (!obj[arrayName][pilotId][weaponId]) obj[arrayName][pilotId][weaponId] = {};
+                
+                obj[arrayName][pilotId][weaponId][fieldName] = value;
+                return;
+            }
+            
+            // Handle simple field names
+            obj[path] = value;
+        }
+        
+        // Function to get form data with additional processing
+        function getCompleteFormData() {
+            const baseData = getFormDataAsJSON();
+            
+            // Convert arrays from objects to actual arrays and clean up
+            if (baseData.aircrew) {
+                baseData.aircrew = Object.values(baseData.aircrew).map(pilot => ({
+                    modex: pilot.modex || '',
+                    pilot: pilot.pilot || '',
+                    rio: pilot.rio || ''
+                }));
+            }
+            
+            if (baseData.aa_weapons) {
+                baseData.aa_weapons = Object.values(baseData.aa_weapons).map(weapon => ({
+                    modex: weapon.modex || '',
+                    weapon: weapon.weapon || '',
+                    target: weapon.target || '',
+                    range: weapon.range ? parseFloat(weapon.range) : null,
+                    speed: weapon.speed ? parseFloat(weapon.speed) : null,
+                    own_altitude: weapon.own_altitude ? parseFloat(weapon.own_altitude) : null,
+                    target_altitude: weapon.target_altitude ? parseFloat(weapon.target_altitude) : null,
+                    hit: weapon.hit || false
+                }));
+            }
+            
+            if (baseData.ag_weapons) {
+                const agWeaponsArray = [];
+                Object.keys(baseData.ag_weapons).forEach(pilotId => {
+                    Object.keys(baseData.ag_weapons[pilotId]).forEach(weaponId => {
+                        const weapon = baseData.ag_weapons[pilotId][weaponId];
+                        if (weapon.weapon_name || weapon.target_value) { // Only include if has content
+                            agWeaponsArray.push({
+                                pilot_id: parseInt(pilotId),
+                                weapon_id: parseInt(weaponId),
+                                weapon_name: weapon.weapon_name || '',
+                                target_type: weapon.target_type || 'none',
+                                target_value: weapon.target_value || '',
+                                image_data: weapon.image_data || '',
+                                bda_result: weapon.bda_result || ''
+                            });
+                        }
+                    });
+                });
+                baseData.ag_weapons = agWeaponsArray;
+            }
+            
+            // Add metadata
+            baseData.form_metadata = {
+                submission_time: new Date().toISOString(),
+                total_aircrew: baseData.aircrew ? baseData.aircrew.length : 0,
+                total_ag_weapons: baseData.ag_weapons ? baseData.ag_weapons.length : 0,
+                total_aa_weapons: baseData.aa_weapons ? baseData.aa_weapons.length : 0,
+                total_bdas: baseData.ag_weapons ? baseData.ag_weapons.filter(w => w.image_data && w.image_data.trim() !== '').length : 0,
+                has_images: baseData.ag_weapons ? baseData.ag_weapons.some(w => w.image_data) : false
+            };
+            
+            return baseData;
+        }
+        
+        // Function to print form data (for debugging)
+        function printFormData() {
+            const data = getCompleteFormData();
+            console.log('=== FORM DATA ===');
+            console.log(JSON.stringify(data, null, 2));
+            return data;
+        }
+        
+        // Function to download form data as JSON file
+        function downloadFormDataAsJSON() {
+            const data = getCompleteFormData();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ap_strike_report_${data.mission_name || 'unnamed'}_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Simple function to submit form to Flask backend
+        async function submitToBackend(formData) {
+            try {
+                // Show loading state
+                const submitButton = document.querySelector('button[type="submit"]');
+                const originalText = submitButton.textContent;
+                submitButton.textContent = 'Submitting...';
+                submitButton.disabled = true;
+                
+                // Send to Flask backend
+                const response = await fetch('/submit-report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(`✅ Strike report submitted successfully!`);
+                    console.log('Server response:', result);
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                alert(`❌ Failed to submit strike report:\n${error.message}`);
+            } finally {
+                // Restore button state
+                const submitButton = document.querySelector('button[type="submit"]');
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            }
+        }
+
+        // Form submission handler
+        document.getElementById('apStrikeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form data as JSON
+            const formData = getCompleteFormData();
+
+            // Submit to backend
+            submitToBackend(formData);
+        });
+        
+        // Add a button to test data extraction (for debugging)
+        document.addEventListener('DOMContentLoaded', function() {
+            const debugButton = document.createElement('button');
+            debugButton.type = 'button';
+            debugButton.textContent = 'Debug: Print Form Data';
+            debugButton.className = 'edit-btn';
+            debugButton.style.marginRight = '10px';
+            debugButton.onclick = printFormData;
+            
+            const downloadButton = document.createElement('button');
+            downloadButton.type = 'button';
+            downloadButton.textContent = 'Download JSON';
+            downloadButton.className = 'edit-btn';
+            downloadButton.style.marginRight = '10px';
+            downloadButton.onclick = downloadFormDataAsJSON;
+            
+            const submitButton = document.querySelector('button[type="submit"]');
+            submitButton.parentNode.insertBefore(debugButton, submitButton);
+            submitButton.parentNode.insertBefore(downloadButton, submitButton);
+        });
+    </script>
+</body>
+</html>
