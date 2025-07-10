@@ -899,10 +899,6 @@
             if (element) element.remove();
         }
 
-        function removeAllElements(selector) {
-            document.querySelectorAll(selector).forEach(el => el.remove());
-        }
-
         // ===== A/A Weapons Functions =====
         function addAARow() {
             AppState.aaRowCounter++;
@@ -1021,7 +1017,7 @@
                 pilotGrid.querySelectorAll('.btn-add').forEach(btn => btn.remove());
             }
 
-            removeAllElements('.btn-remove');
+            pilotGrid.querySelectorAll('.btn-remove').forEach(btn => btn.remove());
 
             const newCard = createElement('div', 'pilot-card');
             newCard.setAttribute('data-pilot-id', AppState.pilotCounter);
