@@ -654,6 +654,41 @@
                 font-size: 11px;
             }
         }
+
+        .btn-load-modex {
+            position: absolute;
+            top: 25px;
+            right: 5px;
+            width: 16px;
+            height: 16px;
+            background: var(--color-primary);
+            border: none;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .btn-load-modex:hover {
+            background: var(--color-primary-hover);
+            transform: scale(1.1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .pilot-card:hover .btn-load-modex {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .pilot-card[data-loaded-from-json="true"] .btn-load-modex {
+           display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -749,6 +784,7 @@
                     </button>
 
                     <div class="pilot-card" data-pilot-id="1">
+                        <button type="button" class="btn-load-modex" onclick="loadDataByModex(1)" title="Load by Modex" style="display: none;">↓</button>
                         <div class="callsign-name">CALLSIGN1</div>
                         <div class="pilot-details">
                             <div>
@@ -861,9 +897,6 @@
 
                 <!-- Submit Section -->
                 <div class="timestamp">
-                    <button type="button" class="btn-primary btn-load-json" onclick="handleJSONFileUpload()">
-                        Load JSON Data
-                    </button>
                     <button type="submit" class="btn-primary">Submit Debrief</button>
                 </div>
             </form>
@@ -886,7 +919,8 @@
             weaponCounters: { 1: 0 },
             uploadedImages: {},
             aaRowCounter: 0,
-            selectedCallsign: null
+            selectedCallsign: null,
+            jsonData: null
         };
 
         // ===== Constants =====
@@ -1033,6 +1067,7 @@
             newCard.setAttribute('data-pilot-id', AppState.pilotCounter);
             newCard.innerHTML = `
                 <button type="button" class="btn-remove" onclick="removePilotCard(${AppState.pilotCounter})">✕</button>
+                ${AppState.jsonData ? `<button type="button" class="btn-load-modex" onclick="loadDataByModex(${AppState.pilotCounter})" title="Load weapons from server">↓</button>` : ''}
                 <div class="callsign-name">${AppState.selectedCallsign || 'CALLSIGN'}${AppState.pilotCounter}</div>
                 <div class="pilot-details">
                     <div>
@@ -1078,8 +1113,21 @@
         }
 
         function removePilotCard(pilotId) {
+            const modexInput = document.getElementById(`aircrew_${pilotId}_modex`);
+            const modexValue = modexInput ? modexInput.value : null;
+
             removeElement(`[data-pilot-id="${pilotId}"]`);
             removeElement(`[data-ag-pilot-id="${pilotId}"]`);
+
+            if (modexValue) {
+                const aaRows = document.querySelectorAll('#aa-table-body tr');
+                aaRows.forEach(row => {
+                    const modexCell = row.querySelector('input[name*="[modex]"]');
+                    if (modexCell && modexCell.value === modexValue) {
+                        row.remove();
+                    }
+                });
+            }
 
             delete AppState.weaponCounters[pilotId];
             AppState.pilotCounter--;
@@ -1662,11 +1710,23 @@
                 pilotIndex++;
             });
 
+            for (let i = 1; i < pilotIndex; i++) {
+                const pilotCard = document.querySelector(`[data-pilot-id="${i}"]`);
+                if (pilotCard) {
+                    // Check if this pilot card has any data
+                    const modexInput = document.getElementById(`aircrew_${i}_modex`);
+                    const pilotInput = document.getElementById(`aircrew_${i}_pilot`);
+
+                    // Only mark as loaded if it has modex or pilot name
+                    if ((modexInput && modexInput.value) || (pilotInput && pilotInput.value)) {
+                        pilotCard.setAttribute('data-loaded-from-json', 'true');
+                    }
+                }
+            }
+
             setTimeout(() => {
                 updateBDACards();
             }, 100);
-
-            alert(`Loaded data for ${Object.keys(aircraftGroups).length} aircraft with ${filteredData.length} weapons`);
         }
 
         function handleJSONFileUpload() {
@@ -1779,6 +1839,15 @@
 
                     // Fetch and load the mission data
                     const missionData = await fetchMissionData(selectedMissionId);
+                    AppState.jsonData = missionData;
+
+                    // Show load button on first card if JSON data is available
+                    const firstCardLoadBtn = document.querySelector('[data-pilot-id="1"] .btn-load-modex');
+                    if (firstCardLoadBtn && missionData) {
+                        firstCardLoadBtn.style.display = '';
+                    }
+
+
                     if (missionData) {
                         loadDataFromJSON(missionData);
                     }
@@ -1790,6 +1859,13 @@
 // Manual button - only sets callsign
             manualButton.addEventListener('click', function() {
                 const selectedCallsign = callsignSelect.value;
+                AppState.jsonData = null;
+                // Hide load button on first card when manual is selected
+                const firstCardLoadBtn = document.querySelector('[data-pilot-id="1"] .btn-load-modex');
+                if (firstCardLoadBtn) {
+                    firstCardLoadBtn.style.display = 'none';
+                }
+
                 if (selectedCallsign) {
                     updateAllCallsigns(selectedCallsign);
                     popup.style.display = 'none';
@@ -1817,6 +1893,100 @@
                 console.error('Failed to fetch mission data labels:', error);
             }
         }
+
+
+        function loadDataByModex(pilotId) {
+            if (!AppState.jsonData) return;
+
+            const card = document.querySelector(`[data-pilot-id="${pilotId}"]`);
+            if (card && card.getAttribute('data-loaded-from-json') === 'true') {
+                alert('This pilot data has already been loaded');
+                return;
+            }
+
+            const modexInput = document.getElementById(`aircrew_${pilotId}_modex`);
+            const modexValue = modexInput ? modexInput.value : null;
+
+            if (!modexValue) {
+                alert('Please enter a modex first');
+                return;
+            }
+
+            // Find all entries matching this modex
+            const matchingEntries = AppState.jsonData.filter(entry =>
+                entry.TAIL_NUMBER === modexValue
+            );
+
+            if (matchingEntries.length === 0) {
+                alert(`No data found for modex ${modexValue}`);
+                return;
+            }
+
+            // Load pilot data
+            const firstEntry = matchingEntries[0];
+            const pilotInput = document.getElementById(`aircrew_${pilotId}_pilot`);
+            const rioInput = document.getElementById(`aircrew_${pilotId}_rio`);
+
+            if (pilotInput && firstEntry.PILOT_NAME) pilotInput.value = firstEntry.PILOT_NAME;
+            if (rioInput && firstEntry.RIO_NAME) rioInput.value = firstEntry.RIO_NAME;
+
+            // Process weapons for this pilot
+            matchingEntries.forEach(entry => {
+                if (entry.TYPE === 0) {
+                    // A/G Weapon
+                    addWeaponCard(pilotId);
+                    const weaponId = AppState.weaponCounters[pilotId];
+
+                    const weaponNameInput = document.querySelector(`input[name="ag_weapons[${pilotId}][${weaponId}][weapon_name]"]`);
+                    const targetSelect = document.querySelector(`select[name="ag_weapons[${pilotId}][${weaponId}][target_type]"]`);
+                    const targetInput = document.getElementById(`target-input-${pilotId}-${weaponId}`);
+
+                    if (weaponNameInput) weaponNameInput.value = entry.WEAPON_NAME ?? '';
+                    if (targetSelect) {
+                        targetSelect.value = 'target';
+                        targetSelect.dispatchEvent(new Event('change'));
+                    }
+                    if (targetInput) targetInput.value = entry.TGT_TNAME ?? entry.TGT_NAME ?? '';
+
+                } else if (entry.TYPE === 1) {
+                    // A/A Weapon
+                    addAARow();
+
+                    const modexInput = document.querySelector(`input[name="aa_weapons[${AppState.aaRowCounter}][modex]"]`);
+                    const weaponInput = document.querySelector(`input[name="aa_weapons[${AppState.aaRowCounter}][weapon]"]`);
+                    const targetInput = document.querySelector(`input[name="aa_weapons[${AppState.aaRowCounter}][target]"]`);
+                    const rangeInput = document.querySelector(`input[name="aa_weapons[${AppState.aaRowCounter}][range]"]`);
+                    const speedInput = document.querySelector(`input[name="aa_weapons[${AppState.aaRowCounter}][speed]"]`);
+                    const ownAltInput = document.querySelector(`input[name="aa_weapons[${AppState.aaRowCounter}][own_altitude]"]`);
+                    const targetAltInput = document.querySelector(`input[name="aa_weapons[${AppState.aaRowCounter}][target_altitude]"]`);
+                    const hitCheckbox = document.querySelector(`input[name="aa_weapons[${AppState.aaRowCounter}][hit]"]`);
+
+                    if (modexInput) modexInput.value = entry.TAIL_NUMBER ?? '';
+                    if (weaponInput) weaponInput.value = entry.WEAPON_NAME ?? '';
+                    if (targetInput) targetInput.value = entry.TGT_TNAME ?? entry.TGT_NAME ?? '';
+                    if (rangeInput) rangeInput.value = entry.RANGE ?? '';
+                    if (speedInput) speedInput.value = entry.SPEED ?? '';
+                    if (ownAltInput) ownAltInput.value = entry.ANGELS ?? '';
+                    if (targetAltInput) targetAltInput.value = entry.ANGELS_TGT ?? '';
+                    if (hitCheckbox) hitCheckbox.checked = entry.HIT === true;
+                }
+            });
+
+            // Mark this pilot card as loaded
+            const pilotCard = document.querySelector(`[data-pilot-id="${pilotId}"]`);
+            if (pilotCard) {
+                pilotCard.setAttribute('data-loaded-from-json', 'true');
+                // Hide the load button after loading
+                const loadBtn = pilotCard.querySelector('.btn-load-modex');
+                if (loadBtn) loadBtn.style.display = 'none';
+            }
+
+            setTimeout(() => {
+                updateBDACards();
+            }, 100);
+
+           alert(`Loaded ${matchingEntries.length} weapons for modex ${modexValue}`);
+       }
 
         async function fetchMissionData(id) {
             try {
