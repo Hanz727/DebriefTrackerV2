@@ -661,6 +661,7 @@
     <div id="callsignPopup" class="popup-overlay">
         <div class="popup-content">
             <div class="popup-title">SELECT YOUR CALLSIGN</div>
+
             <div class="popup-field-group">
                 <div class="field-label">CALLSIGN</div>
                 <select id="callsignSelect" class="popup-select">
@@ -689,7 +690,17 @@
                     <option value="DEVIL4">DEVIL4</option>
                 </select>
             </div>
-            <button id="confirmCallsign" class="popup-button" disabled>CONFIRM</button>
+            <div class="popup-field-group">
+                <div class="field-label">MISSION DATA</div>
+                <select id="missionDataSelect" class="popup-select">
+                    <option value="">-- Select Mission Data --</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button id="manualButton" class="popup-button" style="flex: 1;" disabled>MANUAL</button>
+                <button id="loadButton" class="popup-button" style="flex: 1;" disabled>LOAD</button>
+            </div>
         </div>
     </div>
 
@@ -1614,11 +1625,16 @@
                         const targetInput = document.getElementById(`target-input-${pilotIndex}-${weaponId}`);
 
                         if (weaponNameInput) weaponNameInput.value = entry.WEAPON_NAME ?? '';
-                        if (targetSelect) {
+                        if (entry.TGT_NAME === "NONE")
+                            entry.TGT_NAME = ''
+                        if (entry.TGT_TNAME === "NONE")
+                            entry.TGT_TNAME = ''
+
+                        if (targetSelect && (entry.TGT_NAME || entry.TGT_TNAME)) {
                             targetSelect.value = 'target';
                             targetSelect.dispatchEvent(new Event('change'));
                         }
-                        if (targetInput) targetInput.value = entry.TGT_TNAME ?? entry.TGT_NAME ?? '';
+                        if (targetInput) targetInput.value = entry.TGT_NAME ?? entry.TGT_TNAME ?? '';
 
                     } else if (entry.TYPE === 1) {
                         // A/A Weapon
@@ -1738,11 +1754,42 @@
             const confirmButton = document.getElementById('confirmCallsign');
             const popup = document.getElementById('callsignPopup');
 
-            callsignSelect.addEventListener('change', function() {
-                confirmButton.disabled = !this.value;
+            const loadButton = document.getElementById('loadButton');
+            const manualButton = document.getElementById('manualButton');
+            const missionDataSelect = document.getElementById('missionDataSelect');
+
+            fetchMissionDataLabels();
+
+            function updateButtonStates() {
+                const hasCallsign = !!callsignSelect.value;
+                const hasMissionData = !!missionDataSelect.value;
+
+                loadButton.disabled = !hasCallsign || !hasMissionData;
+                manualButton.disabled = !hasCallsign;
+            }
+
+            callsignSelect.addEventListener('change', updateButtonStates);
+            missionDataSelect.addEventListener('change', updateButtonStates);
+
+            loadButton.addEventListener('click', async function() {
+                const selectedCallsign = callsignSelect.value;
+                const selectedMissionId = missionDataSelect.value;
+
+                if (selectedCallsign && selectedMissionId) {
+                    updateAllCallsigns(selectedCallsign);
+
+                    // Fetch and load the mission data
+                    const missionData = await fetchMissionData(selectedMissionId);
+                    if (missionData) {
+                        loadDataFromJSON(missionData);
+                    }
+
+                    popup.style.display = 'none';
+                }
             });
 
-            confirmButton.addEventListener('click', function() {
+// Manual button - only sets callsign
+            manualButton.addEventListener('click', function() {
                 const selectedCallsign = callsignSelect.value;
                 if (selectedCallsign) {
                     updateAllCallsigns(selectedCallsign);
@@ -1753,6 +1800,36 @@
             // Initialize event listeners
             initializeEventListeners();
         };
+
+        async function fetchMissionDataLabels() {
+            try {
+                const response = await fetch('/data-labels');
+                const labels = await response.json();
+
+                const missionDataSelect = document.getElementById('missionDataSelect');
+                missionDataSelect.innerHTML = '<option value="">-- Select Mission Data --</option>';
+
+                Object.entries(labels).forEach(([id, filename]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = filename;
+                    missionDataSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to fetch mission data labels:', error);
+            }
+        }
+
+        async function fetchMissionData(id) {
+            try {
+                const response = await fetch(`/data?id=${id}`);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Failed to fetch mission data:', error);
+                return null;
+            }
+        }
     </script>
 </body>
 </html>
