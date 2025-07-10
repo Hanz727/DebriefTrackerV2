@@ -660,7 +660,7 @@
     <!-- Callsign Selection Modal -->
     <div id="callsignPopup" class="popup-overlay">
         <div class="popup-content">
-            <div class="popup-title">SELECT YOUR CALLSIGN</div>
+            <div class="popup-title">SETTINGS</div>
 
             <div class="popup-field-group">
                 <div class="field-label">CALLSIGN</div>
@@ -693,12 +693,11 @@
             <div class="popup-field-group">
                 <div class="field-label">MISSION DATA</div>
                 <select id="missionDataSelect" class="popup-select">
-                    <option value="">-- Select Mission Data --</option>
                 </select>
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <button id="manualButton" class="popup-button" style="flex: 1;" disabled>MANUAL</button>
+                <button id="manualButton" class="popup-button" style="flex: 1;" disabled>MANUAL ENTRY</button>
                 <button id="loadButton" class="popup-button" style="flex: 1;" disabled>LOAD</button>
             </div>
         </div>
@@ -1807,7 +1806,6 @@
                 const labels = await response.json();
 
                 const missionDataSelect = document.getElementById('missionDataSelect');
-                missionDataSelect.innerHTML = '<option value="">-- Select Mission Data --</option>';
 
                 Object.entries(labels).forEach(([id, filename]) => {
                     const option = document.createElement('option');
