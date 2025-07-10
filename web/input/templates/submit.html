@@ -965,6 +965,7 @@
             </select>
 
             <div class="timestamp">
+                <button type="button" class="edit-btn" onclick="handleJSONFileUpload()" style="background: #00ff00; margin-right: 10px;">Load JSON Data</button>
                 <button type="submit" class="edit-btn">Submit Debrief</button>
             </div>
 
@@ -1687,6 +1688,197 @@
             submitToBackend(formData);
         });
 
-    </script>
+    // Function to convert callsign to DL format
+    function callsignToDL(callsign) {
+        // Extract base callsign and number
+        const match = callsign.match(/^([A-Z]+)(\d+)$/);
+        if (!match) return null;
+
+        const [, base, number] = match;
+
+        // Extract first and last letter, then add number
+        const firstLetter = base.charAt(0);
+        const lastLetter = base.charAt(base.length - 1);
+
+        return `${firstLetter}${lastLetter}${number}`;
+    }
+
+
+    // Function to filter JSON data by current callsign
+    function filterDataByCallsign(jsonData, currentCallsign) {
+        if (!currentCallsign || !jsonData) return [];
+
+        const currentDL = callsignToDL(currentCallsign);
+        if (!currentDL) return [];
+
+        return jsonData.filter(entry => {
+            if (!entry.DL_CALLSIGN) return false;
+
+            // Remove only the last digit from DL_CALLSIGN (e.g., "GR11" -> "GR1")
+            const entryBase = entry.DL_CALLSIGN.replace(/\d$/, '');
+
+            return entryBase === currentDL;
+        });
+    }
+
+// Function to load JSON data into the form
+function loadDataFromJSON(jsonData) {
+    if (!jsonData || jsonData.length === 0) {
+        alert('No data to load or no matching callsign found');
+        return;
+    }
+
+    const currentCallsign = window.selectedCallsign;
+    if (!currentCallsign) {
+        alert('Please select a callsign first');
+        return;
+    }
+
+    // Filter data by current callsign
+    const filteredData = filterDataByCallsign(jsonData, currentCallsign);
+
+    if (filteredData.length === 0) {
+        alert('No data found for current callsign');
+        return;
+    }
+
+    // Group data by aircraft (DL_CALLSIGN)
+    const aircraftGroups = {};
+    filteredData.forEach(entry => {
+        if (!aircraftGroups[entry.DL_CALLSIGN]) {
+            aircraftGroups[entry.DL_CALLSIGN] = [];
+        }
+        aircraftGroups[entry.DL_CALLSIGN].push(entry);
+    });
+
+    // Clear existing pilot cards (except the first one)
+    const existingCards = document.querySelectorAll('.pilot-card[data-pilot-id]');
+    existingCards.forEach((card, index) => {
+        if (index > 0) {
+            const pilotId = card.getAttribute('data-pilot-id');
+            removePilotCard(parseInt(pilotId));
+        }
+    });
+
+    // Clear existing AA weapons
+    document.getElementById('aa-table-body').innerHTML = '';
+    aaRowCounter = 0;
+
+    let pilotIndex = 1;
+
+    // Process each aircraft
+    Object.keys(aircraftGroups).forEach(dlCallsign => {
+        const aircraftData = aircraftGroups[dlCallsign];
+        const firstEntry = aircraftData[0];
+
+        // Ensure we have enough pilot cards
+        while (pilotIndex > document.querySelectorAll('.pilot-card').length) {
+            addPilotCard();
+        }
+
+        // Fill aircrew data
+        const modexInput = document.getElementById(`aircrew_${pilotIndex}_modex`);
+        const pilotInput = document.getElementById(`aircrew_${pilotIndex}_pilot`);
+        const rioInput = document.getElementById(`aircrew_${pilotIndex}_rio`);
+
+        if (modexInput) modexInput.value = firstEntry.TAIL_NUMBER ?? '';
+        if (pilotInput) pilotInput.value = firstEntry.PILOT_NAME ?? '';
+        if (rioInput) rioInput.value = firstEntry.RIO_NAME ?? '';
+
+        // Process weapons for this aircraft
+        aircraftData.forEach(entry => {
+            if (entry.TYPE === 0) {
+                // A/G Weapon
+                addWeaponCard(pilotIndex);
+                const weaponId = weaponCounters[pilotIndex];
+
+                // Fill weapon data
+                const weaponNameInput = document.querySelector(`input[name="ag_weapons[${pilotIndex}][${weaponId}][weapon_name]"]`);
+                const targetSelect = document.querySelector(`select[name="ag_weapons[${pilotIndex}][${weaponId}][target_type]"]`);
+                const targetInput = document.getElementById(`target-input-${pilotIndex}-${weaponId}`);
+
+                if (weaponNameInput) weaponNameInput.value = entry.WEAPON_NAME ?? '';
+                if (targetSelect) {
+                    targetSelect.value = 'target';
+                    targetSelect.dispatchEvent(new Event('change'));
+                }
+                if (targetInput) targetInput.value = entry.TGT_TNAME ?? entry.TGT_NAME ?? '';
+
+            } else if (entry.TYPE === 1) {
+                // A/A Weapon
+                addAARow();
+
+                // Fill AA weapon data
+                const modexInput = document.querySelector(`input[name="aa_weapons[${aaRowCounter}][modex]"]`);
+                const weaponInput = document.querySelector(`input[name="aa_weapons[${aaRowCounter}][weapon]"]`);
+                const targetInput = document.querySelector(`input[name="aa_weapons[${aaRowCounter}][target]"]`);
+                const rangeInput = document.querySelector(`input[name="aa_weapons[${aaRowCounter}][range]"]`);
+                const speedInput = document.querySelector(`input[name="aa_weapons[${aaRowCounter}][speed]"]`);
+                const ownAltInput = document.querySelector(`input[name="aa_weapons[${aaRowCounter}][own_altitude]"]`);
+                const targetAltInput = document.querySelector(`input[name="aa_weapons[${aaRowCounter}][target_altitude]"]`);
+                const hitCheckbox = document.querySelector(`input[name="aa_weapons[${aaRowCounter}][hit]"]`);
+
+                if (modexInput) modexInput.value = entry.TAIL_NUMBER ?? '';
+                if (weaponInput) weaponInput.value = entry.WEAPON_NAME ?? '';
+                if (targetInput) targetInput.value = entry.TGT_TNAME ?? entry.TGT_NAME ?? '';
+                if (rangeInput) rangeInput.value = entry.RANGE ?? '';
+                if (speedInput) speedInput.value = entry.SPEED ?? '';
+                if (ownAltInput) ownAltInput.value = entry.ANGELS ?? '';
+                if (targetAltInput) targetAltInput.value = entry.ANGELS_TGT ?? '';
+                if (hitCheckbox) hitCheckbox.checked = entry.HIT === true;
+            }
+        });
+
+        pilotIndex++;
+    });
+
+    // Update BDA cards after loading A/G weapons
+    setTimeout(() => {
+        updateBDACards();
+    }, 100);
+
+    alert(`Loaded data for ${Object.keys(aircraftGroups).length} aircraft with ${filteredData.length} weapons`);
+}
+
+// Function to handle file upload for JSON loading
+function handleJSONFileUpload() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.style.display = 'none';
+
+    input.onchange = function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+                    loadDataFromJSON(jsonData);
+                } catch (error) {
+                    alert('Error parsing JSON file: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
+}
+
+// Function to load from JSON string (for testing)
+function loadFromJSONString(jsonString) {
+    try {
+        const jsonData = JSON.parse(jsonString);
+        loadDataFromJSON(jsonData);
+    } catch (error) {
+        alert('Error parsing JSON: ' + error.message);
+    }
+}
+
+
+</script>
 </body>
 </html>
