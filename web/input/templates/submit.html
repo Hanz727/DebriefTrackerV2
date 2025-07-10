@@ -701,28 +701,18 @@
                 <div class="field-label">CALLSIGN</div>
                 <select id="callsignSelect" class="popup-select">
                     <option value="">-- Select Callsign --</option>
-                    <option value="VICTORY1">VICTORY1</option>
-                    <option value="BONES2">BONES2</option>
-                    <option value="SLUGGER3">SLUGGER3</option>
-                    <option value="VANQUISH4">VANQUISH4</option>
-                    <option value="JOKER1">JOKER1</option>
-                    <option value="BLASTER2">BLASTER2</option>
-                    <option value="TRICKER3">TRICKER3</option>
-                    <option value="SMOKE4">SMOKE4</option>
-                    <option value="LINER1">LINER1</option>
-                    <option value="INFERNO2">INFERNO2</option>
-                    <option value="ZAPPER3">ZAPPER3</option>
-                    <option value="CRUSADER4">CRUSADER4</option>
-                    <option value="ROMAN1">ROMAN1</option>
-                    <option value="EMPIRE2">EMPIRE2</option>
-                    <option value="CIRCUS3">CIRCUS3</option>
-                    <option value="GUNFIGHTER1">GUNFIGHTER1</option>
-                    <option value="GUNSLINGER2">GUNSLINGER2</option>
-                    <option value="HOPPY3">HOPPY3</option>
-                    <option value="TOPGUN1">TOPGUN1</option>
-                    <option value="DEATH2">DEATH2</option>
-                    <option value="AMBUSH3">AMBUSH3</option>
-                    <option value="DEVIL4">DEVIL4</option>
+                    <option value="VICTORY1">VICTORY11</option>
+                    <option value="BONES2">BONES21</option>
+                    <option value="SLUGGER3">SLUGGER31</option>
+                    <option value="VANQUISH4">VANQUISH41</option>
+                    <option value="JOKER1">JOKER11</option>
+                    <option value="BLASTER2">BLASTER21</option>
+                    <option value="TRICKER3">TRICKER31</option>
+                    <option value="SMOKE4">SMOKE41</option>
+                    <option value="LINER1">LINER11</option>
+                    <option value="INFERNO2">INFERNO21</option>
+                    <option value="ZAPPER3">ZAPPER31</option>
+                    <option value="CRUSADER4">CRUSADER41</option>
                 </select>
             </div>
             <div class="popup-field-group">
@@ -737,6 +727,15 @@
             </div>
         </div>
     </div>
+
+    <datalist id="aa-weapons">
+        <option value="AIM-54C-Mk60"></option>
+        <option value="AIM-120C"></option>
+        <option value="AIM-9M"></option>
+        <option value="AIM-7P"></option>
+        <option value="AIM-7MH"></option>
+        <option value="GUN"></option>
+    </datalist>
 
     <!-- Main Container -->
     <div class="container">
@@ -789,7 +788,7 @@
                         <div class="pilot-details">
                             <div>
                                 <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
-                                <input type="number" required min="100" max="999"
+                                <input type="text" required pattern="\d{3}"
                                        class="field-value-aircrew" name="aircrew[1][modex]" id="aircrew_1_modex">
                             </div>
                             <div>
@@ -951,8 +950,8 @@
             const newRow = createElement('tr');
             newRow.setAttribute('data-aa-row-id', AppState.aaRowCounter);
             newRow.innerHTML = `
-                <td><input type="text" required class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${AppState.aaRowCounter}][modex]"></td>
-                <td><input type="text" required class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${AppState.aaRowCounter}][weapon]"></td>
+                <td><input type="text" pattern="\\d{3}" required class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${AppState.aaRowCounter}][modex]"></td>
+                <td><input type="text" required list="aa-weapons" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${AppState.aaRowCounter}][weapon]"></td>
                 <td><input type="text" required class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${AppState.aaRowCounter}][target]"></td>
                 <td><input type="number" min="0" max="99" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${AppState.aaRowCounter}][range]"></td>
                 <td><input type="number" min="0.1" max="3" step="0.01" class="field-value-aircrew" style="border: none; background: transparent; text-align: center;" name="aa_weapons[${AppState.aaRowCounter}][speed]"></td>
@@ -1072,7 +1071,7 @@
                 <div class="pilot-details">
                     <div>
                         <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
-                        <input type="number" required min="${MODEX_MIN}" max="${MODEX_MAX}"
+                        <input type="text" required pattern="\\d{3}"
                                class="field-value-aircrew"
                                name="aircrew[${AppState.pilotCounter}][modex]"
                                id="aircrew_${AppState.pilotCounter}_modex">
