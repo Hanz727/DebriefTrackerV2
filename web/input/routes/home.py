@@ -192,6 +192,63 @@ def submit():
 
     return 'Debrief uploaded!'
 
+def save_images(data, debrief_id):
+    if data.get('ag_weapons'):
+        for i, weapon in enumerate(data['ag_weapons']):
+            data['ag_weapons'][i]['image_path'] = ""
+            if weapon.get('image_data'):
+                img_path = InputDataHandler.save_bda_image(weapon['image_data'], str(debrief_id), str(i))
+                data['ag_weapons'][i]['image_data'] = ''
+                data['ag_weapons'][i]['image_path'] = str(img_path.name)
+
+def create_view_data(data, debrief_id):
+    view_data = {
+        "debrief-id": debrief_id,
+        "mission-name": data['mission_name'],
+        "mission-number": data['mission_number'],
+        "mission-event": data['mission_event'],
+        "date": data['mission_date'],
+        "callsign": data['callsign'],
+        "aircrew": [
+            {'modex': aircrew['modex'],
+             'aircrew': aircrew['pilot'] + ' | ' + aircrew['rio'] if aircrew['rio'] else aircrew['pilot']
+             }
+            for aircrew in data['aircrew']
+        ],
+        "ag-drop-count": data['form_metadata']['total_ag_weapons'],
+        "bda-count": data['form_metadata']['total_bdas'],
+        "ag": [
+            {
+                "modex": aircrew['modex'],
+                "drops": [
+                    {
+                        "weapon-name": drop['weapon_name'],
+                        "DMPI": drop['target_value'] if drop['target_type'] == "dmpi" else "",
+                        "tgt-name": drop['target_value'] if drop['target_type'] == "target" else "",
+                        "img-name": drop['image_path'],
+                        "bda-result": drop['bda_result'],
+                    } for drop in data['ag_weapons'] if drop['pilot_id'] - 1 == id_
+                ]
+            } for id_, aircrew in enumerate(data['aircrew'])
+        ],
+        "opposition": {
+            "type": data['opposition_type_number'],
+            "location": data['opposition_location'],
+        },
+        "aa": data['aa_weapons'],
+        "engagement-result": data['engagement_result'],
+        "blue-casualties": data['blue_casualties'],
+        "mission-notes": data['mission_notes'],
+        "restrike-recommendation": data['restrike_recommendation']
+    }
+
+    with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("display-data.json"), "w") as f:
+        json.dump(view_data, f, indent=2)
+
+def insert_tracker_data(data):
+    #postgres_client.insert()
+    ...
+
 @app.route('/submit-report', methods=['POST'])
 def submit_report():
     try:
@@ -203,60 +260,15 @@ def submit_report():
 
         debrief_id = InputDataHandler.find_latest_numbered_folder(BDA_IMAGE_PATH)
 
-        if data.get('ag_weapons'):
-            for i, weapon in enumerate(data['ag_weapons']):
-                data['ag_weapons'][i]['image_path'] = ""
-                if weapon.get('image_data'):
-                    img_path = InputDataHandler.save_bda_image(weapon['image_data'], str(debrief_id), str(i))
-                    data['ag_weapons'][i]['image_data'] = ''
-                    data['ag_weapons'][i]['image_path'] = str(img_path.name)
+        save_images(data, debrief_id)
 
-
+        data['form_metadata']['discord_uid'] = session['discord_uid']
         with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
             json.dump(data, f, indent=2)
 
-        view_data = {
-            "debrief-id": debrief_id,
-            "mission-name": data['mission_name'],
-            "mission-number": data['mission_number'],
-            "mission-event": data['mission_event'],
-            "date": data['mission_date'],
-            "callsign": data['callsign'],
-            "aircrew": [
-                {'modex': aircrew['modex'],
-                 'aircrew': aircrew['pilot'] + ' | ' + aircrew['rio'] if aircrew['rio'] else aircrew['pilot']
-                }
-                for aircrew in data['aircrew']
-            ],
-            "ag-drop-count": data['form_metadata']['total_ag_weapons'],
-            "bda-count": data['form_metadata']['total_bdas'],
-            "ag": [
-                {
-                    "modex": aircrew['modex'],
-                    "drops": [
-                        {
-                            "weapon-name": drop['weapon_name'],
-                            "DMPI": drop['target_value'] if drop['target_type'] == "dmpi" else "",
-                            "tgt-name": drop['target_value'] if drop['target_type'] == "target" else "",
-                            "img-name": drop['image_path'],
-                            "bda-result": drop['bda_result'],
-                        } for drop in data['ag_weapons'] if drop['pilot_id'] - 1 == id_
-                    ]
-                } for id_, aircrew in enumerate(data['aircrew'])
-            ],
-            "opposition": {
-                "type": data['opposition_type_number'],
-                "location": data['opposition_location'],
-            },
-            "aa": data['aa_weapons'],
-            "engagement-result": data['engagement_result'],
-            "blue-casualties": data['blue_casualties'],
-            "mission-notes": data['mission_notes'],
-            "restrike-recommendation": data['restrike_recommendation']
-        }
+        create_view_data(data, debrief_id)
 
-        with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("display-data.json"), "w") as f:
-            json.dump(view_data, f, indent=2)
+        insert_tracker_data(data)
 
         return jsonify({
             'success': True,
@@ -306,8 +318,14 @@ def get():
 
     return jsonify(filtered_rows)
 
+@app.route('/file')
+def file():
+    if session.get('authed', False) or config.bypass_auth_debug:
+        return render_template('submit.html')
+    return redirect('/login')
+
 @app.route('/')
 def home():
     if session.get('authed', False) or config.bypass_auth_debug:
-        return render_template('submit.html')
+        return render_template('menu.html')
     return redirect('/login')

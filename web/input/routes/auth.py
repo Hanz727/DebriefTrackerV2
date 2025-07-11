@@ -7,11 +7,8 @@ from web.input._constants import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, TOKEN_U
 auth_blueprint = Blueprint('auth', __name__)
 app = auth_blueprint
 
-
 def _get_access_token():
-    # Get the authorization code from the callback URL
     code = request.args.get('code')
-    # Exchange the authorization code for an access token
     data = {
         'client_id': CLIENT_ID,
         'client_secret': CLIENT_SECRET,
@@ -28,6 +25,7 @@ def _get_access_token():
     response.raise_for_status()
     token_data = response.json()
     return token_data['access_token']
+
 
 @app.route('/login')
 def login():
@@ -66,6 +64,7 @@ def callback():
 
         if ROLE_ID in user_roles:
             session['authed'] = True
+            session['discord_uid'] = uid
             return redirect('/')
 
     return redirect('/login_failed')

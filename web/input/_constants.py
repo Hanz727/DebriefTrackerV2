@@ -19,7 +19,7 @@ CLIENT_ID: Final[str] = __OAUTH2_CREDENTIALS['id']
 CLIENT_SECRET: Final[str] = __OAUTH2_CREDENTIALS['secret']
 
 AUTH_URL: Final[str] = (f'{AUTHORIZATION_BASE_URL}?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&'
-            f'response_type=code&scope=identify+guilds+guilds.members.read')
+                        f'response_type=code&scope=identify+guilds+guilds.members.read')
 
 GUILD_ID: Final[str] = __CONFIG.auth_discord_guild_id
 ROLE_ID: Final[str] = __CONFIG.auth_discord_role_id

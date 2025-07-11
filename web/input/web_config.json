@@ -1,9 +1,9 @@
 {
   "oauth_callback_uri": "http://localhost:5000/callback",
   "discord_api_base_url": "https://discord.com/api/v10",
-  "auth_discord_guild_id": "747489937527406673",
-  "auth_discord_role_id": "747489937573806213",
-  "bypass_auth_debug": true,
+  "auth_discord_guild_id": "949398102677282836",
+  "auth_discord_role_id": "949401841580515368",
+  "bypass_auth_debug": false,
   "tacview_dir": "C:\\Users\\rocks\\Desktop\\tacview",
   "tracks_dir": "C:\\Users\\rocks\\Desktop\\tacview"
 }

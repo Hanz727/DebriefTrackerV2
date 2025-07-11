@@ -752,23 +752,23 @@
                 <!-- Mission Header -->
                 <div class="mission-header">
                     <div class="field-group">
-                        <div class="field-label">Mission Name</div>
+                        <div class="field-label">Mission Name*</div>
                         <input type="text" required minlength="3" maxlength="32"
                                class="field-value-aircrew" style="text-align: left; padding: 0px 12px;"
                                name="mission_name" id="mission_name">
                     </div>
                     <div class="field-group">
-                        <div class="field-label">Mission Number</div>
+                        <div class="field-label">Mission Number*</div>
                         <input type="number" required min="1000" max="9999"
                                class="field-value" name="mission_number" id="mission_number">
                     </div>
                     <div class="field-group">
-                        <div class="field-label">Event</div>
+                        <div class="field-label">Event*</div>
                         <input type="text" required minlength="3" maxlength="3"
                                class="field-value" name="mission_event" id="mission_event">
                     </div>
                     <div class="field-group">
-                        <div class="field-label">Date</div>
+                        <div class="field-label">Date*</div>
                         <input type="date" required style="color-scheme: dark;"
                                class="field-value" name="mission_date" id="mission_date">
                     </div>
@@ -787,7 +787,7 @@
                         <div class="callsign-name">CALLSIGN1</div>
                         <div class="pilot-details">
                             <div>
-                                <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
+                                <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX*</div>
                                 <input type="text" required pattern="\d{3}"
                                        class="field-value-aircrew" name="aircrew[1][modex]" id="aircrew_1_modex">
                             </div>
@@ -795,9 +795,9 @@
                                 <div class="field-label" style="text-align: center; padding-left: 0px;">AIRCREW</div>
                                 <div style="display: flex;">
                                     <input type="text" required minlength="2" maxlength="32"
-                                           class="field-value-aircrew" name="aircrew[1][pilot]" id="aircrew_1_pilot">
+                                           class="field-value-aircrew" placeholder="Pilot*" name="aircrew[1][pilot]" id="aircrew_1_pilot">
                                     <input type="text" minlength="2" maxlength="32"
-                                           class="field-value-aircrew" name="aircrew[1][rio]" id="aircrew_1_rio">
+                                           class="field-value-aircrew" placeholder="Rio" name="aircrew[1][rio]" id="aircrew_1_rio">
                                 </div>
                             </div>
                         </div>
@@ -844,11 +844,11 @@
                     <table class="aa-table">
                         <thead>
                             <tr>
-                                <th>MODEX</th>
-                                <th>WEAPON</th>
-                                <th>TARGET</th>
+                                <th>MODEX*</th>
+                                <th>WEAPON*</th>
+                                <th>TARGET*</th>
                                 <th>RANGE</th>
-                                <th>SPEED (MACH)</th>
+                                <th>OWN SPEED (MACH)</th>
                                 <th>OWN ALTITUDE</th>
                                 <th>TARGET ALTITUDE</th>
                                 <th>HIT</th>
@@ -989,7 +989,7 @@
                 <div class="weapon-name">
                     <input type="text" required minlength="3" maxlength="32"
                            class="field-value-aircrew" style="text-align: left; padding: 0px 8px;"
-                           placeholder="Weapon Name"
+                           placeholder="Weapon Name*"
                            name="ag_weapons[${pilotId}][${weaponId}][weapon_name]">
                 </div>
                 <div class="target-dmpi-table">
@@ -1070,7 +1070,7 @@
                 <div class="callsign-name">${AppState.selectedCallsign || 'CALLSIGN'}${AppState.pilotCounter}</div>
                 <div class="pilot-details">
                     <div>
-                        <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX</div>
+                        <div class="field-label" style="text-align: center; padding-left: 0px;">MODEX*</div>
                         <input type="text" required pattern="\\d{3}"
                                class="field-value-aircrew"
                                name="aircrew[${AppState.pilotCounter}][modex]"
@@ -1082,10 +1082,12 @@
                             <input type="text" required minlength="2" maxlength="32"
                                    class="field-value-aircrew"
                                    name="aircrew[${AppState.pilotCounter}][pilot]"
+                                   placeholder="Pilot*"
                                    id="aircrew_${AppState.pilotCounter}_pilot">
                             <input type="text" minlength="2" maxlength="32"
                                    class="field-value-aircrew"
                                    name="aircrew[${AppState.pilotCounter}][rio]"
+                                   placeholder="Rio"
                                    id="aircrew_${AppState.pilotCounter}_rio">
                         </div>
                     </div>
@@ -1558,7 +1560,6 @@
                             window.location.href = `/debrief/${result.id}`;
                         }, 1000);
                     } else {
-                        alert(`✅ Strike report submitted successfully!`);
                         console.log('Server response:', result);
                     }
                 } else {
@@ -1600,7 +1601,6 @@
 
         function loadDataFromJSON(jsonData) {
             if (!jsonData || jsonData.length === 0) {
-                alert('No data to load or no matching callsign found');
                 return;
             }
 
@@ -1613,7 +1613,6 @@
             const filteredData = filterDataByCallsign(jsonData, currentCallsign);
 
             if (filteredData.length === 0) {
-                alert('No data found for current callsign');
                 return;
             }
 
@@ -1899,7 +1898,6 @@
 
             const card = document.querySelector(`[data-pilot-id="${pilotId}"]`);
             if (card && card.getAttribute('data-loaded-from-json') === 'true') {
-                alert('This pilot data has already been loaded');
                 return;
             }
 
@@ -1984,7 +1982,6 @@
                 updateBDACards();
             }, 100);
 
-           alert(`Loaded ${matchingEntries.length} weapons for modex ${modexValue}`);
        }
 
         async function fetchMissionData(id) {
