@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -58,124 +59,14 @@ def show_bda_img(debrief_id, img_name):
 
 @app.route("/debrief/<int:debrief_id>")
 def show_debrief(debrief_id):
-    '''
-     debrief = {
-         "debrief-id": debrief_id,
-         "mission-name": "Murmansk Strike Escort",
-         "mission-number": "5031",
-         "mission-event": "1A2",
-         "date": "08 JUL 2025",
-         "callsign": "VICTORY1",
-         "aircrew": [
-             {
-                 "modex": "103",
-                 "aircrew": "JJ | Scarlett"
-             },
-             {
-                 "modex": "105",
-                 "aircrew": "Nakush | Lilo"
-             },
-             {
-                 "modex": "107",
-                 "aircrew": "Alexandra | Patterson"
-             },
-             {
-                 "modex": "111",
-                 "aircrew": "Klapo | Oscar"
-             },
-         ],
-         "ag-drop-count": 4,
-         "bda-count": 4,
-         "ag": [
-             {
-                 "modex": "103",
-                 "drops": [
-                     {
-                         "weapon-name": "GBU-12 Paveway II",
-                         "DMPI": "",
-                         "tgt-name": "",
-                         "img-name": "1.png"
-                     },
-                 ]
-             },
-             {
-                 "modex": "105",
-                 "drops": [
-                     {
-                         "weapon-name": "GBU-12 Paveway II",
-                         "DMPI": "AJDAS-0124",
-                         "tgt-name": "",
-                         "img-name": "2.png"
-                     }
-                 ]
-             },
-             {
-                 "modex": "107",
-                 "drops": [
-                     {
-                         "weapon-name": "GBU-16 Paveway II",
-                         "DMPI": "",
-                         "tgt-name": "SA-3",
-                         "img-name": "3.png"
-                     }
-                 ]
-             },
-             {
-                 "modex": "111",
-                 "drops": [
-                     {
-                         "weapon-name": "GBU-10 Paveway II",
-                         "DMPI": "AJDAS-0126",
-                         "tgt-name": "",
-                         "img-name": "1.png"
-                     }
-                 ]
-             },
-         ],
-         "opposition": {
-             "type": "2xMIG-29",
-             "location": "g"
-         },
-         "aa": [
-             {
-                 "modex": "103",
-                 "weapon": "AIM-54C",
-                 "target": "mig-29s",
-                 "hit": "TRUE"
-             },
-             {
-                 "modex": "107",
-                 "weapon": "AIM-54C",
-                 "target": "su-27",
-                 "hit": "TRUE"
-             },
-             {
-                 "modex": "105",
-                 "weapon": "AIM-54C",
-                 "target": "su-33",
-                 "hit": "FALSE"
-             },
-             {
-                 "modex": "111",
-                 "weapon": "AIM-54C",
-                 "target": "j-11",
-                 "hit": "TRUE"
-             },
-         ],
-         "engagement-result": "1 - Enemy Destroyed",
-         "blue-casualties": "none",
-         "mission-notes": "note",
-         "restrike-recommendation": "1 - No Restrike Recommended"
-     }
-    '''
     debrief = {}
     with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path('display-data.json')) as f:
         debrief = json.load(f)
 
     return render_template("view.html", debrief=debrief)
 
-@app.route('/submit', methods=['POST'])
-def submit():
+@app.route('/submit_old', methods=['POST'])
+def submit_old():
     if not session['authed']:
         return redirect('/login')
     form = request.form
@@ -258,6 +149,7 @@ def submit_report():
         if not data:
             return jsonify({'error': 'No data received'}), 400
 
+        os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
         debrief_id = InputDataHandler.find_latest_numbered_folder(BDA_IMAGE_PATH)
 
         save_images(data, debrief_id)

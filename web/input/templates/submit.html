@@ -1613,6 +1613,7 @@
             const filteredData = filterDataByCallsign(jsonData, currentCallsign);
 
             if (filteredData.length === 0) {
+                alert(`No data found for ${currentCallsign}1`);
                 return;
             }
 
@@ -1701,7 +1702,7 @@
                         if (speedInput) speedInput.value = entry.SPEED ?? '';
                         if (ownAltInput) ownAltInput.value = entry.ANGELS ?? '';
                         if (targetAltInput) targetAltInput.value = entry.ANGELS_TGT ?? '';
-                        if (hitCheckbox) hitCheckbox.checked = entry.HIT === true;
+                        if (hitCheckbox) hitCheckbox.checked = (entry.HIT === true || entry.DESTROYED === true);
                     }
                 });
 
@@ -1845,7 +1846,6 @@
                         firstCardLoadBtn.style.display = '';
                     }
 
-
                     if (missionData) {
                         loadDataFromJSON(missionData);
                     }
@@ -1939,11 +1939,23 @@
                     const targetInput = document.getElementById(`target-input-${pilotId}-${weaponId}`);
 
                     if (weaponNameInput) weaponNameInput.value = entry.WEAPON_NAME ?? '';
-                    if (targetSelect) {
+
+                    // Clean up target data - set to empty string if "NONE"
+                    if (entry.TGT_NAME === "NONE") entry.TGT_NAME = '';
+                    if (entry.TGT_TNAME === "NONE") entry.TGT_TNAME = '';
+
+                    // Only set target type to 'target' if there's actually target data
+                    if (targetSelect && (entry.TGT_NAME || entry.TGT_TNAME)) {
                         targetSelect.value = 'target';
                         targetSelect.dispatchEvent(new Event('change'));
+                        if (targetInput) targetInput.value = entry.TGT_NAME ?? entry.TGT_TNAME ?? '';
+                    } else {
+                        // Keep default 'none' selection if no target data
+                        if (targetSelect) {
+                            targetSelect.value = 'none';
+                            targetSelect.dispatchEvent(new Event('change'));
+                        }
                     }
-                    if (targetInput) targetInput.value = entry.TGT_TNAME ?? entry.TGT_NAME ?? '';
 
                 } else if (entry.TYPE === 1) {
                     // A/A Weapon
@@ -1981,8 +1993,7 @@
             setTimeout(() => {
                 updateBDACards();
             }, 100);
-
-       }
+        }
 
         async function fetchMissionData(id) {
             try {

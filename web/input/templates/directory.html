@@ -3,86 +3,329 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>CVIC MENU</title>
     <style>
-        /* Dark mode styling */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: #e0e0e0;
+        /* ===== CSS Variables for Global Theme ===== */
+        :root {
+            /* Primary Colors */
+            --color-primary: #5865f2;
+            --color-primary-hover: #4752c4;
+            --color-success: #00ff00;
+            --color-danger: #ff5f57;
+            --color-danger-hover: #ff4136;
+
+            /* Background Colors */
+            --bg-main: #303030;
+            --bg-container: #121212;
+            --bg-section: #1f1f1f;
+            --bg-input: #121212;
+            --bg-card: #36393f;
+            --bg-input-disabled: #0a0a0a;
+
+            /* Text Colors */
+            --text-primary: #ffffff;
+            --text-secondary: #dcddde;
+            --text-muted: #b9bbbe;
+
+            /* Border Colors */
+            --border-primary: #4f545c;
+            --border-secondary: #40444b;
+            --border-container: #202225;
+
+            /* Spacing */
+            --spacing-xs: 5px;
+            --spacing-sm: 8px;
+            --spacing-md: 15px;
+            --spacing-lg: 20px;
+            --spacing-xl: 30px;
+
+            /* Typography */
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-size-xs: 10px;
+            --font-size-sm: 12px;
+            --font-size-md: 14px;
+            --font-size-lg: 16px;
+            --font-size-xl: 18px;
+            --font-size-xxl: 20px;
+            --font-size-title: 32px;
+
+            /* Common Dimensions */
+            --max-container-width: 1200px;
+        }
+
+        /* ===== Global Reset & Base Styles ===== */
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
-        /* Container with margins */
+        body {
+            font-family: var(--font-family), serif;
+            background: var(--bg-main);
+            color: var(--text-secondary);
+            min-height: 100vh;
+            padding: var(--spacing-lg);
+        }
+
+        /* ===== Layout Components ===== */
         .container {
-            max-width: 1200px;
+            max-width: var(--max-container-width);
             margin: 0 auto;
-            padding: 20px;
+            background: var(--bg-container);
+            border: 1px solid var(--border-container);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            display: flex;
         }
 
-        h1 {
-            color: #ffffff;
+        .header {
+            background: var(--bg-section);
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-secondary);
             text-align: center;
-            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .header-logo {
+            position: absolute;
+            left: var(--spacing-xl);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 72px;
+        }
+
+        /* ===== Typography ===== */
+        .title {
+            font-size: var(--font-size-title);
+            font-weight: bold;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: var(--font-size-md);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ===== Sidebar ===== */
+        .sidebar {
+            width: 200px;
+            background: var(--bg-section);
+            border-right: 1px solid var(--border-secondary);
+            display: flex;
+            flex-direction: column;
+            padding: var(--spacing-lg);
+        }
+
+        .nav-link {
+            display: block;
+            padding: var(--spacing-md) var(--spacing-lg);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: var(--font-size-md);
+            border: 1px solid var(--border-secondary);
+            transition: all 0.2s ease;
+            text-align: center;
+            margin-bottom: var(--spacing-sm);
+            background: var(--bg-input);
+        }
+
+        .nav-link:hover {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .nav-link:last-child {
+            margin-bottom: 0;
+        }
+
+        /* ===== Main Content Area ===== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content {
+            flex: 1;
+            padding: var(--spacing-xl);
+            background: var(--bg-section);
+        }
+
+        .content-title {
+            font-size: var(--font-size-xl);
+            font-weight: bold;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        /* ===== File List Styling ===== */
+        .file-list {
+            background: var(--bg-input);
+            border: 1px solid var(--border-primary);
+            padding: var(--spacing-lg);
         }
 
         .file-info {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid #333;
-            padding: 10px 0;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: var(--spacing-lg);
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-secondary);
+            align-items: center;
+            transition: background-color 0.2s ease;
         }
 
-        a {
+        .file-info:hover {
+            background: rgba(88, 101, 242, 0.1);
+        }
+
+        .file-info:last-child {
+            border-bottom: none;
+        }
+
+        .file-info a {
+            color: var(--color-primary);
             text-decoration: none;
-            color: #82b1ff;
+            font-weight: bold;
+            transition: color 0.2s ease;
         }
 
-        a:hover {
+        .file-info a:hover {
+            color: var(--color-primary-hover);
             text-decoration: underline;
         }
 
-        .truncate {
-            white-space: nowrap;
+        .file-info .truncate {
             overflow: hidden;
             text-overflow: ellipsis;
-            display: inline-block;
-            width: 50%; /* Adjust as needed */
+            white-space: nowrap;
+            max-width: 100%;
         }
 
-        /* Table columns with flex */
         .file-info span {
-            color: #b0b0b0;
-            margin-left: 10px;
-        }
-
-        .file-info span.size {
+            color: var(--text-muted);
+            font-size: var(--font-size-sm);
             text-align: right;
-            min-width: 100px;
         }
 
-        /* Add more space between the file rows */
-        .file-info + .file-info {
-            margin-top: 10px;
+        .file-info .size {
+            font-weight: bold;
+            color: var(--text-secondary);
+            min-width: 80px;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border-primary);
+            margin: var(--spacing-lg) 0;
+        }
+
+        /* ===== Empty State ===== */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-xl) * 2;
+            color: var(--text-muted);
+        }
+
+        .empty-state-text {
+            font-size: var(--font-size-lg);
+            margin-bottom: var(--spacing-md);
+        }
+
+        /* ===== Footer ===== */
+        .footer {
+            border-bottom: none;
+            border-top: 1px solid var(--border-secondary);
+            height: 108px;
+            align-content: center;
+            background: var(--bg-section);
+            padding: var(--spacing-lg);
+            text-align: center;
+            position: relative;
+        }
+
+        .footer-logo {
+            position: absolute;
+            left: var(--spacing-xl);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 72px;
+        }
+
+        .footer-text .title {
+            font-size: var(--font-size-xl);
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>{{ title }}</h1>
-    <hr>
-    <div>
-        <!-- Loop through the files passed by Flask -->
-        {% for file in files %}
-            <div class="file-info">
-                <a class="truncate" href="{{ route }}/{{ file.item }}">{{ file.name }}</a>
-                <span>{{ file.date }}</span>
-                <span class="size">{{ file.size | round(2) if file.size else '-' }} MB</span>
+    <div class="container">
+        <!-- Header -->
+        <div class="main-content">
+            <div class="header">
+                <img src="/static/img/logo2.png" class="header-logo" alt="CVW-17 Logo">
+                <div class="title">CVIC MENU</div>
+                <div class="subtitle">CARRIER AIR WING 17</div>
             </div>
-        {% endfor %}
+
+            <!-- Main layout with sidebar and content -->
+            <div style="display: flex; flex: 1;">
+                <!-- Sidebar Navigation -->
+                <div class="sidebar">
+                    <a href="/" class="nav-link">HOME</a>
+                    <a href="#" class="nav-link">AP STRIKE REPORTS</a>
+                    <a href="#" class="nav-link">DATA VIEWER</a>
+                    <a href="/tacview" class="nav-link">TACVIEW</a>
+                    <a href="/tracks" class="nav-link">REPLAYS</a>
+                </div>
+
+                <!-- Content Area -->
+                <div class="content" style="min-height: 470px">
+                    <div class="content-title">{{ title }}</div>
+
+                    <div class="divider"></div>
+
+                    <div class="file-list">
+                        <!-- Loop through the files passed by Flask -->
+                        {% for file in files %}
+                            <div class="file-info">
+                                <a class="truncate" href="{{ route }}/{{ file.item }}">{{ file.name }}</a>
+                                <span>{{ file.date }}</span>
+                                <span class="size">{{ file.size | round(2) if file.size else '-' }} MB</span>
+                            </div>
+                        {% endfor %}
+
+                        <!-- Empty state if no files -->
+                        {% if not files %}
+                            <div class="empty-state">
+                                <div class="empty-state-text">No files available</div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <img src="/static/img/logo2.png" width="80" height="72" alt="CVW-17 Logo" class="footer-logo">
+                <div class="footer-text">
+                    <div class="title">VIRTUAL CARRIER AIR WING 17</div>
+                    <div class="subtitle">Not associated with the Department of Defence or any of its components.</div>
+                </div>
+            </div>
+        </div>
     </div>
-    <hr>
-</div>
 </body>
 </html>
