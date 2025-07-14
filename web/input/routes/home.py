@@ -9,6 +9,10 @@ from werkzeug.utils import secure_filename
 from clients.databases.contracts import CVW17DatabaseRow
 from clients.databases.postgres.postgres_client import PostGresClient
 from clients.thread_pool_client import ThreadPoolClient
+from core.constants import MODEX_TO_SQUADRON, Squadrons
+from core.wrappers import safe_execute
+from services import Logger
+from services.data_handler import DataHandler
 from web.input._constants import BDA_IMAGE_PATH
 from web.input.config.config import WebConfigSingleton
 from web.input.tracker_ui.input_data_handler import InputDataHandler
@@ -65,24 +69,6 @@ def show_debrief(debrief_id):
 
     return render_template("view.html", debrief=debrief)
 
-@app.route('/submit_old', methods=['POST'])
-def submit_old():
-    if not session['authed']:
-        return redirect('/login')
-    form = request.form
-    i = 0
-    while form.get(f'tail_number_{i}', None):
-        row = InputDataHandler.get_row(form, i)
-        if InputDataHandler.validate_row(row):
-            row.pilot_name = row.pilot_name.lower().strip()
-            if row.rio_name is not None:
-                row.rio_name = row.rio_name.lower().strip()
-
-            postgres_client.insert(row)
-        i += 1
-
-    return 'Debrief uploaded!'
-
 def save_images(data, debrief_id):
     if data.get('ag_weapons'):
         for i, weapon in enumerate(data['ag_weapons']):
@@ -138,7 +124,106 @@ def create_view_data(data, debrief_id):
 
 def insert_tracker_data(data):
     #postgres_client.insert()
-    ...
+
+    aircrew_presence = data.get('aircrew', [])
+
+    for ag_weapon in data.get('ag_weapons', []):
+        row = CVW17DatabaseRow(
+            datetime.now() or None,
+            data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
+            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(data.get('aircrew', [{}])[0].get('modex', 0))), Squadrons.NONE).value or None,
+            data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1)-1].get('rio', "") or None,
+            data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1)-1].get('pilot', "") or None,
+            data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1)-1].get('modex', "") or None,
+            'A/G',
+            ag_weapon.get('weapon_name', "") or None,
+            ag_weapon.get('target_value', "") or None,
+            None,
+            None,
+            None,
+            None,
+            True,
+            True,
+            1,
+            data.get('mission_number', "") or None,
+            data.get('mission_name', "") or None,
+            data.get('mission_event', "") or None,
+            data.get('mission_notes', "") or None
+        )
+
+        if InputDataHandler.validate_row(row):
+            aircrew_presence.remove(data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1)-1])
+            print(row)
+            #postgres_client.insert(row)
+
+    for aa_weapon in data.get('aa_weapons', []):
+        aircrew = None
+        for aircrew_ in data.get('aircrew', []):
+            if aircrew_.get('modex') == aa_weapon.get('modex'):
+                aircrew = aircrew_
+                break
+
+        if aircrew is None:
+            continue
+
+        row = CVW17DatabaseRow(
+            datetime.now() or None,
+            data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
+            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(data.get('aircrew', [{}])[0].get('modex', 0))),
+                                  Squadrons.NONE).value or None,
+            aircrew.get('rio', '').strip().lower() or None,
+            aircrew.get('pilot', '').strip().lower() or None,
+            int(aircrew.get('modex', 0)) or None,
+            'A/A',
+            aa_weapon.get('weapon', '') or None,
+            aa_weapon.get('target', '') or None,
+            aa_weapon.get('target_altitude', '') or None,
+            aa_weapon.get('own_altitude', '') or None,
+            aa_weapon.get('speed', '') or None,
+            aa_weapon.get('range', '') or None,
+            aa_weapon.get('hit', False),
+            aa_weapon.get('hit', False),
+            1,
+            data.get('mission_number', '') or None,
+            data.get('mission_name', '') or None,
+            data.get('mission_event', '') or None,
+            data.get('mission_notes', '') or None
+        )
+
+        if InputDataHandler.validate_row(row):
+            aircrew_presence.remove(aircrew)
+            #postgres_client.insert(row)
+            print(row)
+
+    for aircrew in aircrew_presence:
+        row = CVW17DatabaseRow(
+            datetime.now() or None,
+            data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
+            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(data.get('aircrew', [{}])[0].get('modex', 0))),
+                                  Squadrons.NONE).value or None,
+            aircrew.get('rio', '').strip().lower() or None,
+            aircrew.get('pilot', '').strip().lower() or None,
+            int(aircrew.get('modex', 0)) or None,
+            'N/A',
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            False,
+            False,
+            0,
+            data.get('mission_number', '') or None,
+            data.get('mission_name', '') or None,
+            data.get('mission_event', '') or None,
+            data.get('mission_notes', '') or None
+        )
+
+        if InputDataHandler.validate_row(row):
+            aircrew_presence.remove(aircrew)
+            print(row)
+            #postgres_client.insert(row)
 
 @app.route('/submit-report', methods=['POST'])
 def submit_report():
