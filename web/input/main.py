@@ -12,6 +12,7 @@ from web.input.routes.auth import auth_blueprint
 from web.input.routes.downloads import downloads_blueprint
 from web.input.routes.home import home_blueprint
 from web.input.routes.msn_data import msn_data_blueprint
+from web.input.routes.reports import reports_blueprint
 
 
 def create_app():
@@ -31,6 +32,7 @@ def create_app():
     app.register_blueprint(auth_blueprint)
     app.register_blueprint(msn_data_blueprint)
     app.register_blueprint(downloads_blueprint)
+    app.register_blueprint(reports_blueprint)
 
     return app
 

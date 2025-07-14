@@ -157,6 +157,7 @@
             flex: 1;
             padding: var(--spacing-xl);
             background: var(--bg-section);
+            min-height: 470px;
         }
 
         .content-title {
@@ -169,60 +170,60 @@
             text-align: center;
         }
 
-        /* ===== File List Styling ===== */
-        .file-list {
+        /* ===== Reports Table Styling ===== */
+        .reports-table {
             background: var(--bg-input);
             border: 1px solid var(--border-primary);
-            padding: var(--spacing-lg);
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--font-size-sm);
         }
 
-        .file-info {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: var(--spacing-lg);
+        .reports-table th {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            padding: var(--spacing-md);
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-primary);
+            cursor: default;
+        }
+
+        .reports-table td {
             padding: var(--spacing-md);
             border-bottom: 1px solid var(--border-secondary);
-            align-items: center;
-            transition: background-color 0.2s ease;
+            color: var(--text-secondary);
+            text-align: center;
         }
 
-        .file-info:hover {
+        .reports-table tr:hover {
             background: rgba(88, 101, 242, 0.1);
+            cursor: pointer;
         }
 
-        .file-info:last-child {
+        .reports-table tr:last-child td {
             border-bottom: none;
         }
 
-        .file-info a {
-            color: var(--color-primary);
-            text-decoration: none;
+        .reports-table .event-cell {
             font-weight: bold;
-            transition: color 0.2s ease;
+            color: var(--text-primary);
         }
 
-        .file-info a:hover {
-            color: var(--color-primary-hover);
-            text-decoration: underline;
+        .reports-table .callsign-cell {
+            font-weight: bold;
+            color: var(--text-primary);
         }
 
-        .file-info .truncate {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 100%;
-        }
-
-        .file-info span {
+        .reports-table .date-cell {
             color: var(--text-muted);
-            font-size: var(--font-size-sm);
-            text-align: right;
+            font-family: monospace;
         }
 
-        .file-info .size {
+        .reports-table .mission-number-cell {
             font-weight: bold;
-            color: var(--text-secondary);
-            min-width: 80px;
         }
 
         .divider {
@@ -234,7 +235,7 @@
         /* ===== Empty State ===== */
         .empty-state {
             text-align: center;
-            padding: var(--spacing-xl) * 2;
+            padding: var(--spacing-xl);
             color: var(--text-muted);
         }
 
@@ -291,28 +292,41 @@
                 </div>
 
                 <!-- Content Area -->
-                <div class="content" style="min-height: 0px">
-                    <div class="content-title">{{ title }}</div>
+                <div class="content">
+                    <div class="content-title">AP STRIKE REPORTS</div>
 
                     <div class="divider"></div>
 
-                    <div class="file-list">
-                        <!-- Loop through the files passed by Flask -->
-                        {% for file in files %}
-                            <div class="file-info">
-                                <a class="truncate" href="{{ route }}/{{ file.item }}">{{ file.name }}</a>
-                                <span>{{ file.date }}</span>
-                                <span class="size">{{ file.size | round(2) if file.size else '-' }} MB</span>
-                            </div>
-                        {% endfor %}
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Callsign</th>
+                                <th>Mission Name</th>
+                                <th>Mission #</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Loop through the reports passed by Flask -->
+                            {% for report in reports %}
+                            <tr onclick="window.location.href='/debrief/{{ report['debrief-id'] }}'">
+                                <td class="event-cell">{{ report.event }}</td>
+                                <td class="callsign-cell">{{ report.callsign }}</td>
+                                <td>{{ report['mission-name'] }}</td>
+                                <td class="mission-number-cell">{{ report['mission-number'] }}</td>
+                                <td class="date-cell">{{ report.date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
 
-                        <!-- Empty state if no files -->
-                        {% if not files %}
-                            <div class="empty-state">
-                                <div class="empty-state-text">No files available</div>
-                            </div>
-                        {% endif %}
+                    <!-- Empty state if no reports -->
+                    {% if not reports %}
+                    <div class="empty-state">
+                        <div class="empty-state-text">No strike reports available</div>
                     </div>
+                    {% endif %}
 
                 </div>
             </div>

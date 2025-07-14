@@ -1,7 +1,7 @@
 import os
 import time
 
-from flask import Blueprint, render_template, send_from_directory
+from flask import Blueprint, render_template, send_from_directory, session, redirect
 from web.input.config.config import WebConfigSingleton
 
 downloads_blueprint = Blueprint('downloads', __name__)
@@ -48,23 +48,33 @@ def _list_directory(path):
 
 @app.route('/tacview')
 def tacview():
-    return render_template('directory.html', files=_list_directory(config.tacview_dir),
-                           title="CVW-17 Tacview Archive", route='tacview')
+    if session.get('authed', False) or config.bypass_auth_debug:
+        return render_template('directory.html', files=_list_directory(config.tacview_dir),
+                               title="CVW-17 Tacview Archive", route='tacview')
+    return redirect('/login')
+
 
 @app.route('/tracks')
 def tracks():
-    return render_template('directory.html', files=_list_directory(config.tracks_dir),
-                           title="CVW-17 Tracks Archive", route='tracks')
+    if session.get('authed', False) or config.bypass_auth_debug:
+        return render_template('directory.html', files=_list_directory(config.tracks_dir),
+                               title="CVW-17 Tracks Archive", route='tracks')
+    return redirect('/login')
 
 @app.route('/tracks/<filename>')
 def download_track(filename):
-    if not filename.endswith('.trk'):
-        return "<h1>404 File not found<h1>"
-    return send_from_directory(config.tracks_dir, filename, as_attachment=True)
+    if session.get('authed', False) or config.bypass_auth_debug:
+        if not filename.endswith('.trk'):
+            return "<h1>404 File not found<h1>"
+        return send_from_directory(config.tracks_dir, filename, as_attachment=True)
 
+    return redirect('/login')
 
 @app.route('/tacview/<filename>')
 def download_tacview(filename):
-    if not filename.endswith('.acmi'):
-        return "<h1>404 File not found<h1>"
-    return send_from_directory(config.tacview_dir, filename, as_attachment=True)
+    if session.get('authed', False) or config.bypass_auth_debug:
+        if not filename.endswith('.acmi'):
+            return "<h1>404 File not found<h1>"
+        return send_from_directory(config.tacview_dir, filename, as_attachment=True)
+
+    return redirect('/login')
