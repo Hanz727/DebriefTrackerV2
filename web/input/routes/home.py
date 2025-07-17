@@ -1,5 +1,6 @@
 import json
 import os
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
@@ -125,16 +126,17 @@ def create_view_data(data, debrief_id):
 def insert_tracker_data(data):
     #postgres_client.insert()
 
-    aircrew_presence = data.get('aircrew', [])
+    aircrew_presence = deepcopy(data.get('aircrew', []))
 
     for ag_weapon in data.get('ag_weapons', []):
+        aircrew = data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1) - 1]
         row = CVW17DatabaseRow(
             datetime.now() or None,
             data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
             MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(data.get('aircrew', [{}])[0].get('modex', 0))), Squadrons.NONE).value or None,
-            data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1)-1].get('rio', "") or None,
-            data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1)-1].get('pilot', "") or None,
-            data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1)-1].get('modex', "") or None,
+            aircrew.get('rio', "").strip().lower() or None,
+            aircrew.get('pilot', "").strip().lower() or None,
+            aircrew.get('modex', "") or None,
             'A/G',
             ag_weapon.get('weapon_name', "") or None,
             ag_weapon.get('target_value', "") or None,
@@ -148,13 +150,13 @@ def insert_tracker_data(data):
             data.get('mission_number', "") or None,
             data.get('mission_name', "") or None,
             data.get('mission_event', "") or None,
-            data.get('mission_notes', "") or None
+            data.get('mission_notes', "")
         )
 
         if InputDataHandler.validate_row(row):
-            aircrew_presence.remove(data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1)-1])
-            print(row)
-            #postgres_client.insert(row)
+            if aircrew in aircrew_presence:
+                aircrew_presence.remove(aircrew)
+            postgres_client.insert(row)
 
     for aa_weapon in data.get('aa_weapons', []):
         aircrew = None
@@ -187,13 +189,13 @@ def insert_tracker_data(data):
             data.get('mission_number', '') or None,
             data.get('mission_name', '') or None,
             data.get('mission_event', '') or None,
-            data.get('mission_notes', '') or None
+            data.get('mission_notes', '')
         )
 
         if InputDataHandler.validate_row(row):
-            aircrew_presence.remove(aircrew)
-            #postgres_client.insert(row)
-            print(row)
+            if aircrew in aircrew_presence:
+                aircrew_presence.remove(aircrew)
+            postgres_client.insert(row)
 
     for aircrew in aircrew_presence:
         row = CVW17DatabaseRow(
@@ -217,13 +219,11 @@ def insert_tracker_data(data):
             data.get('mission_number', '') or None,
             data.get('mission_name', '') or None,
             data.get('mission_event', '') or None,
-            data.get('mission_notes', '') or None
+            data.get('mission_notes', '')
         )
 
         if InputDataHandler.validate_row(row):
-            aircrew_presence.remove(aircrew)
-            print(row)
-            #postgres_client.insert(row)
+            postgres_client.insert(row)
 
 @app.route('/submit-report', methods=['POST'])
 def submit_report():
