@@ -113,17 +113,16 @@
 
         /* ===== Sidebar ===== */
         .sidebar {
-            width: 200px;
-            background: var(--bg-section);
-            border-right: 1px solid var(--border-secondary);
+            width: 220px;
+            background: var(--bg-container);
             display: flex;
             flex-direction: column;
             padding: var(--spacing-lg);
         }
 
         .nav-link {
-            display: block;
-            padding: var(--spacing-md) var(--spacing-lg);
+            display: flex;
+            padding: var(--spacing-md) var(--spacing-xl);
             color: var(--text-primary);
             text-decoration: none;
             font-weight: bold;
@@ -134,7 +133,11 @@
             transition: all 0.2s ease;
             text-align: center;
             margin-bottom: var(--spacing-sm);
-            background: var(--bg-input);
+            background: var(--bg-section);
+            min-height: 50px;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
         }
 
         .nav-link:hover {
@@ -156,7 +159,7 @@
         .content {
             flex: 1;
             padding: var(--spacing-xl);
-            background: var(--bg-section);
+            background: var(--bg-container);
         }
 
         .content-title {
@@ -169,60 +172,83 @@
             text-align: center;
         }
 
-        /* ===== File List Styling ===== */
-        .file-list {
-            background: var(--bg-input);
-            border: 1px solid var(--border-primary);
-            padding: var(--spacing-lg);
+        /* ===== Table Styling ===== */
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid var(--border-secondary);
+            background: var(--bg-container);
         }
 
-        .file-info {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: var(--spacing-lg);
+        .file-table thead {
+            background: var(--bg-section);
+        }
+
+        .file-table th {
             padding: var(--spacing-md);
-            border-bottom: 1px solid var(--border-secondary);
-            align-items: center;
-            transition: background-color 0.2s ease;
+            text-align: center;
+            color: var(--text-primary);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: var(--font-size-sm);
+            border-bottom: 2px solid var(--border-primary);
         }
 
-        .file-info:hover {
+        .file-table th:last-child {
+            border-right: none;
+        }
+
+        .file-table th.name-header {
+            width: 60%;
+        }
+
+        .file-table th.date-header {
+            width: 25%;
+        }
+
+        .file-table th.size-header {
+            width: 15%;
+        }
+
+        .file-table tbody tr {
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+
+        .file-table tbody tr:hover {
             background: rgba(88, 101, 242, 0.1);
         }
 
-        .file-info:last-child {
-            border-bottom: none;
+        .file-table td {
+            padding: var(--spacing-md);
+            text-align: center;
+            border-bottom: 1px solid var(--border-secondary);
         }
 
-        .file-info a {
-            color: var(--color-primary);
-            text-decoration: none;
+        .file-table td:last-child {
+            border-right: none;
+        }
+
+        .file-table .file-name {
+            color: var(--text-secondary);
             font-weight: bold;
-            transition: color 0.2s ease;
-        }
-
-        .file-info a:hover {
-            color: var(--color-primary-hover);
-            text-decoration: underline;
-        }
-
-        .file-info .truncate {
+            text-decoration: none;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            max-width: 100%;
+            display: block;
         }
 
-        .file-info span {
+        .file-table .file-date {
             color: var(--text-muted);
             font-size: var(--font-size-sm);
-            text-align: right;
         }
 
-        .file-info .size {
-            font-weight: bold;
+        .file-table .file-size {
             color: var(--text-secondary);
-            min-width: 80px;
+            font-weight: bold;
+            font-size: var(--font-size-sm);
         }
 
         .divider {
@@ -296,23 +322,37 @@
 
                     <div class="divider"></div>
 
-                    <div class="file-list">
-                        <!-- Loop through the files passed by Flask -->
-                        {% for file in files %}
-                            <div class="file-info">
-                                <a class="truncate" href="{{ route }}/{{ file.item }}">{{ file.name }}</a>
-                                <span>{{ file.date }}</span>
-                                <span class="size">{{ file.size | round(2) if file.size else '-' }} MB</span>
-                            </div>
-                        {% endfor %}
+                    <!-- File Table -->
+                    <table class="file-table">
+                        <thead>
+                            <tr>
+                                <th class="name-header">File Name</th>
+                                <th class="date-header">Date</th>
+                                <th class="size-header">Size (MB)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Loop through the files passed by Flask -->
+                            {% for file in files %}
+                                <tr onclick="window.location.href='{{ route }}/{{ file.item }}'">
+                                    <td>
+                                        <a href="{{ route }}/{{ file.item }}" class="file-name">{{ file.name }}</a>
+                                    </td>
+                                    <td class="file-date">{{ file.date }}</td>
+                                    <td class="file-size">{{ file.size | round(2) if file.size else '-' }}</td>
+                                </tr>
+                            {% endfor %}
 
-                        <!-- Empty state if no files -->
-                        {% if not files %}
-                            <div class="empty-state">
-                                <div class="empty-state-text">No files available</div>
-                            </div>
-                        {% endif %}
-                    </div>
+                            <!-- Empty state if no files -->
+                            {% if not files %}
+                                <tr>
+                                    <td colspan="3" class="empty-state">
+                                        <div class="empty-state-text">No files available</div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
 
                 </div>
             </div>

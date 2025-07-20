@@ -113,17 +113,16 @@
 
         /* ===== Sidebar ===== */
         .sidebar {
-            width: 200px;
-            background: var(--bg-section);
-            border-right: 1px solid var(--border-secondary);
+            width: 220px;
+            background: var(--bg-container);
             display: flex;
             flex-direction: column;
             padding: var(--spacing-lg);
         }
 
         .nav-link {
-            display: block;
-            padding: var(--spacing-md) var(--spacing-lg);
+            display: flex;
+            padding: var(--spacing-md) var(--spacing-xl);
             color: var(--text-primary);
             text-decoration: none;
             font-weight: bold;
@@ -134,7 +133,11 @@
             transition: all 0.2s ease;
             text-align: center;
             margin-bottom: var(--spacing-sm);
-            background: var(--bg-input);
+            background: var(--bg-section);
+            min-height: 50px;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
         }
 
         .nav-link:hover {
@@ -156,7 +159,7 @@
         .content {
             flex: 1;
             padding: var(--spacing-xl);
-            background: var(--bg-section);
+            background: var(--bg-container);
         }
 
         .content-title {

@@ -124,8 +124,6 @@ def create_view_data(data, debrief_id):
         json.dump(view_data, f, indent=2)
 
 def insert_tracker_data(data):
-    #postgres_client.insert()
-
     aircrew_presence = deepcopy(data.get('aircrew', []))
 
     for ag_weapon in data.get('ag_weapons', []):
@@ -133,7 +131,7 @@ def insert_tracker_data(data):
         row = CVW17DatabaseRow(
             datetime.now() or None,
             data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
-            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(data.get('aircrew', [{}])[0].get('modex', 0))), Squadrons.NONE).value or None,
+            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))), Squadrons.NONE).value or None,
             aircrew.get('rio', "").strip().lower() or None,
             aircrew.get('pilot', "").strip().lower() or None,
             aircrew.get('modex', "") or None,
@@ -171,18 +169,18 @@ def insert_tracker_data(data):
         row = CVW17DatabaseRow(
             datetime.now() or None,
             data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
-            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(data.get('aircrew', [{}])[0].get('modex', 0))),
+            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))),
                                   Squadrons.NONE).value or None,
             aircrew.get('rio', '').strip().lower() or None,
             aircrew.get('pilot', '').strip().lower() or None,
-            int(aircrew.get('modex', 0)) or None,
+            aircrew.get('modex', "") or None,
             'A/A',
             aa_weapon.get('weapon', '') or None,
             aa_weapon.get('target', '') or None,
-            aa_weapon.get('target_altitude', '') or None,
-            aa_weapon.get('own_altitude', '') or None,
-            aa_weapon.get('speed', '') or None,
-            aa_weapon.get('range', '') or None,
+            aa_weapon.get('target_altitude', None),
+            aa_weapon.get('own_altitude', None),
+            aa_weapon.get('speed', None),
+            aa_weapon.get('range', None),
             aa_weapon.get('hit', False),
             aa_weapon.get('hit', False),
             1,
@@ -201,11 +199,11 @@ def insert_tracker_data(data):
         row = CVW17DatabaseRow(
             datetime.now() or None,
             data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
-            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(data.get('aircrew', [{}])[0].get('modex', 0))),
+            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))),
                                   Squadrons.NONE).value or None,
             aircrew.get('rio', '').strip().lower() or None,
             aircrew.get('pilot', '').strip().lower() or None,
-            int(aircrew.get('modex', 0)) or None,
+            aircrew.get('modex', 0) or None,
             'N/A',
             None,
             None,
