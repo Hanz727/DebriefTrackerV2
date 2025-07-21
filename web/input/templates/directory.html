@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CVIC MENU</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo2.png') }}">
     <style>
         /* ===== CSS Variables for Global Theme ===== */
         :root {
@@ -178,6 +179,7 @@
             border-collapse: collapse;
             border: 1px solid var(--border-secondary);
             background: var(--bg-container);
+            font-size: var(--font-size-sm);
         }
 
         .file-table thead {
@@ -242,13 +244,11 @@
 
         .file-table .file-date {
             color: var(--text-muted);
-            font-size: var(--font-size-sm);
         }
 
         .file-table .file-size {
             color: var(--text-secondary);
             font-weight: bold;
-            font-size: var(--font-size-sm);
         }
 
         .divider {
@@ -327,8 +327,8 @@
                         <thead>
                             <tr>
                                 <th class="name-header">File Name</th>
-                                <th class="date-header">Date</th>
                                 <th class="size-header">Size (MB)</th>
+                                <th class="date-header">Date (CET)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -338,8 +338,8 @@
                                     <td>
                                         <a href="{{ route }}/{{ file.item }}" class="file-name">{{ file.name }}</a>
                                     </td>
-                                    <td class="file-date">{{ file.date }}</td>
                                     <td class="file-size">{{ file.size | round(2) if file.size else '-' }}</td>
+                                    <td class="file-date">{{ file.date }}</td>
                                 </tr>
                             {% endfor %}
 

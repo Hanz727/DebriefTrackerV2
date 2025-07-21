@@ -23,7 +23,7 @@ def _list_directory(path):
 
         # Get the file's last modification time
         item_mtime = os.path.getmtime(item_path)
-        formatted_date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(item_mtime))
+        formatted_date = time.strftime('%Y-%m-%d %H:%M', time.localtime(item_mtime))
 
         item_name = item
         idx = item.find('DCS')
