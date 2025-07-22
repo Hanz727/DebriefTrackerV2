@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo2.png') }}">
     <title>CVW POST STRIKE AP REPORT</title>
     <style>
         * {
@@ -149,9 +150,7 @@
         .pilot-card {
             background: #1f1f1f;
             border: 1px solid #4f545c;
-            padding: 10px;
-            padding-top: 7px;
-            transition: all 0.3s ease;
+            padding: 7px 10px 10px;
             width: 100%;
             max-width: 300px;
         }
@@ -255,7 +254,6 @@
             border: 1px solid #4f545c;
             height: 86px;
             padding: 15px;
-            transition: all 0.3s ease;
         }
 
         .target-name {
@@ -373,7 +371,6 @@
             cursor: pointer;
             font-size: 12px;
             text-transform: uppercase;
-            transition: background 0.3s ease;
         }
 
         .edit-btn:hover {
@@ -392,9 +389,46 @@
             margin-bottom: 5px;
         }
 
+        .sidebar {
+            max-width: 1200px;
+            margin: 0 auto 10px auto;
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            background: #1f1f1f;
+            border: 1px solid #202225;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .nav-link {
+            background: #121212;
+            color: #dcddde;
+            text-decoration: none;
+            padding: 15px 20px;
+            border: 1px solid #4f545c;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            flex: 1;
+            text-align: center;
+        }
+
+        .nav-link:hover {
+            background: #5865f2;
+            color: white;
+        }
+
     </style>
 </head>
 <body>
+<div class="sidebar">
+    <a href="/" class="nav-link">HOME</a>
+    <a href="/reports" class="nav-link">AP STRIKE REPORTS</a>
+    <a href="/viewer" class="nav-link">DATA VIEWER</a>
+    <a href="/tacview" class="nav-link">TACVIEW</a>
+    <a href="/tracks" class="nav-link">REPLAYS</a>
+</div>
 <div class="container">
     <div class="header">
         <img src="/static/img/logo2.png" width="80", height="72">

@@ -14,6 +14,7 @@ from core.constants import MODEX_TO_SQUADRON, Squadrons
 from core.wrappers import safe_execute
 from services import Logger
 from services.data_handler import DataHandler
+from services.file_handler import FileHandler
 from web.input._constants import BDA_IMAGE_PATH
 from web.input.config.config import WebConfigSingleton
 from web.input.tracker_ui.input_data_handler import InputDataHandler
@@ -65,7 +66,7 @@ def show_bda_img(debrief_id, img_name):
 @app.route("/debrief/<int:debrief_id>")
 def show_debrief(debrief_id):
     debrief = {}
-    with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path('display-data.json')) as f:
+    with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / 'display-data.json') as f:
         debrief = json.load(f)
 
     return render_template("view.html", debrief=debrief)
@@ -223,6 +224,86 @@ def insert_tracker_data(data):
         if InputDataHandler.validate_row(row):
             postgres_client.insert(row)
 
+def format_relative_date(date_input):
+    """
+    Format a date as relative time or absolute date.
+
+    Args:
+        date_input: Can be a datetime object, date string, or timestamp
+
+    Returns:
+        str: Formatted date string
+    """
+    # Convert input to datetime if it's not already
+    if isinstance(date_input, str):
+        # Try common date formats, including ISO formats
+        formats = [
+            '%Y-%m-%dT%H:%M:%S.%fZ',  # ISO with microseconds and Z (your format)
+            '%Y-%m-%dT%H:%M:%SZ',  # ISO with Z, no microseconds
+            '%Y-%m-%dT%H:%M:%S.%f',  # ISO with microseconds, no Z
+            '%Y-%m-%dT%H:%M:%S',  # ISO basic format
+            '%Y-%m-%d %H:%M:%S.%f',  # Space separator with microseconds
+            '%Y-%m-%d %H:%M:%S',  # Space separator
+            '%Y-%m-%d %H:%M',  # Space separator, no seconds
+            '%Y-%m-%d',  # Date only
+            '%m/%d/%Y %H:%M:%S',  # US format with seconds
+            '%m/%d/%Y %H:%M',  # US format
+            '%m/%d/%Y'  # US format, date only
+        ]
+
+        for fmt in formats:
+            try:
+                target_date = datetime.strptime(date_input, fmt)
+                break
+            except ValueError:
+                continue
+        else:
+            raise ValueError(f"Unable to parse date string: {date_input}")
+    elif isinstance(date_input, (int, float)):
+        target_date = datetime.fromtimestamp(date_input)
+    else:
+        target_date = date_input
+
+    # Get current time
+    now = datetime.now()
+
+    # Calculate the difference in days
+    days_diff = (now.date() - target_date.date()).days
+
+    # Format based on the difference
+    if days_diff == 0:
+        return f"Today at {target_date.strftime('%H:%M')}"
+    elif days_diff == 1:
+        return f"Yesterday at {target_date.strftime('%H:%M')}"
+    elif 2 <= days_diff <= 6:
+        return f"{days_diff} days ago"
+    else:
+        return target_date.strftime('%m/%d/%Y %H:%M')
+
+def get_bda_list():
+    bdas = []
+    for debrief in reversed(os.listdir(BDA_IMAGE_PATH)):
+        with open(BDA_IMAGE_PATH / debrief / 'submit-data.json', 'r') as f:
+            data = json.load(f)
+            for bda in data['ag_weapons']:
+                if not bda['target_value'] or not bda['bda_result'] or not bda['weapon_name']:
+                    continue
+
+                bdas.append(
+                    {
+                        "msn-nr": data['mission_number'],
+                        "msn-evt": data['mission_event'],
+                        "date": format_relative_date(data['form_metadata']['submission_time']),
+                        "callsign": data['callsign'] + str(bda['pilot_id']),
+                        "weapon": bda['weapon_name'],
+                        "target": bda['target_value'],
+                        "bda-result": bda['bda_result'],
+                        "img-src": "/bda/" + str(debrief) + "/" + bda['image_path'] if bda['image_path'] else '/static/img/img-placeholder.webp',
+                    }
+                )
+
+    return bdas
+
 @app.route('/submit-report', methods=['POST'])
 def submit_report():
     try:
@@ -302,5 +383,5 @@ def file():
 @app.route('/')
 def home():
     if session.get('authed', False) or config.bypass_auth_debug:
-        return render_template('menu.html')
+        return render_template('menu.html', bdas=get_bda_list())
     return redirect('/login')

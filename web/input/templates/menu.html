@@ -52,6 +52,7 @@
 
             /* Common Dimensions */
             --max-container-width: 1200px;
+            --sidebar-width: 220px;
         }
 
         /* ===== Global Reset & Base Styles ===== */
@@ -77,6 +78,8 @@
             border: 1px solid var(--border-container);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
             display: flex;
+            flex-direction: column;
+            position: relative;
         }
 
         .header {
@@ -85,6 +88,7 @@
             border-bottom: 1px solid var(--border-secondary);
             text-align: center;
             position: relative;
+            z-index: 10;
         }
 
         .header-logo {
@@ -112,13 +116,27 @@
             letter-spacing: 1px;
         }
 
+        /* ===== Main Layout Container ===== */
+        .main-layout {
+            display: flex;
+            flex: 1;
+            min-height: 470px;
+            position: relative;
+        }
+
         /* ===== Sidebar ===== */
         .sidebar {
-            width: 220px;
+            width: var(--sidebar-width);
             background: var(--bg-container);
             display: flex;
             flex-direction: column;
             padding: var(--spacing-lg);
+            position: sticky;
+            top: 0;
+            align-self: flex-start;
+            max-height: 100vh;
+            overflow-y: auto;
+            z-index: 5;
         }
 
         .nav-link {
@@ -131,7 +149,6 @@
             letter-spacing: 1px;
             font-size: var(--font-size-md);
             border: 1px solid var(--border-secondary);
-            transition: all 0.2s ease;
             text-align: center;
             margin-bottom: var(--spacing-sm);
             background: var(--bg-section);
@@ -161,6 +178,7 @@
             flex: 1;
             padding: var(--spacing-xl);
             background: var(--bg-container);
+            margin-left: 0;
         }
 
         .content-title {
@@ -183,6 +201,7 @@
             padding: var(--spacing-lg);
             text-align: center;
             position: relative;
+            z-index: 1;
         }
 
         .footer-logo {
@@ -204,49 +223,250 @@
             background: var(--border-primary);
             margin: var(--spacing-lg) 0;
         }
+
+        .bda-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 10px;
+        }
+
+        .bda-card {
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            padding: 15px;
+        }
+
+        .bda-weapon {
+            text-transform: capitalize;
+            font-weight: bold;
+            font-size: var(--font-size-md);
+            padding-bottom: 2px;
+            white-space: nowrap;
+        }
+
+        .bda-target {
+            font-size: var(--font-size-sm);
+            padding-bottom: 7px;
+            white-space: nowrap;
+        }
+
+        .bda-id-info {
+            font-size: var(--font-size-md);
+            text-transform: capitalize;
+            white-space: nowrap;
+            display: flex;
+            justify-content: space-between;
+            padding-top: 3px;
+        }
+
+        .bda-result {
+            font-size: var(--font-size-md);
+            white-space: nowrap;
+            font-weight: bolder;
+        }
+
+        .bda-img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            background: #121212;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-top: 5px;
+            border: 1px solid #4f545c;
+            text-align: center;
+        }
+
+        .bda-img.loading {
+            opacity: 0.7;
+        }
+
+        .bda-img.loaded {
+            opacity: 1;
+        }
+
+        .bda-footer-date {
+            text-align: right;
+            font-size: var(--font-size-sm);
+        }
+
+        /* ===== Responsive Design ===== */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                max-height: none;
+            }
+
+            .main-layout {
+                flex-direction: column;
+            }
+
+            .footer {
+                margin-left: 0;
+            }
+
+            .container {
+                margin: 0;
+                border: none;
+            }
+
+            body {
+                padding: 0;
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
-        <div class="main-content">
-            <div class="header">
-                <img src="/static/img/logo2.png" class="header-logo" alt="CVW-17 Logo">
-                <div class="title">CVIC MENU</div>
-                <div class="subtitle">CARRIER AIR WING 17</div>
+        <div class="header">
+            <img src="/static/img/logo2.png" class="header-logo" alt="CVW-17 Logo">
+            <div class="title">CVIC MENU</div>
+            <div class="subtitle">CARRIER AIR WING 17</div>
+        </div>
+
+        <!-- Main layout with sidebar and content -->
+        <div class="main-layout">
+            <!-- Sidebar Navigation -->
+            <div class="sidebar">
+                <a href="/" class="nav-link">HOME</a>
+                <a href="/reports" class="nav-link">AP STRIKE REPORTS</a>
+                <a href="/viewer" class="nav-link">DATA VIEWER</a>
+                <a href="/tacview" class="nav-link">TACVIEW</a>
+                <a href="/tracks" class="nav-link">REPLAYS</a>
             </div>
 
-            <!-- Main layout with sidebar and content -->
-            <div style="display: flex; flex: 1; min-height: 470px">
-                <!-- Sidebar Navigation -->
-                <div class="sidebar">
-                    <a href="/" class="nav-link">HOME</a>
-                    <a href="/reports" class="nav-link">AP STRIKE REPORTS</a>
-                    <a href="#" class="nav-link">DATA VIEWER</a>
-                    <a href="/tacview" class="nav-link">TACVIEW</a>
-                    <a href="/tracks" class="nav-link">REPLAYS</a>
-                </div>
-
-                <!-- Content Area -->
+            <!-- Content Area -->
+            <div class="main-content">
                 <div class="content">
                     <div class="content-title">LATEST BDA</div>
 
                     <div class="divider"></div>
 
-                    <!-- Your content goes here -->
-
+                    <div class="bda-grid">
+                        {% for bda in bdas %}
+                            <div class="bda-card">
+                                <div class="bda-weapon">{{ bda['weapon'] }}</div>
+                                <div class="bda-target">{{ bda['target'] }}</div>
+                                <div class="bda-result">{{ bda['bda-result'] }}</div>
+                                <img class="bda-img loading"
+                                     alt="NO BDA IMG"
+                                     src="/static/img/img-placeholder.webp"
+                                     data-src="{{ bda['img-src'] }}"
+                                     data-index="{{ loop.index0 }}">
+                                <div class="bda-id-info">
+                                    <div>{{ bda['msn-nr'] }}</div>
+                                    <div>-</div>
+                                    <div>{{ bda['callsign']}}</div>
+                                    <div>-</div>
+                                    <div>{{ bda['msn-evt'] }}</div>
+                                </div>
+                                <div class="bda-footer-date">{{ bda['date'] }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
+
             </div>
+        </div>
 
-            <!-- Footer -->
-            <div class="footer">
-                <img src="/static/img/logo2.png" width="80" height="72" alt="CVW-17 Logo" class="footer-logo">
-                <div class="footer-text">
-                    <div class="title">VIRTUAL CARRIER AIR WING 17</div>
-                    <div class="subtitle">Not associated with the Department of Defence or any of its components.</div>
-                </div>
+        <!-- Footer -->
+        <div class="footer">
+            <img src="/static/img/logo2.png" width="80" height="72" alt="CVW-17 Logo" class="footer-logo">
+            <div class="footer-text">
+                <div class="title">VIRTUAL CARRIER AIR WING 17</div>
+                <div class="subtitle">Not associated with the Department of Defence or any of its components.</div>
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bdaImages = document.querySelectorAll('.bda-img[data-src]');
+
+            // Function to load a single image
+            function loadImage(img) {
+                const actualSrc = img.getAttribute('data-src');
+
+                // Skip if it's already the placeholder or empty
+                if (!actualSrc || actualSrc === '/static/img/img-placeholder.webp') {
+                    return;
+                }
+
+                // Don't reload if already loaded with correct src
+                if (img.src === actualSrc) {
+                    return;
+                }
+
+                // Create a new image element to preload
+                const tempImg = new Image();
+
+                tempImg.onload = function() {
+                    // Image loaded successfully, update the src
+                    img.src = actualSrc;
+                    img.classList.remove('loading');
+                    img.classList.add('loaded');
+                };
+
+                tempImg.onerror = function() {
+                    // Image failed to load, keep placeholder
+                    img.classList.remove('loading');
+                };
+
+                // Start loading the image
+                tempImg.src = actualSrc;
+            }
+
+            // Function to unload an image (reset to placeholder)
+            function unloadImage(img) {
+                const actualSrc = img.getAttribute('data-src');
+
+                // Only unload if it's not already a placeholder
+                if (img.src !== window.location.origin + '/static/img/img-placeholder.webp' &&
+                    actualSrc && actualSrc !== '/static/img/img-placeholder.webp') {
+                    img.src = '/static/img/img-placeholder.webp';
+                    img.classList.add('loading');
+                    img.classList.remove('loaded');
+                }
+            }
+
+            // Create intersection observer for loading images when they enter viewport
+            const loadObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        loadImage(img);
+                    }
+                });
+            }, {
+                rootMargin: '400px 0px',
+                threshold: 0.01
+            });
+
+            // Create intersection observer for unloading images when they're far from viewport
+            const unloadObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) {
+                        const img = entry.target;
+                        unloadImage(img);
+                    }
+                });
+            }, {
+                // Unload when image is 400px away from viewport (larger margin to prevent thrashing)
+                rootMargin: '1600px 0px',
+                threshold: 0
+            });
+
+            // Start observing all images with both observers
+            bdaImages.forEach(img => {
+                loadObserver.observe(img);
+                unloadObserver.observe(img);
+            });
+        });
+    </script>
 </body>
 </html>
