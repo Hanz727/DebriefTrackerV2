@@ -1559,7 +1559,7 @@
             total_aircrew: baseData.aircrew ? baseData.aircrew.length : 0,
             total_ag_weapons: baseData.ag_weapons ? baseData.ag_weapons.length : 0,
             total_aa_weapons: baseData.aa_weapons ? baseData.aa_weapons.length : 0,
-            total_bdas: baseData.ag_weapons ? baseData.ag_weapons.filter(w => w.image_data && w.image_data.trim() !== '').length : 0,
+            total_bdas: baseData.ag_weapons ? baseData.ag_weapons.filter(w => w.bda_result && w.bda_result.trim() !== '' && w.target_value && w.target_value.trim() !== '').length : 0,
             has_images: baseData.ag_weapons ? baseData.ag_weapons.some(w => w.image_data) : false
         };
 

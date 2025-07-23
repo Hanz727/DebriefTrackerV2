@@ -9,6 +9,7 @@ DISCORD_TOKEN_PATH: Final[Path] = BASE_DIR / Path("keys/discord.token")
 MSN_DATA_FILES_PATH: Final[Path] = BASE_DIR.parent / Path("MissionData")
 
 ON_DB_INSERT_CALLBACK = "on_db_insert"
+ON_REPORT_INSERT_CALLBACK = "on_new_report_insert"
 
 
 class Squadrons(Enum):

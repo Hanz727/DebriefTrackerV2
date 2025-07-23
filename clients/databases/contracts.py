@@ -30,6 +30,7 @@ class PartialDebrief:
     event_nr: str
     notes: str
     squadron: Squadrons
+    debrief_id: int
 
 @dataclass
 class Debrief(PartialDebrief):
@@ -58,6 +59,7 @@ class CVW17Database:
     msn_name: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     event: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
     notes: np.ndarray = field(default_factory=lambda: np.array([], dtype=str))
+    debrief_id: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
     id_: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
 
 @dataclass
@@ -82,3 +84,4 @@ class CVW17DatabaseRow:
     msn_name: str | None
     event: str | None
     notes: str | None
+    debrief_id: int | None

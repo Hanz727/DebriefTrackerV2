@@ -517,7 +517,7 @@
             <div class="bda-grid">
                 {% for plane in debrief["ag"] %}
                     {% set outer_loop = loop %}
-                    {% for drop in plane["drops"] if drop["img-name"] and (drop["tgt-name"] or drop["DMPI"])%}
+                    {% for drop in plane["drops"] if drop["bda-result"] and (drop["tgt-name"] or drop["DMPI"])%}
                         <div class="bda-card">
                             <div class="Aircraft-callsign">{{ debrief["callsign"] }}{{ outer_loop.index }}</div>
                             <div class="weapon-name">{{ drop["weapon-name"] }}</div>
@@ -526,7 +526,11 @@
                             {% elif drop["tgt-name"]|length > 0 %}
                                 <div class="target-name">TARGET: {{ drop["tgt-name"] }}</div>
                             {% endif %}
-                            <img src="/bda/{{ debrief["debrief-id"] }}/{{ drop["img-name"] }}" class="target-image" alt="Target Image">
+                            {% if drop["img-name"] %}
+                                <img src="/bda/{{ debrief["debrief-id"] }}/{{ drop["img-name"] }}" class="target-image" alt="Target Image">
+                            {% else %}
+                                <img src="/static/img/img-placeholder.webp" class="target-image" alt="Target Image">
+                            {% endif %}
                             {% if drop["bda-result"]|length > 0 %}
                                 <div class="field-value" style="margin-top: 10px;">{{ drop["bda-result"] }}</div>
                             {% endif %}

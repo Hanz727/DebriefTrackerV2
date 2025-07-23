@@ -182,17 +182,19 @@ class DataManager:
 
     def __get_latest_entry(self):
         return PartialDebrief(msn_name=self.__db.msn_name[-1], msn_nr=self.__db.msn_nr[-1], posted_by=self.__db.fl_name[-1],
-                              event_nr=self.__db.event[-1], notes=self.__db.notes[-1], squadron=self.__db.squadron[-1])
+                              event_nr=self.__db.event[-1], notes=self.__db.notes[-1], squadron=self.__db.squadron[-1],
+                              debrief_id=self.__db.debrief_id[-1])
 
     def __get_entry_by_id(self, id):
         return PartialDebrief(msn_name=self.__db.msn_name[id], msn_nr=self.__db.msn_nr[id],
                               posted_by=self.__db.fl_name[id],
-                              event_nr=self.__db.event[id], notes=self.__db.notes[id], squadron=self.__db.squadron[id])
+                              event_nr=self.__db.event[id], notes=self.__db.notes[id], squadron=self.__db.squadron[id],
+                              debrief_id=self.__db.debrief_id[id])
 
     def __get_debrief(self, entry):
         debrief_filter = (( self.__db.notes == entry.notes ) & ( self.__db.msn_nr == entry.msn_nr ) &
                           ( self.__db.msn_name == entry.msn_name) & ( self.__db.event == entry.event_nr) &
-                          ( self.__db.fl_name == entry.posted_by ))
+                          ( self.__db.fl_name == entry.posted_by ) & (self.__db.debrief_id == entry.debrief_id))
 
         modexes = self.__db.tail_number[debrief_filter]
         pilot_names = self.__db.pilot_name[debrief_filter]

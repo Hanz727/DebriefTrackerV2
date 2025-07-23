@@ -9,8 +9,8 @@ from core.config.config import ConfigSingleton
 from services import Logger
 from clients.databases.contracts import CVW17Database, CVW17DatabaseRow
 from clients.databases.database_client import DatabaseClient
-from clients.databases.postgres.constants import DB_FETCH_QUERY, DB_INSERT_QUERY
-from core.constants import ON_DB_INSERT_CALLBACK
+from clients.databases.postgres.constants import DB_FETCH_QUERY, DB_INSERT_QUERY, DB_DELETE_QUERY
+from core.constants import ON_DB_INSERT_CALLBACK, ON_REPORT_INSERT_CALLBACK
 from core.wrappers import safe_execute
 
 from decimal import Decimal
@@ -54,20 +54,26 @@ class PostGresClient(DatabaseClient):
         fetched_db = CVW17Database(len(rows), *db_transposed)
 
         old_db_size = self.__db_snapshot.size
+
+        latest_debrief_id = None
+        if old_db_size > 0:
+            latest_debrief_id = self.__db_snapshot.debrief_id[-1]
+
         self.__db_snapshot = fetched_db
         if fetched_db.size > old_db_size > 0:
             for func in self.callbacks[ON_DB_INSERT_CALLBACK]:
                 func()
 
+            if latest_debrief_id != self.__db_snapshot.debrief_id[-1]:
+                for func in self.callbacks[ON_REPORT_INSERT_CALLBACK]:
+                    func()
+
+
     def __insert_row(self, row) -> None:
         try:
-            # Execute the insert statement with the provided row values
             self.__cursor.execute(DB_INSERT_QUERY, row)
-
-            # Commit the transaction to save the changes
             self.__cursor.connection.commit()
         except Exception as error:
-            # Handle any errors and rollback the transaction
             self.__cursor.connection.rollback()
             Logger.error(error)
             Logger.error(row)
@@ -97,7 +103,7 @@ class PostGresClient(DatabaseClient):
                    & (db.range == row.range) & (db.hit == row.hit)
                    & (db.destroyed == row.destroyed) & (db.qty == row.qty)
                    & (db.msn_nr == int(row.msn_nr)) & (db.msn_name == row.msn_name)
-                   & (db.event == row.event) & (db.notes == row.notes))
+                   & (db.event == row.event) & (db.notes == row.notes) & (db.debrief_id == row.debrief_id))
 
         if len(db.id_[filter_]) == 0:
             return None
@@ -106,15 +112,21 @@ class PostGresClient(DatabaseClient):
 
     @override
     @safe_execute
-    def update(self, before: CVW17DatabaseRow, after: CVW17DatabaseRow | None) -> None:
-        id_: int = self.__find_row_id(before)
+    def remove(self, row: CVW17DatabaseRow) -> None:
+        id_: int = self.__find_row_id(row)
 
-        if after is not None:
-            row_list = tuple(asdict(after).values()) + (id_,)
-            print(row_list)
+        if id_ is None:
+            Logger.warning("Row not found when removing")
+            Logger.warning(row)
+            return
 
-        #if id_ is None:
-        #    self.insert(before)
+        try:
+            self.__cursor.execute(DB_DELETE_QUERY, (id_,))
+            self.__cursor.connection.commit()
+        except Exception as error:
+            self.__cursor.connection.rollback()
+            Logger.error(error)
+            Logger.error(row)
 
 
     @override

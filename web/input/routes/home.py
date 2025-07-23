@@ -134,7 +134,7 @@ def create_view_data(data, debrief_id):
     with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("display-data.json"), "w") as f:
         json.dump(view_data, f, indent=2)
 
-def ag_weapon_to_row(data, ag_weapon) -> (dict,CVW17DatabaseRow):
+def ag_weapon_to_row(data, ag_weapon, debrief_id) -> (dict,CVW17DatabaseRow):
     aircrew = data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1) - 1]
     row = CVW17DatabaseRow(
         datetime.now() or None,
@@ -156,11 +156,12 @@ def ag_weapon_to_row(data, ag_weapon) -> (dict,CVW17DatabaseRow):
         data.get('mission_number', "") or None,
         data.get('mission_name', "") or None,
         data.get('mission_event', "") or None,
-        data.get('mission_notes', "")
+        data.get('mission_notes', ""),
+        debrief_id
     )
     return aircrew, row
 
-def aa_weapon_to_row(data, aa_weapon) -> (dict | None,CVW17DatabaseRow | None):
+def aa_weapon_to_row(data, aa_weapon, debrief_id) -> (dict | None,CVW17DatabaseRow | None):
     aircrew = None
     for aircrew_ in data.get('aircrew', []):
         if aircrew_.get('modex') == aa_weapon.get('modex'):
@@ -191,16 +192,43 @@ def aa_weapon_to_row(data, aa_weapon) -> (dict | None,CVW17DatabaseRow | None):
         data.get('mission_number', '') or None,
         data.get('mission_name', '') or None,
         data.get('mission_event', '') or None,
-        data.get('mission_notes', '')
+        data.get('mission_notes', ''),
+        debrief_id
     )
 
     return aircrew, row
 
-def insert_tracker_data(data):
+def aircrew_to_empty_row(data, aircrew, debrief_id) -> CVW17DatabaseRow:
+    return CVW17DatabaseRow(
+        datetime.now() or None,
+        data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
+        MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))),
+                              Squadrons.NONE).value or None,
+        aircrew.get('rio', '').strip().lower() or None,
+        aircrew.get('pilot', '').strip().lower() or None,
+        aircrew.get('modex', 0) or None,
+        'N/A',
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        False,
+        False,
+        0,
+        data.get('mission_number', '') or None,
+        data.get('mission_name', '') or None,
+        data.get('mission_event', '') or None,
+        data.get('mission_notes', ''),
+        debrief_id
+    )
+
+def insert_tracker_data(data, debrief_id):
     aircrew_presence = deepcopy(data.get('aircrew', []))
 
     for ag_weapon in data.get('ag_weapons', []):
-        aircrew, row = ag_weapon_to_row(data, ag_weapon)
+        aircrew, row = ag_weapon_to_row(data, ag_weapon, debrief_id)
         if aircrew is None or row is None:
             continue
 
@@ -210,7 +238,7 @@ def insert_tracker_data(data):
             postgres_client.insert(row)
 
     for aa_weapon in data.get('aa_weapons', []):
-        aircrew, row = aa_weapon_to_row(data, aa_weapon)
+        aircrew, row = aa_weapon_to_row(data, aa_weapon, debrief_id)
 
         if InputDataHandler.validate_row(row):
             if aircrew in aircrew_presence:
@@ -218,44 +246,29 @@ def insert_tracker_data(data):
             postgres_client.insert(row)
 
     for aircrew in aircrew_presence:
-        row = CVW17DatabaseRow(
-            datetime.now() or None,
-            data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
-            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))),
-                                  Squadrons.NONE).value or None,
-            aircrew.get('rio', '').strip().lower() or None,
-            aircrew.get('pilot', '').strip().lower() or None,
-            aircrew.get('modex', 0) or None,
-            'N/A',
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            False,
-            False,
-            0,
-            data.get('mission_number', '') or None,
-            data.get('mission_name', '') or None,
-            data.get('mission_event', '') or None,
-            data.get('mission_notes', '')
-        )
+        row = aircrew_to_empty_row(data, aircrew, debrief_id)
 
         if InputDataHandler.validate_row(row):
             postgres_client.insert(row)
 
-def edit_tracker_data(old_data, new_data):
-    old_rows = []
-    new_rows = []
+def remove_tracker_data(old_data, debrief_id):
+    aircrew_presence = deepcopy(old_data.get('aircrew', []))
 
     for ag_weapon in old_data.get('ag_weapons', []):
-        aircrew, row = ag_weapon_to_row(old_data, ag_weapon)
-        postgres_client.update(row, row)
+        aircrew, row = ag_weapon_to_row(old_data, ag_weapon, debrief_id)
+        if aircrew in aircrew_presence:
+            aircrew_presence.remove(aircrew)
+        postgres_client.remove(row)
 
     for aa_weapon in old_data.get('aa_weapons', []):
-        aircrew, row = aa_weapon_to_row(old_data, aa_weapon)
-        postgres_client.update(row, row)
+        aircrew, row = aa_weapon_to_row(old_data, aa_weapon, debrief_id)
+        if aircrew in aircrew_presence:
+            aircrew_presence.remove(aircrew)
+        postgres_client.remove(row)
+
+    for aircrew in aircrew_presence:
+        row = aircrew_to_empty_row(old_data, aircrew, debrief_id)
+        postgres_client.remove(row)
 
 
 def format_relative_date(date_input):
@@ -316,6 +329,8 @@ def format_relative_date(date_input):
 
 def get_bda_list():
     bdas = []
+
+    os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
     for debrief in reversed(os.listdir(BDA_IMAGE_PATH)):
         with open(BDA_IMAGE_PATH / debrief / 'submit-data.json', 'r') as f:
             data = json.load(f)
@@ -377,7 +392,8 @@ def edit_report(debrief_id):
 
         create_view_data(data, debrief_id)
 
-        edit_tracker_data(old_data, data)
+        remove_tracker_data(old_data, debrief_id)
+        insert_tracker_data(data, debrief_id)
 
         return jsonify({
             'success': True,
@@ -412,8 +428,7 @@ def submit_report():
             json.dump(data, f, indent=2)
 
         create_view_data(data, debrief_id)
-
-        insert_tracker_data(data)
+        insert_tracker_data(data, debrief_id)
 
         return jsonify({
             'success': True,
