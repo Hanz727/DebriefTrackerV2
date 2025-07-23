@@ -197,6 +197,7 @@ class EmbedCreator:
 
         embed = discord.Embed(title=f"{debrief.msn_name}  |  {debrief.msn_nr}  |  {debrief.posted_by}  |  "
                                     f"{debrief.event_nr}",
+                              url=f"https://cvic.virtualcvw17.com/debrief/{debrief.debrief_id}",
                               color=0x206694,
                               description=str(debrief.notes),
                               timestamp=datetime.fromtimestamp(time.time()))
