@@ -1,8 +1,9 @@
 import json
 import os
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from flask import abort, session, redirect, request, render_template, Blueprint, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
@@ -270,23 +271,24 @@ def remove_tracker_data(old_data, debrief_id):
         row = aircrew_to_empty_row(old_data, aircrew, debrief_id)
         postgres_client.remove(row)
 
-
 def format_relative_date(date_input):
     """
-    Format a date as relative time or absolute date.
+    Format a date as relative time or absolute date in CET timezone.
 
     Args:
         date_input: Can be a datetime object, date string, or timestamp
 
     Returns:
-        str: Formatted date string
+        str: Formatted date string in CET
     """
+    cet = ZoneInfo('Europe/Berlin')  # CET/CEST timezone
+
     # Convert input to datetime if it's not already
     if isinstance(date_input, str):
         # Try common date formats, including ISO formats
         formats = [
-            '%Y-%m-%dT%H:%M:%S.%fZ',  # ISO with microseconds and Z (your format)
-            '%Y-%m-%dT%H:%M:%SZ',  # ISO with Z, no microseconds
+            '%Y-%m-%dT%H:%M:%S.%fZ',  # ISO with microseconds and Z (UTC)
+            '%Y-%m-%dT%H:%M:%SZ',  # ISO with Z, no microseconds (UTC)
             '%Y-%m-%dT%H:%M:%S.%f',  # ISO with microseconds, no Z
             '%Y-%m-%dT%H:%M:%S',  # ISO basic format
             '%Y-%m-%d %H:%M:%S.%f',  # Space separator with microseconds
@@ -301,18 +303,32 @@ def format_relative_date(date_input):
         for fmt in formats:
             try:
                 target_date = datetime.strptime(date_input, fmt)
+                # If format ends with 'Z', treat as UTC
+                if fmt.endswith('Z'):
+                    target_date = target_date.replace(tzinfo=timezone.utc)
+                    target_date = target_date.astimezone(cet)
+                else:
+                    # Assume naive datetime is already in CET
+                    target_date = target_date.replace(tzinfo=cet)
                 break
             except ValueError:
                 continue
         else:
             raise ValueError(f"Unable to parse date string: {date_input}")
     elif isinstance(date_input, (int, float)):
-        target_date = datetime.fromtimestamp(date_input)
+        # Timestamp is assumed to be UTC
+        target_date = datetime.fromtimestamp(date_input, tz=timezone.utc)
+        target_date = target_date.astimezone(cet)
     else:
-        target_date = date_input
+        # If datetime object is naive, assume it's in CET
+        if date_input.tzinfo is None:
+            target_date = date_input.replace(tzinfo=cet)
+        else:
+            # Convert to CET if it has timezone info
+            target_date = date_input.astimezone(cet)
 
-    # Get current time
-    now = datetime.now()
+    # Get current time in CET
+    now = datetime.now(cet)
 
     # Calculate the difference in days
     days_diff = (now.date() - target_date.date()).days
