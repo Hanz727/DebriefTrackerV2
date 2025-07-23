@@ -93,6 +93,8 @@ class StatsEmbedManager(Cog):
                 if embed:
                     await msg.edit(embed=embed)
 
+                await asyncio.sleep(DELAY_BETWEEN_MESSAGES_SENT_DURATION)
+
             # Not using the built-in argument for sleeping, because it doesn't allow you to access self.__config
             await asyncio.sleep(self.__config.stats_update_interval_seconds)
         except Exception as err:
