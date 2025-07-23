@@ -17,7 +17,7 @@ class DebriefTrackerBot(Bot):
         self.__config = ConfigSingleton.get_instance()
 
         self.__database_client = DatabaseFactory().create_database()
-        ThreadPoolClient.create_task_loop(self.__database_client.update,
+        ThreadPoolClient.create_task_loop(self.__database_client.update_local,
                                           self.__config.db_update_interval_seconds)
 
         if self.__config.auto_mode:

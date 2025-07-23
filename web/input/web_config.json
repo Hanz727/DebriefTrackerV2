@@ -5,5 +5,6 @@
   "auth_discord_role_id": "949401841580515368",
   "bypass_auth_debug": false,
   "tacview_dir": "C:\\Users\\rocks\\Desktop\\tacview",
-  "tracks_dir": "C:\\Users\\rocks\\Desktop\\tacview"
+  "tracks_dir": "C:\\Users\\rocks\\Desktop\\tacview",
+  "admin_uids": ["222470066854297600", "364838090855940096"]
 }

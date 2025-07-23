@@ -22,7 +22,7 @@ from web.input.tracker_ui.input_data_handler import InputDataHandler
 
 config = WebConfigSingleton.get_instance()
 postgres_client = PostGresClient()
-ThreadPoolClient.create_task_loop(postgres_client.update, 30)
+ThreadPoolClient.create_task_loop(postgres_client.update_local, 30)
 
 home_blueprint = Blueprint('home', __name__)
 app = home_blueprint
@@ -65,11 +65,21 @@ def show_bda_img(debrief_id, img_name):
 
 @app.route("/debrief/<int:debrief_id>")
 def show_debrief(debrief_id):
+    if not (session.get('authed', False) or config.bypass_auth_debug):
+        return redirect('/login')
+
     debrief = {}
     with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / 'display-data.json') as f:
         debrief = json.load(f)
 
     return render_template("view.html", debrief=debrief)
+
+@app.route("/debrief-sdata/<int:debrief_id>")
+def show_debrief_sdata(debrief_id):
+    with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / 'submit-data.json') as f:
+        sdata = json.load(f)
+
+    return jsonify(sdata)
 
 def save_images(data, debrief_id):
     if data.get('ag_weapons'):
@@ -124,33 +134,75 @@ def create_view_data(data, debrief_id):
     with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("display-data.json"), "w") as f:
         json.dump(view_data, f, indent=2)
 
+def ag_weapon_to_row(data, ag_weapon) -> (dict,CVW17DatabaseRow):
+    aircrew = data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1) - 1]
+    row = CVW17DatabaseRow(
+        datetime.now() or None,
+        data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
+        MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))), Squadrons.NONE).value or None,
+        aircrew.get('rio', "").strip().lower() or None,
+        aircrew.get('pilot', "").strip().lower() or None,
+        aircrew.get('modex', "") or None,
+        'A/G',
+        ag_weapon.get('weapon_name', "") or None,
+        ag_weapon.get('target_value', "") or None,
+        None,
+        None,
+        None,
+        None,
+        True,
+        True,
+        1,
+        data.get('mission_number', "") or None,
+        data.get('mission_name', "") or None,
+        data.get('mission_event', "") or None,
+        data.get('mission_notes', "")
+    )
+    return aircrew, row
+
+def aa_weapon_to_row(data, aa_weapon) -> (dict | None,CVW17DatabaseRow | None):
+    aircrew = None
+    for aircrew_ in data.get('aircrew', []):
+        if aircrew_.get('modex') == aa_weapon.get('modex'):
+            aircrew = aircrew_
+            break
+
+    if aircrew is None:
+        return None
+
+    row = CVW17DatabaseRow(
+        datetime.now() or None,
+        data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
+        MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))),
+                              Squadrons.NONE).value or None,
+        aircrew.get('rio', '').strip().lower() or None,
+        aircrew.get('pilot', '').strip().lower() or None,
+        aircrew.get('modex', "") or None,
+        'A/A',
+        aa_weapon.get('weapon', '') or None,
+        aa_weapon.get('target', '') or None,
+        aa_weapon.get('target_altitude', None),
+        aa_weapon.get('own_altitude', None),
+        aa_weapon.get('speed', None),
+        aa_weapon.get('range', None),
+        aa_weapon.get('hit', False),
+        aa_weapon.get('hit', False),
+        1,
+        data.get('mission_number', '') or None,
+        data.get('mission_name', '') or None,
+        data.get('mission_event', '') or None,
+        data.get('mission_notes', '')
+    )
+
+    return aircrew, row
+
 def insert_tracker_data(data):
     aircrew_presence = deepcopy(data.get('aircrew', []))
 
     for ag_weapon in data.get('ag_weapons', []):
-        aircrew = data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1) - 1]
-        row = CVW17DatabaseRow(
-            datetime.now() or None,
-            data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
-            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))), Squadrons.NONE).value or None,
-            aircrew.get('rio', "").strip().lower() or None,
-            aircrew.get('pilot', "").strip().lower() or None,
-            aircrew.get('modex', "") or None,
-            'A/G',
-            ag_weapon.get('weapon_name', "") or None,
-            ag_weapon.get('target_value', "") or None,
-            None,
-            None,
-            None,
-            None,
-            True,
-            True,
-            1,
-            data.get('mission_number', "") or None,
-            data.get('mission_name', "") or None,
-            data.get('mission_event', "") or None,
-            data.get('mission_notes', "")
-        )
+        aircrew, row = ag_weapon_to_row(data, ag_weapon)
+        if aircrew is None or row is None:
+            continue
 
         if InputDataHandler.validate_row(row):
             if aircrew in aircrew_presence:
@@ -158,38 +210,7 @@ def insert_tracker_data(data):
             postgres_client.insert(row)
 
     for aa_weapon in data.get('aa_weapons', []):
-        aircrew = None
-        for aircrew_ in data.get('aircrew', []):
-            if aircrew_.get('modex') == aa_weapon.get('modex'):
-                aircrew = aircrew_
-                break
-
-        if aircrew is None:
-            continue
-
-        row = CVW17DatabaseRow(
-            datetime.now() or None,
-            data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
-            MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))),
-                                  Squadrons.NONE).value or None,
-            aircrew.get('rio', '').strip().lower() or None,
-            aircrew.get('pilot', '').strip().lower() or None,
-            aircrew.get('modex', "") or None,
-            'A/A',
-            aa_weapon.get('weapon', '') or None,
-            aa_weapon.get('target', '') or None,
-            aa_weapon.get('target_altitude', None),
-            aa_weapon.get('own_altitude', None),
-            aa_weapon.get('speed', None),
-            aa_weapon.get('range', None),
-            aa_weapon.get('hit', False),
-            aa_weapon.get('hit', False),
-            1,
-            data.get('mission_number', '') or None,
-            data.get('mission_name', '') or None,
-            data.get('mission_event', '') or None,
-            data.get('mission_notes', '')
-        )
+        aircrew, row = aa_weapon_to_row(data, aa_weapon)
 
         if InputDataHandler.validate_row(row):
             if aircrew in aircrew_presence:
@@ -223,6 +244,19 @@ def insert_tracker_data(data):
 
         if InputDataHandler.validate_row(row):
             postgres_client.insert(row)
+
+def edit_tracker_data(old_data, new_data):
+    old_rows = []
+    new_rows = []
+
+    for ag_weapon in old_data.get('ag_weapons', []):
+        aircrew, row = ag_weapon_to_row(old_data, ag_weapon)
+        postgres_client.update(row, row)
+
+    for aa_weapon in old_data.get('aa_weapons', []):
+        aircrew, row = aa_weapon_to_row(old_data, aa_weapon)
+        postgres_client.update(row, row)
+
 
 def format_relative_date(date_input):
     """
@@ -304,8 +338,63 @@ def get_bda_list():
 
     return bdas
 
+def remove_debrief_data(debrief_id):
+    if os.path.exists(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json'):
+        os.remove(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json')
+
+    if os.path.exists(BDA_IMAGE_PATH / str(debrief_id) / 'view-data.json'):
+        os.remove(BDA_IMAGE_PATH / str(debrief_id) / 'view-data.json')
+
+    for file in os.listdir(BDA_IMAGE_PATH / str(debrief_id)):
+        if file.split('.')[-1] in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff']:
+            os.remove(BDA_IMAGE_PATH / str(debrief_id) / file)
+
+@app.route('/edit-report/<int:debrief_id>', methods=['POST'])
+def edit_report(debrief_id):
+    if not (session.get('authed', False) or config.bypass_auth_debug):
+        return redirect('/login')
+
+    with open(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json') as f:
+        if session.get('discord_uid', -1) != json.load(f).get('form_metadata', {}).get('discord_uid', None):
+            if session.get('discord_uid', None) not in config.admin_uids:
+                return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        with open(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json') as f:
+            old_data = json.load(f)
+
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data received'}), 400
+
+        os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
+        remove_debrief_data(debrief_id)
+        save_images(data, debrief_id)
+
+        data['form_metadata']['discord_uid'] = session['discord_uid']
+        with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
+            json.dump(data, f, indent=2)
+
+        create_view_data(data, debrief_id)
+
+        edit_tracker_data(old_data, data)
+
+        return jsonify({
+            'success': True,
+            'message': 'Strike report updated successfully',
+            'id': str(debrief_id),
+            'timestamp': datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        print(f"Error processing request: {str(e)}")
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
 @app.route('/submit-report', methods=['POST'])
 def submit_report():
+    if not (session.get('authed', False) or config.bypass_auth_debug):
+        return redirect('/login')
+
     try:
         # Get the JSON data from the request
         data = request.get_json()
@@ -375,7 +464,7 @@ def get():
     return jsonify(filtered_rows)
 
 @app.route('/file')
-def file():
+def file_report():
     if session.get('authed', False) or config.bypass_auth_debug:
         return render_template('submit.html')
     return redirect('/login')

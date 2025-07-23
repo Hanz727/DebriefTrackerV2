@@ -617,5 +617,17 @@
     </div>
 </div>
 
+<script>
+    function editDebrief() {
+        const path = window.location.pathname; // e.g., "/debrief/12345"
+        const match = path.match(/^\/debrief\/([^/]+)$/);
+
+        if (match) {
+            const id = match[1]; // "12345"
+            window.location.href = `/file?id=${id}`;
+        }
+
+    }
+</script>
 </body>
 </html>

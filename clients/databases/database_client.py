@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from clients.databases.contracts import CVW17Database
+from clients.databases.contracts import CVW17Database, CVW17DatabaseRow
 from clients.databases.data_manager import DataManager
 from core.constants import ON_DB_INSERT_CALLBACK
 
@@ -10,11 +10,15 @@ class DatabaseClient(ABC):
         self.callbacks = {ON_DB_INSERT_CALLBACK: []}
 
     @abstractmethod
-    def insert(self, to_insert: CVW17Database):
+    def insert(self, to_insert: CVW17Database) -> None:
         ...
 
     @abstractmethod
-    def update(self) -> None:
+    def update(self, before: CVW17DatabaseRow, after: CVW17DatabaseRow) -> None:
+        ...
+
+    @abstractmethod
+    def update_local(self) -> None:
         ...
 
     @abstractmethod

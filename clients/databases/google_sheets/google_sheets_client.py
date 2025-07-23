@@ -189,7 +189,7 @@ class GoogleSheetsClient(DatabaseClient):
 
     @safe_execute
     @override
-    def update(self):
+    def update_local(self):
         cell_values = self.__get_cell_values()
         if not cell_values:
             return

@@ -11,3 +11,4 @@ class WebConfig:
     bypass_auth_debug: bool # disables auth
     tacview_dir: Path
     tracks_dir: Path
+    admin_uids: list[str]
