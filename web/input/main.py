@@ -23,6 +23,9 @@ def create_app():
     app.config['SESSION_TYPE'] = 'redis'
     app.config['SESSION_PERMANENT'] = True
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
+
+    app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
+
     #app.config['SESSION_USE_SIGNER'] = True
     #app.config['SESSION_REDIS'] = redis.StrictRedis(host='localhost', port=6379)
 

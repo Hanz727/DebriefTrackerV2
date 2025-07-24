@@ -517,7 +517,7 @@
             <div class="bda-grid">
                 {% for plane in debrief["ag"] %}
                     {% set outer_loop = loop %}
-                    {% for drop in plane["drops"] if drop["bda-result"] and (drop["tgt-name"] or drop["DMPI"])%}
+                    {% for drop in plane["drops"] if (drop["bda-result"] or drop["img-name"]) and (drop["tgt-name"] or drop["DMPI"])%}
                         <div class="bda-card">
                             <div class="Aircraft-callsign">{{ debrief["callsign"] }}{{ outer_loop.index }}</div>
                             <div class="weapon-name">{{ drop["weapon-name"] }}</div>

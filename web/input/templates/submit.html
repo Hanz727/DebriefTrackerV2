@@ -529,6 +529,7 @@
         }
 
         .popup-content {
+            position: relative; /* Add this line */
             background: var(--bg-section);
             border: 1px solid var(--border-primary);
             padding: var(--spacing-xl);
@@ -720,12 +721,35 @@
             background: #5865f2;
             color: white;
         }
+        .settings-btn {
+            position: absolute;
+            right: var(--spacing-xl);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            background: var(--color-primary);
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .settings-btn:hover {
+            background: var(--color-primary-hover);
+            transform: translateY(-50%) scale(1.1);
+        }
     </style>
 </head>
 <body>
 <!-- Callsign Selection Modal -->
 <div id="callsignPopup" class="popup-overlay">
     <div class="popup-content">
+        <button type="button" id="closePopupBtn" class="btn-primary" style="position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; padding: 0; font-size: 14px; display: none;">✕</button>
         <div class="popup-title">SETTINGS</div>
 
         <div class="popup-field-group">
@@ -780,6 +804,9 @@
     <!-- Header -->
     <div class="header">
         <img src="/static/img/logo2.png" class="header-logo" alt="CVW-17 Logo">
+        <button type="button" class="settings-btn" onclick="showCallsignPopup()" title="Settings">
+            ⚙️
+        </button>
         <div class="title">AP POST STRIKE REPORT</div>
         <div class="subtitle">CARRIER AIR WING 17</div>
     </div>
@@ -1349,35 +1376,82 @@
 
         const files = e.dataTransfer.files;
         if (files.length > 0 && files[0].type.startsWith('image/')) {
-            displayImage(files[0], uploadId, pilotId, weaponId);
+            try {
+                validateFileSize(files[0]);
+                displayImage(files[0], uploadId, pilotId, weaponId);
+            } catch (error) {
+                alert(`❌ Upload failed: ${error.message}`);
+            }
         }
     }
 
     function handleFileSelect(e, uploadId, pilotId, weaponId) {
         const file = e.target.files[0];
         if (file && file.type.startsWith('image/')) {
-            displayImage(file, uploadId, pilotId, weaponId);
+            try {
+                validateFileSize(file);
+                displayImage(file, uploadId, pilotId, weaponId);
+            } catch (error) {
+                alert(`❌ Upload failed: ${error.message}`);
+                // Clear the file input so user can try again
+                e.target.value = '';
+            }
         }
     }
 
-    function displayImage(file, uploadId, pilotId, weaponId) {
+    async function displayImage(file, uploadId, pilotId, weaponId) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             const imageData = e.target.result;
 
-            AppState.uploadedImages[uploadId] = imageData;
+            try {
+                // For non-GIF images, try compression and validate final size
+                const fileType = file.type.split('/')[1].toLowerCase();
+                let finalImageData = imageData;
 
-            // Store image data in hidden input
-            const hiddenInput = document.getElementById(`image-data-${pilotId}-${weaponId}`);
-            if (hiddenInput) {
-                hiddenInput.value = imageData;
-            }
+                if (fileType !== 'gif') {
+                    // Attempt compression
+                    finalImageData = await compressImage(imageData);
 
-            const uploadArea = document.getElementById(uploadId);
-            if (uploadArea) {
-                displayUploadedImage(uploadArea, uploadId, pilotId, weaponId, imageData);
+                    // Check final compressed size
+                    const finalSizeBytes = (finalImageData.length * 3) / 4;
+                    const finalSizeInMB = finalSizeBytes / (1024 * 1024);
+
+                    if (finalSizeInMB > 3) {
+                        throw new Error(`Image still too large after compression (${finalSizeInMB.toFixed(1)}MB). Please use a smaller image.`);
+                    }
+                }
+
+                // Store the final image data (compressed or original for GIFs)
+                AppState.uploadedImages[uploadId] = finalImageData;
+
+                // Store image data in hidden input
+                const hiddenInput = document.getElementById(`image-data-${pilotId}-${weaponId}`);
+                if (hiddenInput) {
+                    hiddenInput.value = finalImageData;
+                }
+
+                const uploadArea = document.getElementById(uploadId);
+                if (uploadArea) {
+                    displayUploadedImage(uploadArea, uploadId, pilotId, weaponId, finalImageData);
+                }
+
+            } catch (error) {
+                alert(`❌ Image processing failed: ${error.message}`);
+
+                // Clear any partial data
+                delete AppState.uploadedImages[uploadId];
+                const hiddenInput = document.getElementById(`image-data-${pilotId}-${weaponId}`);
+                if (hiddenInput) {
+                    hiddenInput.value = '';
+                }
             }
         };
+
+        reader.onerror = function() {
+            alert('❌ Failed to read the image file. Please try again.');
+        };
+
         reader.readAsDataURL(file);
     }
 
@@ -1435,8 +1509,16 @@
                 for (const type of clipboardItem.types) {
                     if (type.startsWith('image/')) {
                         const blob = await clipboardItem.getType(type);
-                        displayImage(blob, uploadId, pilotId, weaponId);
-                        return;
+
+                        // Validate clipboard image size
+                        try {
+                            validateFileSize(blob);
+                            displayImage(blob, uploadId, pilotId, weaponId);
+                            return;
+                        } catch (error) {
+                            alert(`❌ Clipboard image too large: ${error.message}`);
+                            return;
+                        }
                     }
                 }
             }
@@ -1446,7 +1528,6 @@
             alert('Failed to access clipboard. Please use drag & drop or file selection.');
         }
     }
-
     // ===== Callsign Functions =====
     function updateAllCallsigns(callsign) {
         // Update pilot card callsigns
@@ -1575,13 +1656,14 @@
         const submitButton = document.querySelector('button[type="submit"]');
         const originalText = submitButton.textContent;
 
+        // Move urlParams outside try block so it's accessible in catch
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('id');
+        const isEditMode = editId && !isNaN(parseInt(editId)) && parseInt(editId) >= 1;
+
         try {
             submitButton.textContent = 'Submitting...';
             submitButton.disabled = true;
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const editId = urlParams.get('id');
-            const isEditMode = editId && !isNaN(parseInt(editId)) && parseInt(editId) >= 1;
 
             let endpoint;
             if (isEditMode) {
@@ -1593,12 +1675,14 @@
 
             console.log(`Submitting to: ${endpoint} (POST)`);
 
+            const compressedFormData = await compressFormData(formData);
+
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(compressedFormData)
             });
 
             if (response.ok) {
@@ -1624,12 +1708,122 @@
             }
         } catch (error) {
             console.error('Submission error:', error);
-            const action = editId ? 'update' : 'submit';
+            const action = isEditMode ? 'update' : 'submit'; // Use isEditMode instead of urlParams
             alert(`❌ Failed to ${action} strike report:\n${error.message}`);
 
             submitButton.textContent = originalText;
             submitButton.disabled = false;
         }
+    }
+
+    async function compressFormData(formData) {
+        const compressed = { ...formData };
+
+        if (compressed.ag_weapons && compressed.ag_weapons.length > 0) {
+            compressed.ag_weapons = await Promise.all(
+                compressed.ag_weapons.map(async (weapon) => {
+                    if (weapon.image_data && weapon.image_data.length > 0) {
+                        try {
+                            const compressedImage = await compressImage(weapon.image_data);
+                            return { ...weapon, image_data: compressedImage };
+                        } catch (error) {
+                            console.warn('Failed to compress image, using original:', error);
+                            return weapon;
+                        }
+                    }
+                    return weapon;
+                })
+            );
+        }
+
+        return compressed;
+    }
+
+    function compressImage(base64Image, maxWidth = 1024, quality = 0.8) {
+        return new Promise((resolve, reject) => {
+            // Extract the original format from the base64 string
+            const formatMatch = base64Image.match(/^data:image\/([^;]+);base64,/);
+            if (!formatMatch) {
+                reject(new Error('Invalid base64 image format'));
+                return;
+            }
+
+            const originalFormat = formatMatch[1].toLowerCase();
+
+            if (originalFormat === 'gif') {
+                const sizeInBytes = (base64Image.length * 3) / 4;
+                const sizeInMB = sizeInBytes / (1024 * 1024);
+
+                if (sizeInMB > 5) { // If larger than 5MB
+                    reject(new Error(`${originalFormat.toUpperCase()} file too large (${sizeInMB.toFixed(1)}MB). Please use a smaller file.`));
+                    return;
+                }
+
+                resolve(base64Image);
+                return;
+            }
+
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Calculate new dimensions while maintaining aspect ratio
+                let { width, height } = img;
+                const needsResize = width > maxWidth || height > maxWidth;
+
+                if (needsResize) {
+                    if (width > height) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    } else {
+                        width = (width * maxWidth) / height;
+                        height = maxWidth;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                // For PNG images with transparency, preserve transparency
+                if (originalFormat === 'png') {
+                    ctx.clearRect(0, 0, width, height);
+                } else {
+                    // For JPEG, fill with white background
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, width, height);
+                }
+
+                // Draw the image
+                ctx.drawImage(img, 0, 0, width, height);
+
+                try {
+                    let outputFormat = 'image/jpeg';
+                    let outputQuality = quality;
+
+                    // Preserve PNG format for images with transparency
+                    if (originalFormat === 'png') {
+                        outputFormat = 'image/png';
+                        outputQuality = undefined; // PNG doesn't use quality parameter
+                    }
+
+                    const compressedBase64 = canvas.toDataURL(outputFormat, outputQuality);
+
+                    // Check if compression actually helped
+                    if (compressedBase64.length >= base64Image.length && !needsResize) {
+                        // If compressed version is larger or same size and no resize needed, use original
+                        resolve(base64Image);
+                    } else {
+                        resolve(compressedBase64);
+                    }
+                } catch (error) {
+                    reject(error);
+                }
+            };
+
+            img.onerror = () => reject(new Error('Failed to load image for compression'));
+            img.src = base64Image;
+        });
     }
 
     function updateSubmitButtonText() {
@@ -1708,37 +1902,45 @@
         document.getElementById('aa-table-body').innerHTML = '';
         AppState.aaRowCounter = 0;
 
-        let pilotIndex = 1;
+        // Find the highest pilot number needed
+        let maxPilotNumber = 1;
+        Object.keys(aircraftGroups).forEach(dlCallsign => {
+            const pilotNumber = parseInt(dlCallsign.slice(-1)); // Get last digit
+            maxPilotNumber = Math.max(maxPilotNumber, pilotNumber);
+        });
 
-        // Process each aircraft
+        // Create pilot cards up to the highest number needed
+        for (let i = 2; i <= maxPilotNumber; i++) {
+            addPilotCard();
+        }
+
+        // Process each aircraft and map to correct pilot card
         Object.keys(aircraftGroups).forEach(dlCallsign => {
             const aircraftData = aircraftGroups[dlCallsign];
             const firstEntry = aircraftData[0];
 
-            // Ensure we have enough pilot cards
-            while (pilotIndex > document.querySelectorAll('.pilot-card').length) {
-                addPilotCard();
-            }
+            // Extract pilot number from DL_CALLSIGN (last digit)
+            const pilotNumber = parseInt(dlCallsign.slice(-1));
 
-            // Fill aircrew data
-            const modexInput = document.getElementById(`aircrew_${pilotIndex}_modex`);
-            const pilotInput = document.getElementById(`aircrew_${pilotIndex}_pilot`);
-            const rioInput = document.getElementById(`aircrew_${pilotIndex}_rio`);
+            // Fill aircrew data for the specific pilot card
+            const modexInput = document.getElementById(`aircrew_${pilotNumber}_modex`);
+            const pilotInput = document.getElementById(`aircrew_${pilotNumber}_pilot`);
+            const rioInput = document.getElementById(`aircrew_${pilotNumber}_rio`);
 
             if (modexInput) modexInput.value = firstEntry.TAIL_NUMBER ?? '';
             if (pilotInput) pilotInput.value = firstEntry.PILOT_NAME ?? '';
             if (rioInput) rioInput.value = firstEntry.RIO_NAME ?? '';
 
-            // Process weapons
+            // Process weapons for this specific pilot
             aircraftData.forEach(entry => {
                 if (entry.TYPE === 0) {
                     // A/G Weapon
-                    addWeaponCard(pilotIndex);
-                    const weaponId = AppState.weaponCounters[pilotIndex];
+                    addWeaponCard(pilotNumber);
+                    const weaponId = AppState.weaponCounters[pilotNumber];
 
-                    const weaponNameInput = document.querySelector(`input[name="ag_weapons[${pilotIndex}][${weaponId}][weapon_name]"]`);
-                    const targetSelect = document.querySelector(`select[name="ag_weapons[${pilotIndex}][${weaponId}][target_type]"]`);
-                    const targetInput = document.getElementById(`target-input-${pilotIndex}-${weaponId}`);
+                    const weaponNameInput = document.querySelector(`input[name="ag_weapons[${pilotNumber}][${weaponId}][weapon_name]"]`);
+                    const targetSelect = document.querySelector(`select[name="ag_weapons[${pilotNumber}][${weaponId}][target_type]"]`);
+                    const targetInput = document.getElementById(`target-input-${pilotNumber}-${weaponId}`);
 
                     if (weaponNameInput) weaponNameInput.value = entry.WEAPON_NAME ?? '';
                     if (entry.TGT_NAME === "NONE")
@@ -1775,11 +1977,10 @@
                     if (hitCheckbox) hitCheckbox.checked = (entry.HIT === true || entry.DESTROYED === true);
                 }
             });
-
-            pilotIndex++;
         });
 
-        for (let i = 1; i < pilotIndex; i++) {
+        // Mark loaded pilot cards
+        for (let i = 1; i <= maxPilotNumber; i++) {
             const pilotCard = document.querySelector(`[data-pilot-id="${i}"]`);
             if (pilotCard) {
                 // Check if this pilot card has any data
@@ -1797,6 +1998,7 @@
             updateBDACards();
         }, 100);
     }
+
 
     function handleJSONFileUpload() {
         const input = document.createElement('input');
@@ -1827,6 +2029,11 @@
 
     // ===== Event Listeners =====
     function initializeEventListeners() {
+        // Close popup
+        document.getElementById('closePopupBtn').addEventListener('click', function() {
+            document.getElementById('callsignPopup').style.display = 'none';
+        });
+
         // Form submission
         document.getElementById('apStrikeForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -1865,6 +2072,7 @@
                 }
             }
         });
+
     }
 
     // ===== Initialization =====
@@ -1904,13 +2112,13 @@
             const selectedMissionId = missionDataSelect.value;
 
             if (selectedCallsign && selectedMissionId) {
+                clearFormData();
                 updateAllCallsigns(selectedCallsign);
 
                 // Fetch and load the mission data
                 const missionData = await fetchMissionData(selectedMissionId);
                 AppState.jsonData = missionData;
 
-                // Show load button on first card if JSON data is available
                 const firstCardLoadBtn = document.querySelector('[data-pilot-id="1"] .btn-load-modex');
                 if (firstCardLoadBtn && missionData) {
                     firstCardLoadBtn.style.display = '';
@@ -1925,17 +2133,21 @@
         });
 
 // Manual button - only sets callsign
-        manualButton.addEventListener('click', function() {
+        manualButton.addEventListener('click', async function() {
             const selectedCallsign = callsignSelect.value;
-            AppState.jsonData = null;
-            // Hide load button on first card when manual is selected
-            const firstCardLoadBtn = document.querySelector('[data-pilot-id="1"] .btn-load-modex');
-            if (firstCardLoadBtn) {
-                firstCardLoadBtn.style.display = 'none';
-            }
+            const selectedMissionId = missionDataSelect.value;
 
-            if (selectedCallsign) {
+            if (selectedCallsign && selectedMissionId) {
+                clearFormData()
                 updateAllCallsigns(selectedCallsign);
+
+                AppState.jsonData = await fetchMissionData(selectedMissionId);
+
+                const firstCardLoadBtn = document.querySelector('[data-pilot-id="1"] .btn-load-modex');
+                if (firstCardLoadBtn) {
+                    firstCardLoadBtn.style.display = ''; // Show the button explicitly
+                }
+
                 popup.style.display = 'none';
             }
         });
@@ -2201,9 +2413,7 @@
         }
     }
 
-    // Helper function to clear existing form data
     function clearFormData() {
-        // Clear existing pilot cards (keep the first one)
         const existingCards = document.querySelectorAll('.pilot-card[data-pilot-id]');
         existingCards.forEach((card, index) => {
             if (index > 0) {
@@ -2212,14 +2422,42 @@
             }
         });
 
-        // Clear existing A/A weapons
+        // Clear the first pilot card's data
+        const firstModexInput = document.getElementById('aircrew_1_modex');
+        const firstPilotInput = document.getElementById('aircrew_1_pilot');
+        const firstRioInput = document.getElementById('aircrew_1_rio');
+
+        if (firstModexInput) firstModexInput.value = '';
+        if (firstPilotInput) firstPilotInput.value = '';
+        if (firstRioInput) firstRioInput.value = '';
+
+        // Remove the loaded-from-json attribute from first card
+        const firstCard = document.querySelector('[data-pilot-id="1"]');
+        if (firstCard) {
+            firstCard.removeAttribute('data-loaded-from-json');
+        }
+
+        document.querySelectorAll('.weapon-card').forEach(weaponCard => {
+            weaponCard.remove();
+        });
+
+        const bdaGrid = document.getElementById('bda-grid');
+        if (bdaGrid) {
+            bdaGrid.innerHTML = '';
+        }
+
         document.getElementById('aa-table-body').innerHTML = '';
         AppState.aaRowCounter = 0;
 
-        // Reset counters
-        AppState.pilotCounter = 1;
-        AppState.weaponCounters = { 1: 0 };
+        const allPilotCards = document.querySelectorAll('.pilot-card[data-pilot-id]');
+        allPilotCards.forEach(card => {
+            const pilotId = parseInt(card.getAttribute('data-pilot-id'));
+            AppState.weaponCounters[pilotId] = 0;
+        });
+
         AppState.uploadedImages = {};
+
+        AppState.pilotCounter = 1;
     }
 
     // Load basic mission information
@@ -2510,10 +2748,41 @@
                     setTimeout(autoLoadFromURLParameter, 500); // Small delay to ensure everything is initialized
                 });
             } else {
-                setTimeout(autoLoadFromURLParameter, 500);
             }
         }
     }
+
+    function showCallsignPopup() {
+        const popup = document.getElementById('callsignPopup');
+        const closeBtn = document.getElementById('closePopupBtn');
+        const callsignSelect = document.getElementById('callsignSelect');
+        const loadButton = document.getElementById('loadButton');
+        const manualButton = document.getElementById('manualButton');
+        const missionDataSelect = document.getElementById('missionDataSelect');
+
+        popup.style.display = 'flex';
+        closeBtn.style.display = 'block'; // Show close button when opened via settings
+
+        const hasCallsign = !!callsignSelect.value;
+        const hasMissionData = !!missionDataSelect.value;
+
+        loadButton.disabled = !hasCallsign || !hasMissionData;
+        manualButton.disabled = !hasCallsign;
+    }
+
+    function validateFileSize(file) {
+        const maxFinalSizeBytes = 4 * 1024 * 1024;
+        const fileSizeInMB = file.size / (1024 * 1024);
+        const fileType = file.type.split('/')[1].toLowerCase();
+
+        if (fileType === 'gif') {
+            if (file.size > maxFinalSizeBytes) {
+                throw new Error(`GIF file too large (${fileSizeInMB.toFixed(1)}MB). Maximum allowed: 4MB `);
+            }
+        }
+        return true;
+    }
+
 
     initializeAutoLoad();
 </script>

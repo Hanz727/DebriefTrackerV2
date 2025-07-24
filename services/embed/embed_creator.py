@@ -38,7 +38,7 @@ class EmbedCreator:
 
         embed.add_field(name="Name", value=names, inline=True)
         embed.add_field(name="A/A kills", value=aa_kills, inline=True)
-        embed.add_field(name="A/G drops", value=ag_drops, inline=True)
+        embed.add_field(name="A/G expended", value=ag_drops, inline=True)
 
         embed.set_footer(text=AUTHOR_FOOTER)
         return embed
@@ -64,7 +64,7 @@ class EmbedCreator:
 
         embed.add_field(name="Name", value=names, inline=True)
         embed.add_field(name="A/A kills", value=aa_kills, inline=True)
-        embed.add_field(name="A/G drops", value=ag_drops, inline=True)
+        embed.add_field(name="A/G expended", value=ag_drops, inline=True)
 
 
         embed.set_footer(text=AUTHOR_FOOTER)
@@ -91,7 +91,7 @@ class EmbedCreator:
 
         embed.add_field(name="Name", value=names, inline=True)
         embed.add_field(name="A/A kills", value=aa_kills, inline=True)
-        embed.add_field(name="A/G drops", value=ag_drops, inline=True)
+        embed.add_field(name="A/G expended", value=ag_drops, inline=True)
 
         embed.set_footer(text=AUTHOR_FOOTER)
         return embed
@@ -107,27 +107,27 @@ class EmbedCreator:
         stats_103 = self.__database_client.get_data_manager().get_squadron_stats(Squadrons.VF103)
         embed.add_field(name="VF-103", value=f"Jolly Rogers", inline=True)
         embed.add_field(name='A/A kills', value=str(stats_103.aa_kills), inline=True)
-        embed.add_field(name='A/G drops', value=str(stats_103.ag_drops), inline=True)
+        embed.add_field(name='A/G expended', value=str(stats_103.ag_drops), inline=True)
 
         embed.add_field(name='▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬', value=" ", inline=False)
 
         stats_34 = self.__database_client.get_data_manager().get_squadron_stats(Squadrons.VFA34)
         embed.add_field(name="VFA-34", value=f"Blue Blasters", inline=True)
         embed.add_field(name='A/A kills', value=str(stats_34.aa_kills), inline=True)
-        embed.add_field(name='A/G drops', value=str(stats_34.ag_drops), inline=True)
+        embed.add_field(name='A/G expended', value=str(stats_34.ag_drops), inline=True)
 
         embed.add_field(name='▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬', value=" ", inline=False)
 
         stats_81 = self.__database_client.get_data_manager().get_squadron_stats(Squadrons.VFA81)
         embed.add_field(name="VFA-81", value=f"Sunliners", inline=True)
         embed.add_field(name='A/A kills', value=str(stats_81.aa_kills), inline=True)
-        embed.add_field(name='A/G drops', value=str(stats_81.ag_drops), inline=True)
+        embed.add_field(name='A/G expended', value=str(stats_81.ag_drops), inline=True)
 
         embed.add_field(name='▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬', value=" ", inline=False)
 
         embed.add_field(name="CVW-17", value=f"Team Quicksand", inline=True)
         embed.add_field(name='A/A kills', value=str(stats_34.aa_kills + stats_103.aa_kills + stats_81.aa_kills), inline=True)
-        embed.add_field(name='A/G drops', value=str(stats_34.ag_drops + stats_103.ag_drops + stats_81.ag_drops), inline=True)
+        embed.add_field(name='A/G expended', value=str(stats_34.ag_drops + stats_103.ag_drops + stats_81.ag_drops), inline=True)
 
         embed.set_footer(text=AUTHOR_FOOTER)
         return embed
@@ -205,7 +205,7 @@ class EmbedCreator:
         for modex, player_stats in debrief.player_stats.items():
             embed.add_field(name=modex, value=player_stats.player_name, inline=True)
             embed.add_field(name='A/A kills', value=player_stats.aa_kills, inline=True)
-            embed.add_field(name='A/G drops', value=player_stats.ag_drops, inline=True)
+            embed.add_field(name='A/G expended', value=player_stats.ag_drops, inline=True)
 
         embed.set_footer(text=AUTHOR_FOOTER)
         return embed

@@ -348,7 +348,7 @@
                     <div class="divider"></div>
 
                     <div class="bda-grid">
-                        {% for bda in bdas %}
+                        {% for bda in bdas if bda['img-src'] %}
                             <div class="bda-card">
                                 <div class="bda-weapon">{{ bda['weapon'] }}</div>
                                 <div class="bda-target">{{ bda['target'] }}</div>

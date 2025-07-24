@@ -255,6 +255,7 @@ def insert_tracker_data(data, debrief_id):
             postgres_client.insert(row)
 
 def remove_tracker_data(old_data, debrief_id):
+    postgres_client.update_local()
     aircrew_presence = deepcopy(old_data.get('aircrew', []))
 
     for ag_weapon in old_data.get('ag_weapons', []):
@@ -375,7 +376,7 @@ def get_bda_list():
                     "weapon": bda['weapon_name'],
                     "target": bda['target_value'],
                     "bda-result": bda['bda_result'],
-                    "img-src": "/bda/" + str(debrief) + "/" + bda.get('image_path') if bda.get('image_path') else '/static/img/img-placeholder.webp',
+                    "img-src": "/bda/" + str(debrief) + "/" + bda.get('image_path') if bda.get('image_path') else '',
                 }
             )
 
