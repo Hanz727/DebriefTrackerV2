@@ -12,10 +12,8 @@ from clients.databases.contracts import CVW17DatabaseRow
 from clients.databases.postgres.postgres_client import PostGresClient
 from clients.thread_pool_client import ThreadPoolClient
 from core.constants import MODEX_TO_SQUADRON, Squadrons
-from core.wrappers import safe_execute
 from services import Logger
 from services.data_handler import DataHandler
-from services.file_handler import FileHandler
 from web.input._constants import BDA_IMAGE_PATH
 from web.input.config.config import WebConfigSingleton
 from web.input.tracker_ui.input_data_handler import InputDataHandler
@@ -83,15 +81,21 @@ def show_debrief_sdata(debrief_id):
     return jsonify(sdata)
 
 def save_images(data, debrief_id):
-    if data.get('ag_weapons'):
-        for i, weapon in enumerate(data['ag_weapons']):
-            data['ag_weapons'][i]['image_path'] = ""
-            if weapon.get('image_data'):
-                img_path = InputDataHandler.save_bda_image(weapon['image_data'], str(debrief_id), str(i))
-                data['ag_weapons'][i]['image_data'] = ''
-                data['ag_weapons'][i]['image_path'] = str(img_path.name)
+    for i, weapon in enumerate(data.get('ag_weapons', [])):
+        weapon['image_path'] = ''
 
-def create_view_data(data, debrief_id):
+        if not weapon.get('image_data'):
+            continue
+
+        img_path = InputDataHandler.save_bda_image(weapon['image_data'], str(debrief_id), str(i))
+        if img_path is None:
+            Logger.error("Image path is None")
+            continue
+
+        weapon['image_data'] = ''
+        weapon['image_path'] = str(img_path.name)
+
+def create_display_data(data, debrief_id):
     view_data = {
         "debrief-id": debrief_id,
         "mission-name": data['mission_name'],
@@ -140,13 +144,13 @@ def ag_weapon_to_row(data, ag_weapon, debrief_id) -> (dict,CVW17DatabaseRow):
     row = CVW17DatabaseRow(
         datetime.now() or None,
         data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
-        MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))), Squadrons.NONE).value or None,
+        MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(aircrew.get('modex')), Squadrons.NONE).value or None,
         aircrew.get('rio', "").strip().lower() or None,
         aircrew.get('pilot', "").strip().lower() or None,
-        aircrew.get('modex', "") or None,
+        InputDataHandler.safe_int(aircrew.get('modex', "").strip()) or None,
         'A/G',
-        ag_weapon.get('weapon_name', "") or None,
-        ag_weapon.get('target_value', "") or None,
+        ag_weapon.get('weapon_name', "").strip() or None,
+        ag_weapon.get('target_value', "").strip() or None,
         None,
         None,
         None,
@@ -154,9 +158,9 @@ def ag_weapon_to_row(data, ag_weapon, debrief_id) -> (dict,CVW17DatabaseRow):
         True,
         True,
         1,
-        data.get('mission_number', "") or None,
-        data.get('mission_name', "") or None,
-        data.get('mission_event', "") or None,
+        InputDataHandler.safe_int(data.get('mission_number', "").strip()) or None,
+        data.get('mission_name', "").strip() or None,
+        data.get('mission_event', "").strip().upper() or None,
         data.get('mission_notes', ""),
         debrief_id
     )
@@ -165,7 +169,7 @@ def ag_weapon_to_row(data, ag_weapon, debrief_id) -> (dict,CVW17DatabaseRow):
 def aa_weapon_to_row(data, aa_weapon, debrief_id) -> (dict | None,CVW17DatabaseRow | None):
     aircrew = None
     for aircrew_ in data.get('aircrew', []):
-        if aircrew_.get('modex') == aa_weapon.get('modex'):
+        if aircrew_.get('modex') == aa_weapon.get('modex') and aa_weapon.get('modex') is not None:
             aircrew = aircrew_
             break
 
@@ -175,14 +179,13 @@ def aa_weapon_to_row(data, aa_weapon, debrief_id) -> (dict | None,CVW17DatabaseR
     row = CVW17DatabaseRow(
         datetime.now() or None,
         data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
-        MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))),
-                              Squadrons.NONE).value or None,
+        MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(aircrew.get('modex')), Squadrons.NONE).value or None,
         aircrew.get('rio', '').strip().lower() or None,
         aircrew.get('pilot', '').strip().lower() or None,
-        aircrew.get('modex', "") or None,
+        InputDataHandler.safe_int(aircrew.get('modex', "").strip()) or None,
         'A/A',
-        aa_weapon.get('weapon', '') or None,
-        aa_weapon.get('target', '') or None,
+        aa_weapon.get('weapon', '').strip() or None,
+        aa_weapon.get('target', '').strip() or None,
         aa_weapon.get('target_altitude', None),
         aa_weapon.get('own_altitude', None),
         aa_weapon.get('speed', None),
@@ -190,9 +193,9 @@ def aa_weapon_to_row(data, aa_weapon, debrief_id) -> (dict | None,CVW17DatabaseR
         aa_weapon.get('hit', False),
         aa_weapon.get('hit', False),
         1,
-        data.get('mission_number', '') or None,
-        data.get('mission_name', '') or None,
-        data.get('mission_event', '') or None,
+        InputDataHandler.safe_int(data.get('mission_number', "").strip()) or None,
+        data.get('mission_name', '').strip() or None,
+        data.get('mission_event', '').strip().upper() or None,
         data.get('mission_notes', ''),
         debrief_id
     )
@@ -203,11 +206,10 @@ def aircrew_to_empty_row(data, aircrew, debrief_id) -> CVW17DatabaseRow:
     return CVW17DatabaseRow(
         datetime.now() or None,
         data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
-        MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(int(aircrew.get('modex', 0))),
-                              Squadrons.NONE).value or None,
+        MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(aircrew.get('modex')), Squadrons.NONE).value or None,
         aircrew.get('rio', '').strip().lower() or None,
         aircrew.get('pilot', '').strip().lower() or None,
-        aircrew.get('modex', 0) or None,
+        InputDataHandler.safe_int(aircrew.get('modex', '').strip()) or None,
         'N/A',
         None,
         None,
@@ -218,9 +220,9 @@ def aircrew_to_empty_row(data, aircrew, debrief_id) -> CVW17DatabaseRow:
         False,
         False,
         0,
-        data.get('mission_number', '') or None,
-        data.get('mission_name', '') or None,
-        data.get('mission_event', '') or None,
+        InputDataHandler.safe_int(data.get('mission_number', "").strip()) or None,
+        data.get('mission_name', '').strip() or None,
+        data.get('mission_event', '').strip().upper() or None,
         data.get('mission_notes', ''),
         debrief_id
     )
@@ -282,6 +284,9 @@ def format_relative_date(date_input):
         str: Formatted date string in CET
     """
     cet = ZoneInfo('Europe/Berlin')  # CET/CEST timezone
+
+    if date_input is None:
+        return "INVALID DATE"
 
     # Convert input to datetime if it's not already
     if isinstance(date_input, str):
@@ -348,24 +353,31 @@ def get_bda_list():
 
     os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
     for debrief in reversed(os.listdir(BDA_IMAGE_PATH)):
+        if not os.path.exists(BDA_IMAGE_PATH / debrief / 'submit-data.json'):
+            continue
+
         with open(BDA_IMAGE_PATH / debrief / 'submit-data.json', 'r') as f:
             data = json.load(f)
-            for bda in data['ag_weapons']:
-                if not bda['target_value'] or not bda['bda_result'] or not bda['weapon_name']:
-                    continue
 
-                bdas.append(
-                    {
-                        "msn-nr": data['mission_number'],
-                        "msn-evt": data['mission_event'],
-                        "date": format_relative_date(data['form_metadata']['submission_time']),
-                        "callsign": data['callsign'] + str(bda['pilot_id']),
-                        "weapon": bda['weapon_name'],
-                        "target": bda['target_value'],
-                        "bda-result": bda['bda_result'],
-                        "img-src": "/bda/" + str(debrief) + "/" + bda['image_path'] if bda['image_path'] else '/static/img/img-placeholder.webp',
-                    }
-                )
+        for bda in data.get('ag_weapons', []):
+            if not all(bda.get(key) for key in ['target_value', 'bda_result', 'weapon_name', 'pilot_id']):
+                continue
+
+            if not all(data.get(key) for key in ['mission_number', 'mission_event', 'callsign']):
+                continue
+
+            bdas.append(
+                {
+                    "msn-nr": data['mission_number'],
+                    "msn-evt": data['mission_event'],
+                    "date": format_relative_date(data.get('form_metadata', {}).get('submission_time')),
+                    "callsign": data['callsign'] + str(bda['pilot_id']),
+                    "weapon": bda['weapon_name'],
+                    "target": bda['target_value'],
+                    "bda-result": bda['bda_result'],
+                    "img-src": "/bda/" + str(debrief) + "/" + bda.get('image_path') if bda.get('image_path') else '/static/img/img-placeholder.webp',
+                }
+            )
 
     return bdas
 
@@ -385,9 +397,13 @@ def edit_report(debrief_id):
     if not (session.get('authed', False) or config.bypass_auth_debug):
         return redirect('/login')
 
+    os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
+    if not os.path.exists(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json'):
+        return jsonify({'error': 'Report data not found'}), 404
+
     with open(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json') as f:
-        if session.get('discord_uid', -1) != json.load(f).get('form_metadata', {}).get('discord_uid', None):
-            if session.get('discord_uid', None) not in config.admin_uids:
+        if session.get('discord_uid', -1) != json.load(f).get('form_metadata', {}).get('discord_uid'):
+            if session.get('discord_uid') not in config.admin_uids:
                 return jsonify({'error': 'Unauthorized'}), 401
 
     try:
@@ -395,10 +411,9 @@ def edit_report(debrief_id):
             old_data = json.load(f)
 
         data = request.get_json()
-        if not data:
+        if not data or not InputDataHandler.validate_data_json(data):
             return jsonify({'error': 'No data received'}), 400
 
-        os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
         remove_debrief_data(debrief_id)
         save_images(data, debrief_id)
 
@@ -406,7 +421,7 @@ def edit_report(debrief_id):
         with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
             json.dump(data, f, indent=2)
 
-        create_view_data(data, debrief_id)
+        create_display_data(data, debrief_id)
 
         remove_tracker_data(old_data, debrief_id)
         insert_tracker_data(data, debrief_id)
@@ -428,10 +443,9 @@ def submit_report():
         return redirect('/login')
 
     try:
-        # Get the JSON data from the request
         data = request.get_json()
 
-        if not data:
+        if not data or not InputDataHandler.validate_data_json(data):
             return jsonify({'error': 'No data received'}), 400
 
         os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
@@ -440,10 +454,12 @@ def submit_report():
         save_images(data, debrief_id)
 
         data['form_metadata']['discord_uid'] = session['discord_uid']
+
+        os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
         with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
             json.dump(data, f, indent=2)
 
-        create_view_data(data, debrief_id)
+        create_display_data(data, debrief_id)
         insert_tracker_data(data, debrief_id)
 
         return jsonify({

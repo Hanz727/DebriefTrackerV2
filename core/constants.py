@@ -19,7 +19,7 @@ class Squadrons(Enum):
     VFA81 = 'VFA-81'
 
 MODEX_TO_SQUADRON: Final[dict[int, Squadrons]] = {
-    -1: Squadrons.NONE,
+    0: Squadrons.NONE,
     100: Squadrons.VF103,
     200: Squadrons.VFA34,
     400: Squadrons.VFA81

@@ -1,59 +1,68 @@
-from datetime import datetime
-from pathlib import Path
 import os
-import re
 
 from clients.databases.contracts import CVW17DatabaseRow
-from core.constants import MODEX_TO_SQUADRON, Squadrons
-from services.data_handler import DataHandler
+from services import Logger
 from web.input._constants import BDA_IMAGE_PATH
-
 
 class InputDataHandler:
     @staticmethod
-    def validate_row(row):
-        if None in [row.pilot_name, row.fl_name, row.msn_name, row.msn_nr, row.event, row.tail_number, row.hit,
-                    row.destroyed, row.weapon_type, row.squadron]:
+    def validate_row(row: CVW17DatabaseRow):
+        if None in [row.date, row.pilot_name, row.fl_name, row.msn_name, row.msn_nr, row.event, row.tail_number, row.hit,
+                    row.destroyed, row.weapon_type, row.squadron, row.debrief_id]:
             return False
+
         if row.weapon_type not in ['A/A', 'A/G', 'N/A']:
+            return False
+
+        if 3 > len(row.event) > 4:
             return False
 
         return True
 
     @staticmethod
-    def find_latest_numbered_folder(directory_path="."):
-        """Find the highest numbered folder and create the next one."""
+    def safe_int(x: str) -> int | None:
+        if x.isdigit():
+            return int(x)
+        return None
 
-        # Get all items in the directory
+    @staticmethod
+    def validate_data_json(data) -> bool:
+        return all(data.get(key) for key in ['mission_name',
+                                             'mission_number',
+                                             'mission_event',
+                                             'mission_date',
+                                             'callsign',
+                                             'aircrew',
+                                             'form_metadata'])
+
+    @staticmethod
+    def find_latest_numbered_folder(directory_path="."):
         items = os.listdir(directory_path)
 
-        # Filter for directories with numeric names
         numeric_dirs = []
         for item in items:
             full_path = os.path.join(directory_path, item)
             if os.path.isdir(full_path) and item.isdigit():
                 numeric_dirs.append(int(item))
 
-        # Find the highest number
         if numeric_dirs:
             latest = max(numeric_dirs)
             next_number = latest + 1
-            print(f"Latest numbered folder: {latest}")
+            Logger.info(f"Latest numbered folder: {latest}")
         else:
             next_number = 1
-            print("No numbered folders found. Starting with 1.")
+            Logger.info("No numbered folders found. Starting with 1.")
 
-        # Create the new directory
         new_folder_path = os.path.join(directory_path, str(next_number))
 
         try:
             os.makedirs(new_folder_path)
             return next_number
         except FileExistsError:
-            print(f"Folder {next_number} already exists!")
+            Logger.warning(f"Folder {next_number} already exists!")
             return next_number + 1
         except Exception as e:
-            print(f"Error creating folder: {e}")
+            Logger.error(f"Error creating folder: {e}")
             return None
 
     @staticmethod
@@ -97,10 +106,8 @@ class InputDataHandler:
             if not filename.lower().endswith(f'.{file_extension}'):
                 filename_with_ext = f"{filename}.{file_extension}"
 
-            # Decode and save
             image_data = base64.b64decode(encoded_data)
 
-            # Create uploads directory if it doesn't exist
             os.makedirs(BDA_IMAGE_PATH / str(debrief_id), exist_ok=True)
 
             filepath = BDA_IMAGE_PATH / Path(str(debrief_id)) / Path(filename_with_ext)

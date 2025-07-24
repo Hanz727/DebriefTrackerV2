@@ -15,7 +15,15 @@ class DataHandler:
         return flat_list
 
     @staticmethod
-    def get_hundreth(num: int) -> int:
+    def get_hundreth(num: int | str | None) -> int | None:
+        if type(num) == str and num.isdigit():
+            num = int(num)
+        else:
+            return None
+
+        if num is None:
+            return None
+
         return int(math.floor(num / 100) * 100)
 
     @staticmethod
