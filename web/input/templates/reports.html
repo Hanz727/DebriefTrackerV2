@@ -114,11 +114,17 @@
 
         /* ===== Sidebar ===== */
         .sidebar {
-            width: 220px;
+            width: var(--sidebar-width);
             background: var(--bg-container);
             display: flex;
             flex-direction: column;
             padding: var(--spacing-lg);
+            position: sticky;
+            top: 0;
+            align-self: flex-start;
+            max-height: 100vh;
+            overflow-y: auto;
+            z-index: 5;
         }
 
         .nav-link {

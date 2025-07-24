@@ -1810,7 +1810,7 @@
                     const compressedBase64 = canvas.toDataURL(outputFormat, outputQuality);
 
                     // Check if compression actually helped
-                    if (compressedBase64.length >= base64Image.length && !needsResize) {
+                    if (!needsResize && (base64Image.length * 3 / 4 / (1024*1024)) < 1) {
                         // If compressed version is larger or same size and no resize needed, use original
                         resolve(base64Image);
                     } else {
