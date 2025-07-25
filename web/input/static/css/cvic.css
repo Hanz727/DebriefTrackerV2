@@ -1,0 +1,180 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family), serif;
+    background: var(--bg-main);
+    color: var(--text-secondary);
+    min-height: 100vh;
+    padding: var(--spacing-lg);
+}
+
+/* ===== Layout Components ===== */
+.container {
+    max-width: var(--max-container-width);
+    margin: 0 auto;
+    background: var(--bg-container);
+    border: 1px solid var(--border-container);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.header {
+    background: var(--bg-section);
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-secondary);
+    text-align: center;
+    position: relative;
+    z-index: 10;
+}
+
+.header-logo {
+    position: absolute;
+    left: var(--spacing-xl);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 72px;
+}
+
+/* ===== Typography ===== */
+.title {
+    font-size: var(--font-size-title);
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+    letter-spacing: 2px;
+}
+
+.subtitle {
+    font-size: var(--font-size-md);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ===== Main Layout Container ===== */
+.main-layout {
+    display: flex;
+    flex: 1;
+    min-height: 470px;
+    position: relative;
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--bg-container);
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-lg);
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    max-height: 100vh;
+    overflow-y: auto;
+    z-index: 5;
+}
+
+.nav-link {
+    display: flex;
+    padding: var(--spacing-md) var(--spacing-xl);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: var(--font-size-md);
+    border: 1px solid var(--border-secondary);
+    transition: all 0.2s ease;
+    text-align: center;
+    margin-bottom: var(--spacing-sm);
+    background: var(--bg-section);
+    min-height: 50px;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.nav-link:hover {
+    background: var(--color-primary);
+    color: white;
+}
+
+.nav-link:last-child {
+    margin-bottom: 0;
+}
+
+/* ===== Main Content Area ===== */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.content {
+    flex: 1;
+    padding: var(--spacing-xl);
+    background: var(--bg-container);
+    margin-left: 0;
+}
+
+.content-title {
+    font-size: var(--font-size-xl);
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+/* ===== Footer ===== */
+.footer {
+    border-bottom: none;
+    border-top: 1px solid var(--border-secondary);
+    height: 108px;
+    align-content: center;
+    background: var(--bg-section);
+    padding: var(--spacing-lg);
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.footer-logo {
+    position: absolute;
+    left: var(--spacing-xl);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 72px;
+}
+
+.footer-text .title {
+    font-size: var(--font-size-xl);
+}
+
+/* ===== Divider ===== */
+.divider {
+    height: 1px;
+    background: var(--border-primary);
+    margin: var(--spacing-lg) 0;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xl) * 2;
+    color: var(--text-muted);
+}
+
+.empty-state-text {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-md);
+}
