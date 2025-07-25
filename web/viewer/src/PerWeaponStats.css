@@ -1,9 +1,13 @@
 .PerWeaponTable {
-   border: 1px #3a3a3a;
+   border: 1px solid #4f545c;
    table-layout: auto;
    width: 100%;
    border-collapse: collapse;
    box-sizing: border-box;
+}
+
+.PerWeaponTable th {
+   background: #36393f;
 }
 
 .PerWeaponTable th, td {

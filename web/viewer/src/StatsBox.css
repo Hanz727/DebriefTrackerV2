@@ -1,8 +1,15 @@
 .StatsBox {
     display: inline-block;
     background-color: #1F1F1F;
+    border: 1px solid #4f545c;
     padding: 10px;
     margin-right: 10px;
+}
+
+.Divider {
+    height: 1px;
+    background: #4f545c;
+    margin: 15px;
 }
 
 .StatsBox h4 {

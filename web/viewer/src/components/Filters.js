@@ -50,7 +50,7 @@ const Filters = ({refreshFunc}) => {
             </datalist>
 
             <div className="Filter">
-                <label htmlFor="killed">Killed?</label>
+                <label htmlFor="killed">Hit?</label>
                 <input type="text" list="bool" className="KilledFilter" id="killed" onInput={refresh}/>
             </div>
 

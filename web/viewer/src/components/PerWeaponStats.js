@@ -41,7 +41,7 @@ const PerWeaponStats = ({data, type}) => {
                     {type === "A/A" ? (
                         <th>Kills< /th>
                     ) : (
-                        <th>Drops< /th>
+                        <th>Expended< /th>
                     )}
 
                     {type === "A/A" && (

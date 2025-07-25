@@ -28,12 +28,12 @@ const Table = ({updateState, data, setData}) => {
     }
 
     const createFetchInterval = async () => {
-        const response = await fetch("https://debrief.virtualcvw17.com/get_db");
+        const response = await fetch("https://cvic.virtualcvw17.com/get_db");
         const fdata = await response.json();
         setFetchedData(fdata);
 
         setIntervalId(setInterval(async () => {
-            const response = await fetch("https://debrief.virtualcvw17.com/get_db");
+            const response = await fetch("https://cvic.virtualcvw17.com/get_db");
             const fdata = await response.json();
             setFetchedData(fdata);
         }, 30000))
@@ -92,7 +92,7 @@ const Table = ({updateState, data, setData}) => {
                         <th>Target</th>
                         <th>Range</th>
                         <th>Speed</th>
-                        <th>Killed?</th>
+                        <th>Hit?</th>
                     </tr>
                 </thead>
                 <tbody>

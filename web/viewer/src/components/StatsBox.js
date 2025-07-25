@@ -5,7 +5,7 @@ const StatsBox = ({title, children, style}) => {
     return (
         <div className="StatsBox" style={style}>
             <h4>{title}</h4>
-            <hr/>
+            <div className="Divider"></div>
             {children}
         </div>
         )
