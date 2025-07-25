@@ -1,0 +1,51 @@
+
+:root {
+    /* Primary Colors */
+    --color-primary: #5865f2;
+    --color-primary-hover: #4752c4;
+    --color-success: #00ff00;
+    --color-danger: #ff5f57;
+    --color-danger-hover: #ff4136;
+
+    /* Background Colors */
+    --bg-main: #303030;
+    --bg-container: #121212;
+    --bg-section: #1f1f1f;
+    --bg-input: #121212;
+    --bg-card: #36393f;
+    --bg-input-disabled: #0a0a0a;
+
+    /* Text Colors */
+    --text-primary: #ffffff;
+    --text-secondary: #dcddde;
+    --text-muted: #b9bbbe;
+
+    /* Border Colors */
+    --border-primary: #4f545c;
+    --border-secondary: #40444b;
+    --border-container: #202225;
+
+    /* Spacing */
+    --spacing-xs: 5px;
+    --spacing-sm: 8px;
+    --spacing-md: 15px;
+    --spacing-lg: 20px;
+    --spacing-xl: 30px;
+
+    /* Typography */
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-size-xs: 10px;
+    --font-size-sm: 12px;
+    --font-size-md: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 18px;
+    --font-size-xxl: 20px;
+    --font-size-title: 32px;
+
+    /* Common Dimensions */
+    --input-height: 37px;
+    --max-container-width: 1200px;
+    --pilot-card-width: 300px;
+}
+
+
