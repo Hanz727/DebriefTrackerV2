@@ -80,6 +80,15 @@ def show_debrief_sdata(debrief_id):
 
     return jsonify(sdata)
 
+def get_submission_date(data):
+    date = datetime.now()
+    if data.get('form_metadata', {}).get('submission_time'):
+        time_str = data.get('form_metadata', {}).get('submission_time')
+        utc_dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
+        date = utc_dt.astimezone(ZoneInfo('Europe/Berlin'))
+
+    return date
+
 def save_images(data, debrief_id):
     for i, weapon in enumerate(data.get('ag_weapons', [])):
         weapon['image_path'] = ''
@@ -141,8 +150,9 @@ def create_display_data(data, debrief_id):
 
 def ag_weapon_to_row(data, ag_weapon, debrief_id) -> (dict,CVW17DatabaseRow):
     aircrew = data.get('aircrew', [{}, {}, {}, {}])[ag_weapon.get('pilot_id', 1) - 1]
+
     row = CVW17DatabaseRow(
-        datetime.now() or None,
+        get_submission_date(data) or None,
         data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
         MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(aircrew.get('modex')), Squadrons.NONE).value or None,
         aircrew.get('rio', "").strip().lower() or None,
@@ -177,7 +187,7 @@ def aa_weapon_to_row(data, aa_weapon, debrief_id) -> (dict | None,CVW17DatabaseR
         return None
 
     row = CVW17DatabaseRow(
-        datetime.now() or None,
+        get_submission_date(data) or None,
         data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
         MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(aircrew.get('modex')), Squadrons.NONE).value or None,
         aircrew.get('rio', '').strip().lower() or None,
@@ -204,7 +214,7 @@ def aa_weapon_to_row(data, aa_weapon, debrief_id) -> (dict | None,CVW17DatabaseR
 
 def aircrew_to_empty_row(data, aircrew, debrief_id) -> CVW17DatabaseRow:
     return CVW17DatabaseRow(
-        datetime.now() or None,
+        get_submission_date(data) or None,
         data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
         MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(aircrew.get('modex')), Squadrons.NONE).value or None,
         aircrew.get('rio', '').strip().lower() or None,
@@ -254,25 +264,9 @@ def insert_tracker_data(data, debrief_id):
         if InputDataHandler.validate_row(row):
             postgres_client.insert(row)
 
-def remove_tracker_data(old_data, debrief_id):
+def remove_tracker_data(debrief_id):
     postgres_client.update_local()
-    aircrew_presence = deepcopy(old_data.get('aircrew', []))
-
-    for ag_weapon in old_data.get('ag_weapons', []):
-        aircrew, row = ag_weapon_to_row(old_data, ag_weapon, debrief_id)
-        if aircrew in aircrew_presence:
-            aircrew_presence.remove(aircrew)
-        postgres_client.remove(row)
-
-    for aa_weapon in old_data.get('aa_weapons', []):
-        aircrew, row = aa_weapon_to_row(old_data, aa_weapon, debrief_id)
-        if aircrew in aircrew_presence:
-            aircrew_presence.remove(aircrew)
-        postgres_client.remove(row)
-
-    for aircrew in aircrew_presence:
-        row = aircrew_to_empty_row(old_data, aircrew, debrief_id)
-        postgres_client.remove(row)
+    postgres_client.remove_by_debrief_id(debrief_id)
 
 def format_relative_date(date_input):
     """
@@ -418,13 +412,17 @@ def edit_report(debrief_id):
         remove_debrief_data(debrief_id)
         save_images(data, debrief_id)
 
+        old_date = old_data.get('form_metadata', {}).get('submission_time')
+        if old_date:
+            data['form_metadata']['submission_time'] = old_date
+
         data['form_metadata']['discord_uid'] = session['discord_uid']
         with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
             json.dump(data, f, indent=2)
 
         create_display_data(data, debrief_id)
 
-        remove_tracker_data(old_data, debrief_id)
+        remove_tracker_data(debrief_id)
         insert_tracker_data(data, debrief_id)
 
         return jsonify({

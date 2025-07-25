@@ -55,19 +55,21 @@ class PostGresClient(DatabaseClient):
 
         old_db_size = self.__db_snapshot.size
 
-        latest_debrief_id = None
+        old_debrief_max = None
         if old_db_size > 0:
-            latest_debrief_id = self.__db_snapshot.debrief_id[-1]
+            old_debrief_max = max([id_ for id_ in self.__db_snapshot.debrief_id if id_ is not None])
 
         self.__db_snapshot = fetched_db
         if fetched_db.size > old_db_size > 0:
             for func in self.callbacks[ON_DB_INSERT_CALLBACK]:
                 func()
 
-            if latest_debrief_id != self.__db_snapshot.debrief_id[-1]:
+            new_debrief_id = self.__db_snapshot.debrief_id[-1]
+            max_debrief_id = max([id_ for id_ in self.__db_snapshot.debrief_id if id_ is not None])
+
+            if new_debrief_id == max_debrief_id and max_debrief_id != old_debrief_max:
                 for func in self.callbacks[ON_REPORT_INSERT_CALLBACK]:
                     func()
-
 
     def __insert_row(self, row) -> None:
         try:
@@ -109,6 +111,18 @@ class PostGresClient(DatabaseClient):
             return None
 
         return np.max(db.id_[filter_])
+
+    @safe_execute
+    def remove_by_debrief_id(self, debrief_id):
+        filter_ = self.__db_snapshot.debrief_id == debrief_id
+        for id_ in self.__db_snapshot.id_[filter_]:
+            try:
+                self.__cursor.execute(DB_DELETE_QUERY, (id_,))
+                self.__cursor.connection.commit()
+            except Exception as error:
+                self.__cursor.connection.rollback()
+                Logger.error(error)
+                Logger.error(id_)
 
     @override
     @safe_execute

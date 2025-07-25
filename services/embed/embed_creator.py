@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 import discord
 
 from datetime import datetime
@@ -6,6 +9,7 @@ import time
 from clients.databases.database_client import DatabaseClient
 from core.constants import Squadrons, Weapons
 from services.embed.constants import VF_103_LOGO_URL, VFA_34_LOGO_URL, AUTHOR_FOOTER, CVW_17_LOGO_URL, VFA_81_LOGO_URL
+from web.input._constants import BDA_IMAGE_PATH
 
 
 class EmbedCreator:
@@ -192,10 +196,23 @@ class EmbedCreator:
         embed.set_footer(text=AUTHOR_FOOTER)
         return embed
 
-    def make_embed_notes(self):
+    def make_embed_notes(self) -> (discord.Embed, discord.File):
         debrief = self.__database_client.get_data_manager().get_latest_debrief()
 
-        embed = discord.Embed(title=f"{debrief.msn_name}  |  {debrief.msn_nr}  |  {debrief.posted_by}  |  "
+        with open(BDA_IMAGE_PATH / str(debrief.debrief_id) / 'submit-data.json') as f:
+            data = json.load(f)
+
+        file, ext = None, ''
+        for w in data.get('ag_weapons', []):
+            img = w.get('image_path')
+            if img is None:
+                continue
+
+            ext = "." +img.split('.')[-1]
+            file = discord.File(BDA_IMAGE_PATH / str(debrief.debrief_id) / img, filename='bda' + ext)
+            break
+
+        embed = discord.Embed(title=f"{data.get('callsign', '')}1  |  {debrief.msn_name}  |  {debrief.msn_nr}  |  {debrief.posted_by}  |  "
                                     f"{debrief.event_nr}",
                               url=f"https://cvic.virtualcvw17.com/debrief/{debrief.debrief_id}",
                               color=0x206694,
@@ -207,5 +224,8 @@ class EmbedCreator:
             embed.add_field(name='A/A kills', value=player_stats.aa_kills, inline=True)
             embed.add_field(name='A/G expended', value=player_stats.ag_drops, inline=True)
 
+        if file:
+            embed.set_image(url='attachment://bda' + ext)
+
         embed.set_footer(text=AUTHOR_FOOTER)
-        return embed
+        return embed, file

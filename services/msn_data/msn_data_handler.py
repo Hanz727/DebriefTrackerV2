@@ -51,6 +51,7 @@ class MsnDataHandler:
         db.range = np.append(db.range, entry.range)
         db.hit = np.append(db.hit, entry.hit)
         db.destroyed = np.append(db.destroyed, entry.destroyed)
+        db.debrief_id = np.append(db.debrief_id, 0)
 
         return db
 
