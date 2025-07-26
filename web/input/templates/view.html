@@ -74,6 +74,94 @@
             padding: 30px;
         }
 
+        /* Flash Messages Styling */
+        .flash-messages {
+            margin: 0 auto;
+            max-width: 1200px;
+            justify-items: center;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            margin: 5px 0;
+            border-radius: 4px;
+            position: relative;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-out 7.5s forwards;
+        }
+
+        .alert-error {
+            width: 100%;
+            background-color: #2d1b1b;
+            color: #ff6b6b;
+            border: 1px solid #4a2626;
+        }
+
+        .alert-success {
+            background-color: #1b2d1b;
+            color: #51cf66;
+            border: 1px solid #264a26;
+        }
+
+        .alert-warning {
+            background-color: #2d2a1b;
+            color: #ffd43b;
+            border: 1px solid #4a4526;
+        }
+
+        .alert-info {
+            background-color: #1b252d;
+            color: #74c0fc;
+            border: 1px solid #263e4a;
+        }
+
+
+        .close {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            color: inherit;
+            line-height: 1;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+                height: 0;
+                padding: 0;
+                margin: 0;
+                overflow: hidden;
+            }
+        }
+
         .mission-header {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -422,6 +510,21 @@
     </style>
 </head>
 <body>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+          {{ message }}
+          <button type="button" class="close" onclick="this.parentElement.style.display='none'">&times;</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 <div class="sidebar">
     <a href="/" class="nav-link">HOME</a>
     <a href="/reports" class="nav-link">AP STRIKE REPORTS</a>
@@ -429,6 +532,7 @@
     <a href="/tacview" class="nav-link">TACVIEW</a>
     <a href="/tracks" class="nav-link">REPLAYS</a>
 </div>
+
 <div class="container">
     <div class="header">
         <img src="/static/img/logo2.png" width="80", height="72">

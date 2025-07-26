@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from flask import abort, session, redirect, request, render_template, Blueprint, jsonify, send_from_directory
+from flask import abort, session, redirect, request, render_template, Blueprint, jsonify, send_from_directory, flash
 from werkzeug.utils import secure_filename
 
 from clients.databases.contracts import CVW17DatabaseRow
@@ -416,7 +416,12 @@ def edit_report(debrief_id):
         if old_date:
             data['form_metadata']['submission_time'] = old_date
 
-        data['form_metadata']['discord_uid'] = session['discord_uid']
+        old_uid = old_data.get('form_metadata', {}).get('discord_uid')
+        if old_uid:
+            data['form_metadata']['discord_uid'] = old_uid
+        else:
+            data['form_metadata']['discord_uid'] = session['discord_uid']
+
         with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
             json.dump(data, f, indent=2)
 
@@ -509,11 +514,24 @@ def get():
 
     return jsonify(filtered_rows)
 
+
 @app.route('/file')
 def file_report():
-    if session.get('authed', False) or config.bypass_auth_debug:
-        return render_template('submit.html')
-    return redirect('/login')
+    if not (session.get('authed', False) or config.bypass_auth_debug):
+        return redirect('/login')
+
+    debrief_id = request.args.get('id')
+    if debrief_id:
+        with open(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json') as f:
+            form_discord_uid = json.load(f).get('form_metadata', {}).get('discord_uid')
+
+        if session.get('discord_uid', -1) != form_discord_uid:
+            if session.get('discord_uid') not in config.admin_uids:
+                flash('You are not authorized to edit this report!', 'error')
+                return redirect(request.referrer or '/reports')
+
+    return render_template('submit.html')
+
 
 @app.route('/')
 def home():
