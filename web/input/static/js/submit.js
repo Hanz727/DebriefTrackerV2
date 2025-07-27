@@ -878,7 +878,7 @@ function compressImage(base64Image, maxWidth = 1024, quality = 0.8) {
 
                 const compressedBase64 = canvas.toDataURL(outputFormat, outputQuality);
 
-                if (!needsResize && (base64Image.length * 3 / 4 / (1024*1024)) < 1) {
+                if (!needsResize && (base64Image.length * 3 / 4 / (1024*1024)) < 2) {
                     resolve(base64Image);
                 } else {
                     resolve(compressedBase64);
@@ -900,7 +900,7 @@ function updateSubmitButtonText() {
 
     const submitButton = document.getElementById('SubmitButton');
     if (submitButton && isEditMode) {
-        submitButton.textContent = 'Update Debrief';
+        submitButton.textContent = 'Update Report';
     }
 }
 
