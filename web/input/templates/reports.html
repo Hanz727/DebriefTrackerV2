@@ -33,7 +33,6 @@
             font-size: var(--font-size-md);
             border: 1px solid var(--border-secondary);
             cursor: pointer;
-            transition: all 0.2s ease;
             position: absolute;
             right: 0;
             top: 50%;
@@ -68,7 +67,39 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: 2px solid var(--border-primary);
-            cursor: default;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+        }
+
+        .reports-table th:hover {
+            background: rgba(88, 101, 242, 0.1);
+        }
+
+        .reports-table th.sortable::after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-bottom: 6px solid var(--text-muted);
+            opacity: 0.3;
+        }
+
+        .reports-table th.sort-asc::after {
+            border-bottom: 6px solid var(--text-primary);
+            border-top: none;
+            opacity: 1;
+        }
+
+        .reports-table th.sort-desc::after {
+            border-top: 6px solid var(--text-primary);
+            border-bottom: none;
+            opacity: 1;
         }
 
         .reports-table td {
@@ -105,6 +136,47 @@
         .reports-table .mission-number-cell {
             font-weight: bold;
         }
+
+        /* ===== Search Container Styling ===== */
+        .search-container {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .search-input {
+            width: 180px;
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--bg-section);
+            border: 1px solid var(--border-secondary);
+            color: var(--text-primary);
+            font-size: var(--font-size-md);
+            border-radius: 0;
+            outline: none;
+            font-family: inherit;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .search-input:focus {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-primary);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--text-muted);
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -131,23 +203,26 @@
                 <!-- Content Area -->
                 <div class="content">
                     <div class="content-header">
+                        <div class="search-container">
+                            <input type="text" id="searchInput" class="search-input" placeholder="Search...">
+                        </div>
                         <div class="content-title">AP STRIKE REPORTS</div>
                         <a href="/file" class="file-report-btn">+ FILE REPORT</a>
                     </div>
 
                     <div class="divider"></div>
 
-                    <table class="reports-table">
+                    <table class="reports-table" id="reportsTable">
                         <thead>
                             <tr>
-                                <th>Event</th>
-                                <th>Callsign</th>
-                                <th>Mission Name</th>
-                                <th>Mission#</th>
-                                <th>Date</th>
+                                <th class="sortable" data-column="event" data-type="text">Event</th>
+                                <th class="sortable" data-column="callsign" data-type="text">Callsign</th>
+                                <th class="sortable" data-column="mission-name" data-type="text">Mission Name</th>
+                                <th class="sortable" data-column="mission-number" data-type="number">Mission#</th>
+                                <th class="sortable" data-column="date" data-type="date">Date</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tableBody">
                             <!-- Loop through the reports passed by Flask -->
                             {% for report in reports %}
                             <tr onclick="window.location.href='/debrief/{{ report['debrief-id'] }}'">
@@ -181,5 +256,186 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.getElementById('reportsTable');
+            const tbody = document.getElementById('tableBody');
+            const headers = table.querySelectorAll('th.sortable');
+
+            let currentSort = {
+                column: 'date',
+                direction: 'desc'
+            };
+
+            // Add click event listeners to sortable headers
+            headers.forEach(header => {
+                header.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent row click when clicking header
+
+                    const column = this.dataset.column;
+                    const dataType = this.dataset.type;
+
+                    // Determine sort direction
+                    if (currentSort.column === column) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.direction = 'asc';
+                    }
+
+                    currentSort.column = column;
+
+                    // Update header classes
+                    headers.forEach(h => {
+                        h.classList.remove('sort-asc', 'sort-desc');
+                    });
+                    this.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+
+                    // Sort the table
+                    sortTable(column, currentSort.direction, dataType);
+                });
+            });
+
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            let allRows = Array.from(tbody.querySelectorAll('tr'));
+
+            // Set default sort to date descending
+            const dateHeader = table.querySelector('th[data-column="date"]');
+            if (dateHeader) {
+                dateHeader.classList.add('sort-desc');
+                sortTable('date', 'desc', 'date');
+            }
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                filterTable(searchTerm);
+            });
+
+            // Also listen for keyup to catch edge cases like Ctrl+Backspace
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                filterTable(searchTerm);
+            });
+
+            function filterTable(searchTerm) {
+                // Always remove existing no results message first
+                showNoResultsMessage(false);
+
+                if (searchTerm === '') {
+                    // Show all rows if search is empty
+                    allRows.forEach(row => {
+                        row.style.display = '';
+                    });
+                } else {
+                    // Filter rows based on search term
+                    let visibleCount = 0;
+
+                    allRows.forEach(row => {
+                        const event = row.children[0].textContent.toLowerCase();
+                        const callsign = row.children[1].textContent.toLowerCase();
+                        const missionName = row.children[2].textContent.toLowerCase();
+                        const missionNumber = row.children[3].textContent.toLowerCase();
+                        const date = row.children[4].textContent.toLowerCase();
+
+                        const isMatch = event.includes(searchTerm) ||
+                                       callsign.includes(searchTerm) ||
+                                       missionName.includes(searchTerm) ||
+                                       missionNumber.includes(searchTerm) ||
+                                       date.includes(searchTerm);
+
+                        if (isMatch) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    // Show "no results" message if no matches and search is not empty
+                    if (visibleCount === 0) {
+                        showNoResultsMessage(true);
+                    }
+                }
+            }
+
+            function showNoResultsMessage(show) {
+                let noResultsRow = document.getElementById('noResultsRow');
+
+                if (show && !noResultsRow) {
+                    noResultsRow = document.createElement('tr');
+                    noResultsRow.id = 'noResultsRow';
+                    noResultsRow.innerHTML = '<td colspan="5" class="no-results">No reports match your search criteria</td>';
+                    tbody.appendChild(noResultsRow);
+                } else if (!show && noResultsRow) {
+                    noResultsRow.remove();
+                }
+            }
+
+            function sortTable(column, direction, dataType) {
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                rows.sort((a, b) => {
+                    let aVal, bVal;
+
+                    // Get the cell values based on column
+                    switch(column) {
+                        case 'event':
+                            aVal = a.children[0].textContent.trim();
+                            bVal = b.children[0].textContent.trim();
+                            break;
+                        case 'callsign':
+                            aVal = a.children[1].textContent.trim();
+                            bVal = b.children[1].textContent.trim();
+                            break;
+                        case 'mission-name':
+                            aVal = a.children[2].textContent.trim();
+                            bVal = b.children[2].textContent.trim();
+                            break;
+                        case 'mission-number':
+                            aVal = a.children[3].textContent.trim();
+                            bVal = b.children[3].textContent.trim();
+                            break;
+                        case 'date':
+                            aVal = a.children[4].textContent.trim();
+                            bVal = b.children[4].textContent.trim();
+                            break;
+                        default:
+                            return 0;
+                    }
+
+                    // Handle different data types
+                    let comparison = 0;
+
+                    if (dataType === 'number') {
+                        const aNum = parseFloat(aVal) || 0;
+                        const bNum = parseFloat(bVal) || 0;
+                        comparison = aNum - bNum;
+                    } else if (dataType === 'date') {
+                        const aDate = new Date(aVal);
+                        const bDate = new Date(bVal);
+                        comparison = aDate - bDate;
+                    } else {
+                        comparison = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
+                    }
+
+                    return direction === 'asc' ? comparison : -comparison;
+                });
+
+                // Clear tbody and append sorted rows
+                tbody.innerHTML = '';
+                rows.forEach(row => tbody.appendChild(row));
+
+                // Update allRows reference after sorting
+                allRows = Array.from(tbody.querySelectorAll('tr'));
+
+                // Reapply current search filter if there is one
+                const currentSearch = searchInput.value.toLowerCase().trim();
+                if (currentSearch) {
+                    filterTable(currentSearch);
+                }
+            }
+        });
+    </script>
 </body>
 </html>
