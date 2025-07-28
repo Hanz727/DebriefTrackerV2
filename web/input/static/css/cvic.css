@@ -91,7 +91,6 @@ body {
     letter-spacing: 1px;
     font-size: var(--font-size-md);
     border: 1px solid var(--border-secondary);
-    transition: all 0.2s ease;
     text-align: center;
     margin-bottom: var(--spacing-sm);
     background: var(--bg-section);
