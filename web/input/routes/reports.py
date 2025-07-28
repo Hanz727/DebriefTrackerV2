@@ -1,11 +1,8 @@
 import json
 import os
-from pathlib import Path
 
-from flask import Blueprint, jsonify, request, send_file, render_template, session, redirect
+from flask import Blueprint, render_template, session, redirect
 
-from core.constants import MSN_DATA_FILES_PATH
-from services.file_handler import FileHandler
 from web.input._constants import BDA_IMAGE_PATH
 from web.input.config.config import WebConfigSingleton
 
@@ -20,7 +17,7 @@ def reports():
 
     reports_ = []
 
-    for debrief in os.listdir(BDA_IMAGE_PATH):
+    for debrief in reversed(os.listdir(BDA_IMAGE_PATH)):
         with open(BDA_IMAGE_PATH / debrief / "submit-data.json", 'r') as f:
             submit_data = json.load(f)
             reports_row = {'event': submit_data['mission_event'], 'date': submit_data['mission_date'],
