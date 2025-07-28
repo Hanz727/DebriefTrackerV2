@@ -1,4 +1,5 @@
 import json
+import os.path
 from pathlib import Path
 
 import discord
@@ -211,7 +212,10 @@ class EmbedCreator:
             if not(img.endswith('.png') or img.endswith('.jpg') or img.endswith('.jpeg') or img.endswith('.gif')):
                 continue
 
-            ext = "." +img.split('.')[-1]
+            if not os.path.exists(BDA_IMAGE_PATH / str(debrief.debrief_id) / img):
+                continue
+
+            ext = "." + img.split('.')[-1]
             file = discord.File(BDA_IMAGE_PATH / str(debrief.debrief_id) / img, filename='bda' + ext)
             break
 
