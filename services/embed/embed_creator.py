@@ -196,7 +196,7 @@ class EmbedCreator:
         embed.set_footer(text=AUTHOR_FOOTER)
         return embed
 
-    def make_embed_notes(self) -> (discord.Embed, discord.File):
+    def make_embed_notes(self) -> (discord.Embed, discord.File | None):
         debrief = self.__database_client.get_data_manager().get_latest_debrief()
 
         with open(BDA_IMAGE_PATH / str(debrief.debrief_id) / 'submit-data.json') as f:
@@ -205,7 +205,7 @@ class EmbedCreator:
         file, ext = None, ''
         for w in data.get('ag_weapons', []):
             img = w.get('image_path')
-            if img is None:
+            if img is None or img.strip() == '':
                 continue
 
             ext = "." +img.split('.')[-1]
