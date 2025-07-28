@@ -219,7 +219,11 @@ class EmbedCreator:
             file = discord.File(BDA_IMAGE_PATH / str(debrief.debrief_id) / img, filename='bda' + ext)
             break
 
-        embed = discord.Embed(title=f"{data.get('callsign', '')}1  |  {debrief.msn_name}  |  {debrief.msn_nr}  |  {debrief.posted_by}  |  "
+        fl = debrief.posted_by.strip().capitalize()
+        if len(fl) == 2:
+            fl = fl.upper()
+
+        embed = discord.Embed(title=f"{data.get('callsign', '')}1  |  {debrief.msn_name}  |  {debrief.msn_nr}  |  {fl}  |  "
                                     f"{debrief.event_nr}",
                               url=f"https://cvic.virtualcvw17.com/debrief/{debrief.debrief_id}",
                               color=0x206694,
