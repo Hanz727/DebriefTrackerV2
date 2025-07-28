@@ -208,6 +208,9 @@ class EmbedCreator:
             if img is None or img.strip() == '':
                 continue
 
+            if not(img.endswith('.png') or img.endswith('.jpg') or img.endswith('.jpeg') or img.endswith('.gif')):
+                continue
+
             ext = "." +img.split('.')[-1]
             file = discord.File(BDA_IMAGE_PATH / str(debrief.debrief_id) / img, filename='bda' + ext)
             break
