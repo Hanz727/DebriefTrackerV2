@@ -9,6 +9,7 @@ const Sidebar = () => {
             <a href="#" className="nav-link">DATA VIEWER</a>
             <a href="/tacview" className="nav-link">TACVIEW</a>
             <a href="/tracks" className="nav-link">REPLAYS</a>
+            <a href="https://virtualcvw17.com/" className="nav-link">CVW-17 WEBSITE</a>
         </div>
     )
 }
