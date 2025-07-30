@@ -10,7 +10,7 @@ import time
 from clients.databases.database_client import DatabaseClient
 from core.constants import Squadrons, Weapons
 from services.embed.constants import VF_103_LOGO_URL, VFA_34_LOGO_URL, AUTHOR_FOOTER, CVW_17_LOGO_URL, VFA_81_LOGO_URL
-from web.input._constants import BDA_IMAGE_PATH
+from web.input._constants import DEBRIEFS_PATH
 
 
 class EmbedCreator:
@@ -200,7 +200,7 @@ class EmbedCreator:
     def make_embed_notes(self) -> (discord.Embed, discord.File | None):
         debrief = self.__database_client.get_data_manager().get_latest_debrief()
 
-        with open(BDA_IMAGE_PATH / str(debrief.debrief_id) / 'submit-data.json') as f:
+        with open(DEBRIEFS_PATH / str(debrief.debrief_id) / 'submit-data.json') as f:
             data = json.load(f)
 
         file, ext = None, ''
@@ -212,11 +212,11 @@ class EmbedCreator:
             if not(img.endswith('.png') or img.endswith('.jpg') or img.endswith('.jpeg') or img.endswith('.gif')):
                 continue
 
-            if not os.path.exists(BDA_IMAGE_PATH / str(debrief.debrief_id) / img):
+            if not os.path.exists(DEBRIEFS_PATH / str(debrief.debrief_id) / img):
                 continue
 
             ext = "." + img.split('.')[-1]
-            file = discord.File(BDA_IMAGE_PATH / str(debrief.debrief_id) / img, filename='bda' + ext)
+            file = discord.File(DEBRIEFS_PATH / str(debrief.debrief_id) / img, filename='bda' + ext)
             break
 
         fl = debrief.posted_by.strip().capitalize()

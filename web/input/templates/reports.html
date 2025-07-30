@@ -53,21 +53,25 @@
 
         /* ===== Reports Table Styling ===== */
         .reports-table {
-            background: var(--bg-input);
-            border: 1px solid var(--border-primary);
             width: 100%;
             border-collapse: collapse;
+            border: 1px solid var(--border-secondary);
+            background: var(--bg-container);
             font-size: var(--font-size-sm);
         }
 
+        .reports-table thead {
+            background: var(--bg-section);
+        }
+
         .reports-table th {
-            background: var(--bg-card);
-            color: var(--text-primary);
             padding: var(--spacing-md);
             text-align: center;
+            color: var(--text-primary);
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            font-size: var(--font-size-sm);
             border-bottom: 2px solid var(--border-primary);
             cursor: pointer;
             position: relative;
@@ -75,7 +79,7 @@
         }
 
         .reports-table th:hover {
-            background: rgba(88, 101, 242, 0.1);
+            background: rgba(185, 187, 190, 0.15);
         }
 
         .reports-table th.sortable::after {
@@ -104,15 +108,22 @@
             opacity: 1;
         }
 
-        .reports-table td {
-            padding: var(--spacing-md);
-            border-bottom: 1px solid var(--border-secondary);
-            color: var(--text-secondary);
-            text-align: center;
+        .reports-table th:last-child {
+            border-right: none;
         }
 
-        .reports-table tr:hover {
-            background: rgba(88, 101, 242, 0.1);
+        .reports-table td {
+            padding: var(--spacing-md);
+            text-align: center;
+            border-bottom: 1px solid var(--border-secondary);
+        }
+
+        .reports-table td:last-child {
+            border-right: none;
+        }
+
+        tbody tr:hover {
+            background: rgba(185, 187, 190, 0.15);
             cursor: pointer;
         }
 
@@ -132,11 +143,16 @@
         }
 
         .reports-table .date-cell {
-            color: var(--text-muted);
+            color: var(--text-secondary);
         }
 
         .reports-table .mission-number-cell {
             font-weight: bold;
+            color: var(--text-secondary);
+        }
+
+        .reports-table td {
+            color: var(--text-secondary);
         }
 
         /* ===== Search Container Styling ===== */
@@ -197,6 +213,7 @@
                 <div class="sidebar">
                     <a href="/" class="nav-link">HOME</a>
                     <a href="#" class="nav-link">AP STRIKE REPORTS</a>
+                    <a href="/dmpi_db" class="nav-link">DMPI DATABASE</a>
                     <a href="/viewer" class="nav-link">DATA VIEWER</a>
                     <a href="/tacview" class="nav-link">TACVIEW</a>
                     <a href="/tracks" class="nav-link">REPLAYS</a>

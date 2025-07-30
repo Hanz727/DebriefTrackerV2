@@ -2,7 +2,7 @@ import os
 
 from clients.databases.contracts import CVW17DatabaseRow
 from services import Logger
-from web.input._constants import BDA_IMAGE_PATH
+from web.input._constants import DEBRIEFS_PATH
 
 class InputDataHandler:
     @staticmethod
@@ -108,9 +108,9 @@ class InputDataHandler:
 
             image_data = base64.b64decode(encoded_data)
 
-            os.makedirs(BDA_IMAGE_PATH / str(debrief_id), exist_ok=True)
+            os.makedirs(DEBRIEFS_PATH / str(debrief_id), exist_ok=True)
 
-            filepath = BDA_IMAGE_PATH / Path(str(debrief_id)) / Path(filename_with_ext)
+            filepath = DEBRIEFS_PATH / Path(str(debrief_id)) / Path(filename_with_ext)
             with open(filepath, 'wb') as f:
                 f.write(image_data)
 

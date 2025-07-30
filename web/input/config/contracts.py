@@ -12,3 +12,5 @@ class WebConfig:
     tacview_dir: Path
     tracks_dir: Path
     admin_uids: list[str]
+    missions_path: Path
+    deployment_msn_prefix: str

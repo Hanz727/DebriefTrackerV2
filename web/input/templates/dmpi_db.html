@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVIC MENU</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo2.png') }}">
+    <style>
+        @import url('static/css/color-palette.css');
+        @import url('static/css/cvic.css');
+
+        /* ===== Table Styling ===== */
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid var(--border-secondary);
+            background: var(--bg-container);
+            font-size: var(--font-size-sm);
+        }
+
+        .file-table thead {
+            background: var(--bg-section);
+        }
+
+        .file-table th {
+            padding: var(--spacing-md);
+            text-align: center;
+            color: var(--text-primary);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: var(--font-size-sm);
+            border-bottom: 2px solid var(--border-primary);
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+        }
+
+        .file-table th:hover {
+            background: rgba(185, 187, 190, 0.15);
+        }
+
+        .file-table th.sortable::after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-bottom: 6px solid var(--text-muted);
+            opacity: 0.3;
+        }
+
+        .file-table th.sort-asc::after {
+            border-bottom: 6px solid var(--text-primary);
+            border-top: none;
+            opacity: 1;
+        }
+
+        .file-table th.sort-desc::after {
+            border-top: 6px solid var(--text-primary);
+            border-bottom: none;
+            opacity: 1;
+        }
+
+        .file-table th:last-child {
+            border-right: none;
+        }
+
+        .file-table th.dmpi-id-header {
+            width: 18%;
+        }
+
+        .file-table th.comment-header {
+            width: 35%;
+        }
+
+        .file-table th.in-msn-header {
+            width: 8%;
+        }
+
+        .file-table th.date-header {
+            width: 15%;
+        }
+
+        .file-table th.bda-header {
+            width: 24%;
+        }
+
+        .file-table tbody tr.clickable {
+            cursor: pointer;
+        }
+
+        .file-table tbody tr.non-clickable {
+            cursor: default;
+        }
+
+        .file-table tbody tr.clickable:hover {
+            background: rgba(185, 187, 190, 0.18);
+        }
+
+        .file-table tbody tr.collision, tbody tr.clickable.expanded-row {
+            background: rgba(190, 190, 190, 0.08);
+        }
+
+        .file-table tbody tr.sub-row.collision, tbody tr.sub-row {
+            background: rgba(190, 190, 190, 0.03);
+        }
+
+        .file-table tbody tr.expanded-row:hover {
+            background: rgba(185, 187, 190, 0.18);
+        }
+
+        .file-table td {
+            padding: var(--spacing-md);
+            text-align: center;
+            border-bottom: 1px solid var(--border-secondary);
+        }
+
+        .file-table td:last-child {
+            border-right: none;
+        }
+
+        .file-table .file-name {
+            color: var(--text-secondary);
+            font-weight: bold;
+            text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+        }
+
+        .file-table .comment-text {
+            color: var(--text-secondary);
+            font-style: italic;
+            text-align: left;
+            padding-left: var(--spacing-lg);
+        }
+
+        .file-table .date-text {
+            color: var(--text-secondary);
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        .file-table .date-none {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .file-table .bda-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .file-table .bda-link:hover {
+            text-decoration: underline;
+        }
+
+        .file-table .bda-text {
+            color: var(--text-secondary);
+            font-weight: bold;
+        }
+
+        /* Boolean indicator styles */
+        .boolean-indicator {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 12px;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .boolean-true {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+        }
+
+        .boolean-false {
+            background: linear-gradient(135deg, #dc3545, #e74c3c);
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+        }
+
+        .expand-indicator {
+            margin-left: 8px;
+            font-size: 10px;
+            color: var(--text-muted);
+            display: inline-block;
+        }
+
+        .expanded-row .expand-indicator {
+            transform: rotate(90deg);
+        }
+
+        .sub-row-indent {
+            padding-right: var(--spacing-lg) !important;
+            text-align: right !important;
+        }
+
+        /* Content header with centered title and left search bar and right button */
+        .content-header {
+            position: relative;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .search-container {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .search-input {
+            width: 188px;
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--bg-section);
+            border: 1px solid var(--border-secondary);
+            color: var(--text-primary);
+            font-size: var(--font-size-md);
+            border-radius: 0;
+            outline: none;
+            font-family: inherit;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .search-input:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 1px var(--color-primary);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.6;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+        /* ===== Popup Styling ===== */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-content {
+            background: var(--bg-section);
+            border: 1px solid var(--border-container);
+            padding: var(--spacing-xl);
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .popup-header {
+            font-size: var(--font-size-xl);
+            font-weight: bold;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-primary);
+            padding-bottom: var(--spacing-md);
+        }
+
+        .popup-textarea {
+            flex: 1;
+            min-height: 200px;
+            max-height: 400px;
+            width: 100%;
+            padding: var(--spacing-md);
+            background: var(--bg-input);
+            border: 1px solid var(--border-secondary);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: var(--font-size-sm);
+            resize: vertical;
+            outline: none;
+        }
+
+        .popup-textarea:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 1px var(--color-primary);
+        }
+
+        .popup-textarea::placeholder {
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        .popup-buttons {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: flex-end;
+            margin-top: var(--spacing-lg);
+        }
+
+        .popup-button {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border: none;
+            font-size: var(--font-size-sm);
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            outline: none;
+        }
+
+        .popup-button.cancel {
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-secondary);
+        }
+
+        .popup-button.cancel:hover {
+            background: var(--border-primary);
+            color: var(--text-primary);
+            border-color: var(--border-primary);
+        }
+
+        .popup-button.apply {
+            background: var(--color-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--color-primary);
+        }
+
+        .popup-button.apply:hover {
+            background: var(--color-primary-hover);
+            border-color: var(--color-primary-hover);
+            box-shadow: 0 2px 8px rgba(88, 101, 242, 0.3);
+        }
+
+        .popup-button:active {
+            transform: translateY(0);
+        }
+
+        /* ===== File Report Button ===== */
+        .manual-destroy-btn {
+            width: 188px;
+            text-align: center;
+            background: var(--bg-section);
+            color: var(--text-primary);
+            padding: var(--spacing-md) var(--spacing-lg);
+            text-decoration: none;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: var(--font-size-md);
+            border: 1px solid var(--border-secondary);
+            cursor: pointer;
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .manual-destroy-btn:hover {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        .manual-destroy-btn:active {
+            background: var(--color-primary-hover);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="main-content">
+            <div class="header">
+                <img src="/static/img/logo2.png" class="header-logo" alt="CVW-17 Logo">
+                <div class="title">CVIC MENU</div>
+                <div class="subtitle">CARRIER AIR WING 17</div>
+            </div>
+
+            <!-- Main layout with sidebar and content -->
+            <div style="display: flex; flex: 1;">
+                <!-- Sidebar Navigation -->
+                <div class="sidebar">
+                    <a href="/" class="nav-link">HOME</a>
+                    <a href="/reports" class="nav-link">AP STRIKE REPORTS</a>
+                    <a href="#" class="nav-link">DMPI DATABASE</a>
+                    <a href="/viewer" class="nav-link">DATA VIEWER</a>
+                    <a href="/tacview" class="nav-link">TACVIEW</a>
+                    <a href="/tracks" class="nav-link">REPLAYS</a>
+                    <a href="https://virtualcvw17.com/" class="nav-link">CVW-17 WEBSITE</a>
+                </div>
+
+                <!-- Content Area -->
+                <div class="content" style="min-height: 0px">
+                    <div class="content-header">
+                        <div class="search-container">
+                            <input type="text" class="search-input" id="searchInput" placeholder="Search...">
+                        </div>
+                        <div class="content-title">DMPI DATABASE</div>
+                        {% if admin %}
+                            <button class="manual-destroy-btn" onclick="showManualDestroyPopup()">MANUAL DESTROY</button>
+                        {% else %}
+                            <div></div>
+                        {% endif %}
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- File Table -->
+                    <table class="file-table" id="dmpiTable">
+                        <thead>
+                            <tr>
+                                <th class="dmpi-id-header sortable" data-column="dmpi-id" data-type="text">DMPI ID</th>
+                                <th class="comment-header sortable" data-column="comment" data-type="text">COMMENT</th>
+                                <th class="in-msn-header sortable" data-column="in-msn" data-type="boolean">IN MSN</th>
+                                <th class="bda-header sortable" data-column="bda" data-type="text">BDA</th>
+                                <th class="date-header sortable" data-column="date" data-type="date">DATE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dmpiTableBody">
+                            {% for dmpi_id, dmpi_data in dmpis.items() %}
+                                {% set first_aim_point = dmpi_data.aim_points|first %}
+                                {% set first_aim_data = dmpi_data.aim_points[first_aim_point] %}
+                                {% set is_collision = dmpi_data.collision %}
+                                {% set has_multiple_aims = dmpi_data.aim_points|length > 1 %}
+
+                                <tr class="{% if has_multiple_aims %}clickable{% else %}non-clickable{% endif %}{% if is_collision %} collision{% endif %}"
+                                    data-dmpi-id="{{ dmpi_id }}"
+                                    data-expandable="{{ has_multiple_aims|lower }}"
+                                    onclick="{% if has_multiple_aims %}toggleExpand(this){% endif %}">
+                                    <td data-value="{{ dmpi_id }}">
+                                        <span class="file-name">
+                                            {{ dmpi_id }} - {{ first_aim_point }}
+                                            {% if has_multiple_aims %}
+                                                <span class="expand-indicator">▶</span>
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td data-value="{{ dmpi_data.comment }}">
+                                        <span class="comment-text">{{ dmpi_data.comment }}</span>
+                                    </td>
+                                    <td data-value="{{ dmpi_data.in_msn }}">
+                                        <span class="boolean-indicator {% if dmpi_data.in_msn %}boolean-true{% else %}boolean-false{% endif %}">
+                                            {% if dmpi_data.in_msn %}✓{% else %}✗{% endif %}
+                                        </span>
+                                    </td>
+                                    <td data-value="{{ first_aim_data.bda }}" onclick="event.stopPropagation();">
+                                        {% if first_aim_data.debrief_id and first_aim_data.debrief_id != "None" %}
+                                            <a href="/debrief/{{ first_aim_data.debrief_id }}" class="bda-link">{{ first_aim_data.bda }}</a>
+                                        {% else %}
+                                            <span class="bda-text">{{ first_aim_data.bda }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-value="{{ first_aim_data.date }}">
+                                        {% if first_aim_data.date and first_aim_data.date != "None" %}
+                                            <span class="date-text">{{ first_aim_data.date }}</span>
+                                        {% else %}
+                                            <span class="date-none">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+
+                                {% if has_multiple_aims %}
+                                    {% for aim_point, aim_data in dmpi_data.aim_points.items() %}
+                                        {% if aim_point != first_aim_point %}
+                                            <tr class="sub-row" style="display: none;" data-parent="{{ dmpi_id }}">
+                                                <td class="sub-row-indent" data-value="{{ dmpi_id }}">
+                                                    <span class="file-name">{{ dmpi_id }} - {{ aim_point }}</span>
+                                                </td>
+                                                <td data-value="{{ dmpi_data.comment }}">
+                                                    <span class="comment-text">{{ dmpi_data.comment }}</span>
+                                                </td>
+                                                <td data-value="{{ dmpi_data.in_msn }}">
+                                                    <span class="boolean-indicator {% if dmpi_data.in_msn %}boolean-true{% else %}boolean-false{% endif %}">
+                                                        {% if dmpi_data.in_msn %}✓{% else %}✗{% endif %}
+                                                    </span>
+                                                </td>
+                                                <td data-value="{{ aim_data.bda }}">
+                                                    {% if aim_data.debrief_id and aim_data.debrief_id != "None" %}
+                                                        <a href="/debrief/{{ aim_data.debrief_id }}" class="bda-link">{{ aim_data.bda }}</a>
+                                                    {% else %}
+                                                        <span class="bda-text">{{ aim_data.bda }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td data-value="{{ aim_data.date }}">
+                                                    {% if aim_data.date and aim_data.date != "None" %}
+                                                        <span class="date-text">{{ aim_data.date }}</span>
+                                                    {% else %}
+                                                        <span class="date-none">-</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- Empty state if no files -->
+                            {% if not dmpis %}
+                                <tr class="non-clickable">
+                                    <td colspan="5" class="empty-state">
+                                        <div class="empty-state-text">No files available</div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+
+            <!-- Manual Destroy Popup -->
+            <div class="popup-overlay" id="manualDestroyPopup">
+                <div class="popup-content">
+                    <div class="popup-header">Manual Destroy Override</div>
+                    <textarea class="popup-textarea" id="overrideTextarea" placeholder="Enter DMPI IDs, one per line:&#10;CC-CCC-12345-01&#10;CC-CCC-12345-02"></textarea>
+                    <div class="popup-buttons">
+                        <button class="popup-button cancel" onclick="hideManualDestroyPopup()">Cancel</button>
+                        <button class="popup-button apply" onclick="applyManualDestroy()">Apply Changes</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <img src="/static/img/logo2.png" width="80" height="72" alt="CVW-17 Logo" class="footer-logo">
+                <div class="footer-text">
+                    <div class="title">VIRTUAL CARRIER AIR WING 17</div>
+                    <div class="subtitle">Not associated with the Department of Defence or any of its components.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let expandedRows = new Set();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.getElementById('dmpiTable');
+            const tbody = document.getElementById('dmpiTableBody');
+            const headers = table.querySelectorAll('th.sortable');
+            const searchInput = document.getElementById('searchInput');
+
+            let currentSort = {
+                column: 'bda',
+                direction: 'desc'
+            };
+
+            // Add search functionality
+            searchInput.addEventListener('input', function() {
+                filterTable(this.value);
+            });
+
+            function filterTable(searchTerm) {
+                const rows = tbody.querySelectorAll('tr:not(.sub-row)');
+                const subRows = tbody.querySelectorAll('tr.sub-row');
+
+                searchTerm = searchTerm.toLowerCase().trim();
+
+                rows.forEach(row => {
+                    const dmpiId = row.dataset.dmpiId;
+                    let shouldShow = false;
+
+                    if (searchTerm === '') {
+                        shouldShow = true;
+                    } else {
+                        // Search in all columns
+                        const cells = row.querySelectorAll('td');
+                        for (let cell of cells) {
+                            const cellText = cell.textContent.toLowerCase();
+                            const dataValue = cell.dataset.value ? cell.dataset.value.toLowerCase() : '';
+
+                            if (cellText.includes(searchTerm) || dataValue.includes(searchTerm)) {
+                                shouldShow = true;
+                                break;
+                            }
+                        }
+
+                        // Also search in sub-rows for this DMPI
+                        if (!shouldShow) {
+                            const relatedSubRows = Array.from(subRows).filter(subRow =>
+                                subRow.dataset.parent === dmpiId
+                            );
+
+                            for (let subRow of relatedSubRows) {
+                                const subCells = subRow.querySelectorAll('td');
+                                for (let cell of subCells) {
+                                    const cellText = cell.textContent.toLowerCase();
+                                    const dataValue = cell.dataset.value ? cell.dataset.value.toLowerCase() : '';
+
+                                    if (cellText.includes(searchTerm) || dataValue.includes(searchTerm)) {
+                                        shouldShow = true;
+                                        break;
+                                    }
+                                }
+                                if (shouldShow) break;
+                            }
+                        }
+                    }
+
+                    // Show/hide main row
+                    row.style.display = shouldShow ? 'table-row' : 'none';
+
+                    // Show/hide related sub-rows
+                    const relatedSubRows = Array.from(subRows).filter(subRow =>
+                        subRow.dataset.parent === dmpiId
+                    );
+
+                    relatedSubRows.forEach(subRow => {
+                        if (shouldShow) {
+                            // Only show sub-rows if parent is expanded
+                            if (expandedRows.has(dmpiId)) {
+                                subRow.style.display = 'table-row';
+                            } else {
+                                subRow.style.display = 'none';
+                            }
+                        } else {
+                            subRow.style.display = 'none';
+                        }
+                    });
+                });
+            }
+
+            // Add click event listeners to sortable headers
+            headers.forEach(header => {
+                header.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent row click when clicking header
+
+                    const column = this.dataset.column;
+                    const dataType = this.dataset.type;
+
+                    // Determine sort direction
+                    if (currentSort.column === column) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.direction = 'asc';
+                    }
+
+                    currentSort.column = column;
+
+                    // Update header classes
+                    headers.forEach(h => {
+                        h.classList.remove('sort-asc', 'sort-desc');
+                    });
+                    this.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+
+                    // Sort the table
+                    sortTable(column, currentSort.direction, dataType);
+                });
+            });
+
+            // Set default sort to BDA descending
+            const bdaHeader = table.querySelector('th[data-column="bda"]');
+            if (bdaHeader) {
+                bdaHeader.classList.add('sort-desc');
+                sortTable('bda', 'desc', 'text');
+            }
+
+            function sortTable(column, direction, dataType) {
+                const rows = Array.from(tbody.querySelectorAll('tr:not(.sub-row)'));
+                const allSubRows = Array.from(tbody.querySelectorAll('tr.sub-row'));
+
+                // Store sub-rows by parent
+                const subRowsByParent = {};
+                allSubRows.forEach(subRow => {
+                    const parent = subRow.dataset.parent;
+                    if (!subRowsByParent[parent]) {
+                        subRowsByParent[parent] = [];
+                    }
+                    subRowsByParent[parent].push(subRow);
+                });
+
+                rows.sort((a, b) => {
+                    let aVal, bVal;
+
+                    // Get the cell values based on column using data-value attribute
+                    switch(column) {
+                        case 'dmpi-id':
+                            aVal = (a.children[0] && a.children[0].dataset && a.children[0].dataset.value) ||
+                                   (a.children[0] && a.children[0].textContent.trim()) || '';
+                            bVal = (b.children[0] && b.children[0].dataset && b.children[0].dataset.value) ||
+                                   (b.children[0] && b.children[0].textContent.trim()) || '';
+                            break;
+                        case 'comment':
+                            aVal = (a.children[1] && a.children[1].dataset && a.children[1].dataset.value) || '';
+                            bVal = (b.children[1] && b.children[1].dataset && b.children[1].dataset.value) || '';
+                            break;
+                        case 'in-msn':
+                            aVal = (a.children[2] && a.children[2].dataset && a.children[2].dataset.value) || '';
+                            bVal = (b.children[2] && b.children[2].dataset && b.children[2].dataset.value) || '';
+                            break;
+                        case 'bda':
+                            aVal = (a.children[3] && a.children[3].dataset && a.children[3].dataset.value) || '';
+                            bVal = (b.children[3] && b.children[3].dataset && b.children[3].dataset.value) || '';
+                            break;
+                        case 'date':
+                            aVal = (a.children[4] && a.children[4].dataset && a.children[4].dataset.value) || '';
+                            bVal = (b.children[4] && b.children[4].dataset && b.children[4].dataset.value) || '';
+                            break;
+                        default:
+                            return 0;
+                    }
+
+                    // Handle different data types
+                    let comparison = 0;
+
+                    if (dataType === 'boolean') {
+                        // Convert string boolean values to actual booleans for comparison
+                        const aBool = aVal === 'True' || aVal === true;
+                        const bBool = bVal === 'True' || bVal === true;
+
+                        if (aBool === bBool) {
+                            comparison = 0;
+                        } else if (aBool && !bBool) {
+                            comparison = 1; // true comes after false
+                        } else {
+                            comparison = -1; // false comes before true
+                        }
+                    } else if (dataType === 'date') {
+                        // Special handling for date column with None/null values
+                        const aIsNone = aVal === 'None' || aVal === '' || aVal == null;
+                        const bIsNone = bVal === 'None' || bVal === '' || bVal == null;
+
+                        if (aIsNone && bIsNone) {
+                            comparison = 0;
+                        } else if (aIsNone && !bIsNone) {
+                            comparison = -1; // None comes before actual dates (will be reversed by direction)
+                        } else if (!aIsNone && bIsNone) {
+                            comparison = 1; // Actual dates come after None (will be reversed by direction)
+                        } else {
+                            // Both have date values, sort chronologically
+                            const dateA = new Date(aVal);
+                            const dateB = new Date(bVal);
+                            comparison = dateA.getTime() - dateB.getTime();
+                        }
+                    } else if (column === 'bda') {
+                        // Special handling for BDA column with None values
+                        const aIsNone = aVal === 'None' || aVal === '' || aVal == null;
+                        const bIsNone = bVal === 'None' || bVal === '' || bVal == null;
+
+                        if (aIsNone && bIsNone) {
+                            comparison = 0;
+                        } else if (aIsNone && !bIsNone) {
+                            comparison = -1; // None comes before actual values (will be reversed by direction)
+                        } else if (!aIsNone && bIsNone) {
+                            comparison = 1; // Actual values come after None (will be reversed by direction)
+                        } else {
+                            // Both have values, sort naturally (numeric-aware)
+                            comparison = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
+                        }
+                    } else {
+                        comparison = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
+                    }
+
+                    return direction === 'asc' ? comparison : -comparison;
+                });
+
+                // Clear tbody and re-insert sorted rows with their sub-rows
+                tbody.innerHTML = '';
+                rows.forEach(row => {
+                    tbody.appendChild(row);
+
+                    // Find and append any sub-rows for this DMPI
+                    const dmpiId = row.dataset.dmpiId;
+                    if (dmpiId && subRowsByParent[dmpiId]) {
+                        subRowsByParent[dmpiId].forEach(subRow => {
+                            tbody.appendChild(subRow);
+
+                            // Maintain expansion state
+                            if (expandedRows.has(dmpiId)) {
+                                subRow.style.display = 'table-row';
+                            } else {
+                                subRow.style.display = 'none';
+                            }
+                        });
+                    }
+                });
+
+                // Restore expansion state for main rows
+                expandedRows.forEach(dmpiId => {
+                    const mainRow = tbody.querySelector(`tr[data-dmpi-id="${dmpiId}"]`);
+                    if (mainRow) {
+                        const indicator = mainRow.querySelector('.expand-indicator');
+                        if (indicator) {
+                            indicator.classList.add('expanded');
+                            mainRow.classList.add('expanded-row');
+                        }
+                    }
+                });
+            }
+        });
+
+        function showManualDestroyPopup() {
+            const popup = document.getElementById('manualDestroyPopup');
+            const textarea = document.getElementById('overrideTextarea');
+
+            // Set the textarea value to the current overrides (this would come from the backend)
+            textarea.value = `{{ overrides|default('') }}`;
+
+            popup.style.display = 'flex';
+            textarea.focus();
+        }
+
+        function hideManualDestroyPopup() {
+            const popup = document.getElementById('manualDestroyPopup');
+            popup.style.display = 'none';
+        }
+
+        function applyManualDestroy() {
+            const textarea = document.getElementById('overrideTextarea');
+            const overrideData = textarea.value;
+
+            // Send POST request to /dmpi_override
+            fetch('/dmpi_override', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    overrides: overrideData
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    hideManualDestroyPopup();
+                    // Optionally reload the page to show updated data
+                    location.reload();
+                } else {
+                    alert('Failed to apply changes. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        }
+
+        function toggleExpand(row) {
+            const dmpiId = row.dataset.dmpiId;
+            const indicator = row.querySelector('.expand-indicator');
+            const subRows = document.querySelectorAll(`tr.sub-row[data-parent="${dmpiId}"]`);
+
+            console.log('Toggling expand for:', dmpiId);
+            console.log('Found sub-rows:', subRows.length);
+
+            if (expandedRows.has(dmpiId)) {
+                // Collapse
+                expandedRows.delete(dmpiId);
+                indicator.classList.remove('expanded');
+                row.classList.remove('expanded-row');
+                subRows.forEach(subRow => {
+                    subRow.style.display = 'none';
+                });
+            } else {
+                // Expand
+                expandedRows.add(dmpiId);
+                indicator.classList.add('expanded');
+                row.classList.add('expanded-row');
+                subRows.forEach(subRow => {
+                    subRow.style.display = 'table-row';
+                });
+            }
+        }
+    </script>
+</body>
+</html>

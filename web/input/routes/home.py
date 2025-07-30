@@ -14,7 +14,7 @@ from clients.thread_pool_client import ThreadPoolClient
 from core.constants import MODEX_TO_SQUADRON, Squadrons
 from services import Logger
 from services.data_handler import DataHandler
-from web.input._constants import BDA_IMAGE_PATH
+from web.input._constants import DEBRIEFS_PATH
 from web.input.config.config import WebConfigSingleton
 from web.input.tracker_ui.input_data_handler import InputDataHandler
 
@@ -44,7 +44,7 @@ def show_bda_img(debrief_id, img_name):
         abort(404)
 
     # Construct paths securely
-    debrief_dir = BDA_IMAGE_PATH / str(debrief_id)
+    debrief_dir = DEBRIEFS_PATH / str(debrief_id)
     file_path = debrief_dir / secure_name
 
     # Ensure the resolved path is within the expected directory
@@ -68,14 +68,14 @@ def show_debrief(debrief_id):
         return redirect('/login')
 
     debrief = {}
-    with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / 'display-data.json') as f:
+    with open(DEBRIEFS_PATH / Path(str(debrief_id)) / 'display-data.json') as f:
         debrief = json.load(f)
 
     return render_template("view.html", debrief=debrief)
 
 @app.route("/debrief-sdata/<int:debrief_id>")
 def show_debrief_sdata(debrief_id):
-    with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / 'submit-data.json') as f:
+    with open(DEBRIEFS_PATH / Path(str(debrief_id)) / 'submit-data.json') as f:
         sdata = json.load(f)
 
     return jsonify(sdata)
@@ -145,7 +145,7 @@ def create_display_data(data, debrief_id):
         "restrike-recommendation": data['restrike_recommendation']
     }
 
-    with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("display-data.json"), "w") as f:
+    with open(DEBRIEFS_PATH / Path(str(debrief_id)) / Path("display-data.json"), "w") as f:
         json.dump(view_data, f, indent=2)
 
 def ag_weapon_to_row(data, ag_weapon, debrief_id) -> (dict,CVW17DatabaseRow):
@@ -346,12 +346,12 @@ def format_relative_date(date_input):
 def get_bda_list():
     bdas = []
 
-    os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
-    for debrief in reversed(os.listdir(BDA_IMAGE_PATH)):
-        if not os.path.exists(BDA_IMAGE_PATH / debrief / 'submit-data.json'):
+    os.makedirs(DEBRIEFS_PATH, exist_ok=True)
+    for debrief in reversed(os.listdir(DEBRIEFS_PATH)):
+        if not os.path.exists(DEBRIEFS_PATH / debrief / 'submit-data.json'):
             continue
 
-        with open(BDA_IMAGE_PATH / debrief / 'submit-data.json', 'r') as f:
+        with open(DEBRIEFS_PATH / debrief / 'submit-data.json', 'r') as f:
             data = json.load(f)
 
         for bda in data.get('ag_weapons', []):
@@ -377,32 +377,32 @@ def get_bda_list():
     return bdas
 
 def remove_debrief_data(debrief_id):
-    if os.path.exists(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json'):
-        os.remove(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json')
+    if os.path.exists(DEBRIEFS_PATH / str(debrief_id) / 'submit-data.json'):
+        os.remove(DEBRIEFS_PATH / str(debrief_id) / 'submit-data.json')
 
-    if os.path.exists(BDA_IMAGE_PATH / str(debrief_id) / 'view-data.json'):
-        os.remove(BDA_IMAGE_PATH / str(debrief_id) / 'view-data.json')
+    if os.path.exists(DEBRIEFS_PATH / str(debrief_id) / 'view-data.json'):
+        os.remove(DEBRIEFS_PATH / str(debrief_id) / 'view-data.json')
 
-    for file in os.listdir(BDA_IMAGE_PATH / str(debrief_id)):
+    for file in os.listdir(DEBRIEFS_PATH / str(debrief_id)):
         if file.split('.')[-1] in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff']:
-            os.remove(BDA_IMAGE_PATH / str(debrief_id) / file)
+            os.remove(DEBRIEFS_PATH / str(debrief_id) / file)
 
 @app.route('/edit-report/<int:debrief_id>', methods=['POST'])
 def edit_report(debrief_id):
     if not (session.get('authed', False) or config.bypass_auth_debug):
         return redirect('/login')
 
-    os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
-    if not os.path.exists(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json'):
+    os.makedirs(DEBRIEFS_PATH, exist_ok=True)
+    if not os.path.exists(DEBRIEFS_PATH / str(debrief_id) / 'submit-data.json'):
         return jsonify({'error': 'Report data not found'}), 404
 
-    with open(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json') as f:
+    with open(DEBRIEFS_PATH / str(debrief_id) / 'submit-data.json') as f:
         if session.get('discord_uid', -1) != json.load(f).get('form_metadata', {}).get('discord_uid'):
             if session.get('discord_uid') not in config.admin_uids:
                 return jsonify({'error': 'Unauthorized'}), 401
 
     try:
-        with open(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json') as f:
+        with open(DEBRIEFS_PATH / str(debrief_id) / 'submit-data.json') as f:
             old_data = json.load(f)
 
         data = request.get_json()
@@ -422,7 +422,7 @@ def edit_report(debrief_id):
         else:
             data['form_metadata']['discord_uid'] = session['discord_uid']
 
-        with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
+        with open(DEBRIEFS_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
             json.dump(data, f, indent=2)
 
         create_display_data(data, debrief_id)
@@ -452,15 +452,15 @@ def submit_report():
         if not data or not InputDataHandler.validate_data_json(data):
             return jsonify({'error': 'No data received'}), 400
 
-        os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
-        debrief_id = InputDataHandler.find_latest_numbered_folder(BDA_IMAGE_PATH)
+        os.makedirs(DEBRIEFS_PATH, exist_ok=True)
+        debrief_id = InputDataHandler.find_latest_numbered_folder(DEBRIEFS_PATH)
 
         save_images(data, debrief_id)
 
         data['form_metadata']['discord_uid'] = session['discord_uid']
 
-        os.makedirs(BDA_IMAGE_PATH, exist_ok=True)
-        with open(BDA_IMAGE_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
+        os.makedirs(DEBRIEFS_PATH, exist_ok=True)
+        with open(DEBRIEFS_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
             json.dump(data, f, indent=2)
 
         create_display_data(data, debrief_id)
@@ -522,7 +522,7 @@ def file_report():
 
     debrief_id = request.args.get('id')
     if debrief_id:
-        with open(BDA_IMAGE_PATH / str(debrief_id) / 'submit-data.json') as f:
+        with open(DEBRIEFS_PATH / str(debrief_id) / 'submit-data.json') as f:
             form_discord_uid = json.load(f).get('form_metadata', {}).get('discord_uid')
 
         if session.get('discord_uid', -1) != form_discord_uid:
