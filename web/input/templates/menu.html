@@ -16,10 +16,30 @@
             gap: 10px;
         }
 
+        .bda-card-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .bda-card-link:hover {
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .bda-card-link:hover .bda-card {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-color: #666;
+        }
+
         .bda-card {
             background: #1f1f1f;
             border: 1px solid #4f545c;
             padding: 15px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         .bda-weapon {
@@ -169,24 +189,26 @@
 
                     <div class="bda-grid">
                         {% for bda in bdas if bda['img-src'] %}
-                            <div class="bda-card">
-                                <div class="bda-weapon">{{ bda['weapon'] }}</div>
-                                <div class="bda-target">{{ bda['target'] }}</div>
-                                <div class="bda-result">{{ bda['bda-result'] }}</div>
-                                <img class="bda-img loading"
-                                     alt="NO BDA IMG"
-                                     src="/static/img/img-placeholder.webp"
-                                     data-src="{{ bda['img-src'] }}"
-                                     data-index="{{ loop.index0 }}">
-                                <div class="bda-id-info">
-                                    <div>{{ bda['msn-nr'] }}</div>
-                                    <div>-</div>
-                                    <div>{{ bda['callsign'] }}</div>
-                                    <div>-</div>
-                                    <div>{{ bda['msn-evt'] }}</div>
+                            <a href="/debrief/{{ bda['id'] }}" class="bda-card-link">
+                                <div class="bda-card">
+                                    <div class="bda-weapon">{{ bda['weapon'] }}</div>
+                                    <div class="bda-target">{{ bda['target'] }}</div>
+                                    <div class="bda-result">{{ bda['bda-result'] }}</div>
+                                    <img class="bda-img loading"
+                                         alt="NO BDA IMG"
+                                         src="/static/img/img-placeholder.webp"
+                                         data-src="{{ bda['img-src'] }}"
+                                         data-index="{{ loop.index0 }}">
+                                    <div class="bda-id-info">
+                                        <div>{{ bda['msn-nr'] }}</div>
+                                        <div>-</div>
+                                        <div>{{ bda['callsign'] }}</div>
+                                        <div>-</div>
+                                        <div>{{ bda['msn-evt'] }}</div>
+                                    </div>
+                                    <div class="bda-footer-date">{{ bda['date'] }}</div>
                                 </div>
-                                <div class="bda-footer-date">{{ bda['date'] }}</div>
-                            </div>
+                            </a>
                         {% endfor %}
                     </div>
                 </div>

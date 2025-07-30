@@ -363,6 +363,7 @@ def get_bda_list():
 
             bdas.append(
                 {
+                    "id": str(debrief),
                     "msn-nr": data['mission_number'],
                     "msn-evt": data['mission_event'],
                     "date": format_relative_date(data.get('form_metadata', {}).get('submission_time')),
