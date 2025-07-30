@@ -1,11 +1,15 @@
 import json
 import os
 import re
+import threading
 import zipfile
 from pathlib import Path
 
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 from flask import Blueprint, session, redirect, render_template, request, jsonify
 
+from core.constants import BASE_DIR
 from services.file_handler import FileHandler
 from web.input._constants import DEBRIEFS_PATH
 from web.input.config.config import WebConfigSingleton
@@ -17,7 +21,8 @@ config = WebConfigSingleton.get_instance()
 app = dmpi_db_blueprint
 
 # Define the overrides file path
-OVERRIDES_FILE = Path('overrides.txt')
+_OVERRIDES_FILE = Path('overrides.txt')
+_dmpi_cache = {}
 
 def get_deployment_msn_path() -> Path | None:
     deployment_miz_path = None
@@ -30,6 +35,7 @@ def get_deployment_msn_path() -> Path | None:
             continue
 
         deployment_miz_path = msn
+        break
 
     return deployment_miz_path
 
@@ -60,8 +66,18 @@ def _get_miz_nav_points(path: Path) -> list[dict]:
         print(f"Error parsing mission file: {e}")
         return []
 
-def get_dmpis():
+def _reset_dmpi_cache():
+    global _dmpi_cache
+    _dmpi_cache = {}
+
+def _get_dmpis():
     dmpis = {}
+
+    global _dmpi_cache
+    if _dmpi_cache != {}:
+        return _dmpi_cache
+
+    print('calculating dmpis')
 
     # Load DMPIs from mission file
     _load_dmpis_from_mission(dmpis)
@@ -72,13 +88,178 @@ def get_dmpis():
     # Apply overrides
     _apply_overrides(dmpis)
 
+    _dmpi_cache = dmpis
     return dmpis
+
+
+def _draw_sam_symbol_from_file(draw, x, y, scale_factor, image_path, symbol_size=12, active=True):
+    try:
+        # Load the symbol image
+        symbol_img = Image.open(image_path)
+
+        # Resize to desired size
+        target_size = int(symbol_size * scale_factor * 2)  # *2 for good visibility
+        symbol_img = symbol_img.resize((target_size, target_size), Image.LANCZOS)
+
+        # Make very dark gray if not active
+        if not active:
+            # Preserve original alpha channel
+            if symbol_img.mode != 'RGBA':
+                symbol_img = symbol_img.convert('RGBA')
+            original_alpha = symbol_img.split()[-1]
+
+            # Convert to grayscale first to remove any color tints (like red)
+            grayscale = symbol_img.convert('L')
+
+            # Strengthen the black by darkening the grayscale values
+            darkened = grayscale.point(lambda p: int(p * 1.2))  # Make very dark (20% of original)
+
+            # Convert back to RGBA and restore alpha channel
+            symbol_img = Image.merge('RGBA', (darkened, darkened, darkened, original_alpha))
+
+        # Calculate position to center the symbol
+        paste_x = int(x - target_size/2)
+        paste_y = int(y - target_size/2)
+
+        # Get the main image from the draw object (this is a bit hacky but works)
+        main_img = draw._image
+
+        # If symbol has transparency, use it
+        if symbol_img.mode in ('RGBA', 'LA') or 'transparency' in symbol_img.info:
+            main_img.paste(symbol_img, (paste_x, paste_y), symbol_img)
+        else:
+            main_img.paste(symbol_img, (paste_x, paste_y))
+
+    except Exception as e:
+        print(f"Could not load symbol from {image_path}: {e}")
+
+
+
+def draw_dynamic_map():
+    _reset_dmpi_cache()
+    dmpis = _get_dmpis()
+    print('drawing map')
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, ), daemon=True).start()
+
+def _draw_dynamic_map_from_dmpis(dmpis, bw_intensity=0.9, contrast=1.1, darken_shadows=1.5,symbol_size=12):
+    try:
+        if os.path.exists(BASE_DIR / 'web' / 'static'):
+            os.makedirs(BASE_DIR / 'web' / 'static' / 'maps', exist_ok=True)
+            img = Image.open(BASE_DIR / 'web' / 'static' / 'maps' / config.current_map_path)
+        else:
+            os.makedirs(BASE_DIR / 'web' / 'input' / 'static' / 'maps', exist_ok=True)
+            img = Image.open(BASE_DIR / 'web' / 'input' / 'static' / 'maps' / config.current_map_path)
+
+        if bw_intensity > 0:
+            img_gray = img.convert('L').convert('RGB')
+            img_array = np.array(img, dtype=np.float32)
+            gray_array = np.array(img_gray, dtype=np.float32)
+            blended_array = img_array * (1 - bw_intensity) + gray_array * bw_intensity
+            img = Image.fromarray(blended_array.astype(np.uint8))
+
+        if contrast != 1.0:
+            img_array = np.array(img, dtype=np.float32)
+            contrasted_array = (img_array - 128) * contrast + 128
+            contrasted_array = np.clip(contrasted_array, 0, 255)
+            img = Image.fromarray(contrasted_array.astype(np.uint8))
+
+        if darken_shadows > 0:
+            img_array = np.array(img, dtype=np.float32)
+            normalized = img_array / 255.0
+            shadow_factor = 1.0 - normalized
+            shadow_factor = np.power(shadow_factor, 0.8)
+            darken_amount = darken_shadows * 80
+            darkened_array = img_array - darken_amount * shadow_factor
+            darkened_array = np.clip(darkened_array, 0, 255)
+            img = Image.fromarray(darkened_array.astype(np.uint8))
+
+    except Exception as e:
+        print(f"Error loading image: {e}")
+        return
+
+    # Create a copy for drawing at higher resolution for antialiasing
+    scale_factor = 4
+    img_width, img_height = img.size
+
+    # Create high-res version
+    img_hires = img.resize((img_width * scale_factor, img_height * scale_factor), Image.LANCZOS)
+    draw = ImageDraw.Draw(img_hires)
+
+    for dmpi_name in dmpis:
+        if "SAD" not in dmpi_name:
+            continue
+
+        dmpi = dmpis[dmpi_name]
+
+        x = dmpi['coords']['y']
+        y = -dmpi['coords']['x']
+
+        if x == 0 or y == 0:
+            continue
+
+        radius_meters = 35_560  # SA-6 (default)
+        if "SA-3" in dmpi['comment']:
+            radius_meters = 25_000
+        if "SA-2" in dmpi['comment']:
+             radius_meters = 51_860
+        if "SA-9" in dmpi['comment']:
+            radius_meters = 4_640
+        if "HAAA" in dmpi['comment']:
+            radius_meters = 3_000
+        if "HAWK" in dmpi['comment']:
+            radius_meters = 47_410
+
+        mpp = config.map_scale_mpp
+        radius_pixels = (radius_meters / mpp) * scale_factor
+
+        pixel_x = (config.map_origin_x + x / mpp) * scale_factor
+        pixel_y = (config.map_origin_y + y / mpp) * scale_factor
+
+        img_width_hires = img_width * scale_factor
+        img_height_hires = img_height * scale_factor
+
+        # Add some margin for the symbol size
+        symbol_margin = symbol_size * scale_factor * 2  # 2x symbol size as margin
+
+        if (pixel_x < -symbol_margin or pixel_x > img_width_hires + symbol_margin or
+                pixel_y < -symbol_margin or pixel_y > img_height_hires + symbol_margin):
+            print(f"DMPI '{dmpi}': SKIPPED - outside image bounds")
+            print(f"  World coords: ({x:.1f}, {y:.1f})")
+            print(f"  Pixel coords: ({pixel_x / scale_factor:.1f}, {pixel_y / scale_factor:.1f})")
+            print(f"  Image size: {img_width} x {img_height}")
+            continue
+
+        # Draw radius circle (same as before)
+        circle_left = pixel_x - radius_pixels
+        circle_top = pixel_y - radius_pixels
+        circle_right = pixel_x + radius_pixels
+        circle_bottom = pixel_y + radius_pixels
+
+        if not dmpi['collision']:
+            draw.ellipse([circle_left, circle_top, circle_right, circle_bottom],
+                         fill=None, outline='red', width=1 * scale_factor)
+
+        # Use external image file - you need to specify the path
+        if os.path.exists(BASE_DIR / 'web' / 'static'):
+            symbol_path = BASE_DIR / 'web' / 'static' / 'img' / 'nato.png'
+        else:
+            symbol_path = BASE_DIR / 'web' / 'input' / 'static' / 'img' / 'nato.png'
+
+        _draw_sam_symbol_from_file(draw, pixel_x, pixel_y, scale_factor, symbol_path, symbol_size, not dmpi['collision'])
+
+    # Downsample back to original size for antialiasing effect
+    img_with_symbols = img_hires.resize((img_width, img_height), Image.LANCZOS)
+
+    if os.path.exists(BASE_DIR / 'web' / 'static'):
+        img_with_symbols.save(BASE_DIR / 'web' / 'static' / 'maps' / "interactive_map.png")
+    else:
+        img_with_symbols.save(BASE_DIR / 'web' / 'input' / 'static' / 'maps' / "interactive_map.png")
 
 def load_overrides():
     """Load overrides from the overrides.txt file."""
     try:
-        if OVERRIDES_FILE.exists():
-            with open(OVERRIDES_FILE, 'r', encoding='utf-8') as f:
+        if _OVERRIDES_FILE.exists():
+            with open(_OVERRIDES_FILE, 'r', encoding='utf-8') as f:
                 content = f.read().strip()
                 return content if content else ""
         else:
@@ -91,7 +272,7 @@ def load_overrides():
 def save_overrides(overrides_text):
     """Save overrides to the overrides.txt file."""
     try:
-        with open(OVERRIDES_FILE, 'w', encoding='utf-8') as f:
+        with open(_OVERRIDES_FILE, 'w', encoding='utf-8') as f:
             f.write(overrides_text)
         return True
     except Exception as e:
@@ -115,7 +296,6 @@ def _load_dmpis_from_mission(dmpis):
 
         dmpis[dmpi_name]["aim_points"][aim_point] = {"bda": None, "debrief_id": None}
 
-
 def _load_dmpis_from_debriefs(dmpis):
     """Load DMPIs from debrief files."""
     for debrief_dir in os.listdir(DEBRIEFS_PATH):
@@ -127,12 +307,10 @@ def _load_dmpis_from_debriefs(dmpis):
         debrief_data = _load_debrief_data(submit_data_path)
         _process_debrief_weapons(debrief_data, dmpis, debrief_dir)
 
-
 def _load_debrief_data(file_path):
     """Load and return debrief data from JSON file."""
     with open(file_path, 'r') as f:
         return json.load(f)
-
 
 def _process_debrief_weapons(debrief_data, dmpis, debrief_id):
     """Process weapons data from a debrief file."""
@@ -150,14 +328,12 @@ def _process_debrief_weapons(debrief_data, dmpis, debrief_id):
         date = debrief_data.get('mission_date')
         _update_dmpi_entry(dmpis, dmpi_name, aim_point, bda_result, debrief_id, date)
 
-
 def _parse_dmpi_name(dmpi_full_name):
     """Parse DMPI name into base name and aim point."""
     parts = dmpi_full_name.rsplit('-', 1)
     dmpi_name = parts[0]
     aim_point = parts[1] if len(parts) > 1 else "01"
     return dmpi_name, aim_point
-
 
 def _create_dmpi_entry(in_msn=False):
     """Create a new DMPI entry with default values."""
@@ -190,7 +366,6 @@ def _update_dmpi_entry(dmpis, dmpi_name, aim_point, bda_result, debrief_id, date
             "debrief_id": debrief_id,
             "date": date
         }
-
 
 def _should_update_bda(dmpi_entry, aim_point, new_bda_result):
     """Determine if BDA result should be updated based on first digit comparison."""
@@ -256,6 +431,7 @@ def dmpi_override():
         if save_overrides(overrides_text):
             # Split by newlines to get individual DMPI IDs for counting
             dmpi_ids = [line.strip() for line in overrides_text.split('\n') if line.strip()]
+            draw_dynamic_map()
 
             return jsonify({
                 'success': True,
@@ -282,6 +458,6 @@ def dmpi_db():
 
     return render_template('dmpi_db.html',
                            overrides=load_overrides(),
-                           dmpis=get_dmpis(),
+                           dmpis=_get_dmpis(),
                            admin=session.get('discord_uid') in config.admin_uids
                            )

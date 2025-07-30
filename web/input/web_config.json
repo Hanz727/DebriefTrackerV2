@@ -8,5 +8,9 @@
   "tracks_dir": "C:\\Users\\rocks\\Desktop\\tacview",
   "admin_uids": ["222470066854297600", "364838090855940096"],
   "missions_path": "D:\\projects\\DCS\\Missions",
-  "deployment_msn_prefix": "CVW-17_2025_Deployment"
+  "deployment_msn_prefix": "CVW-17_2025_Deployment",
+  "current_map_path": "sinai.png",
+  "map_origin_x": 836.5,
+  "map_origin_y": 684,
+  "map_scale_mpp": 336.727
 }

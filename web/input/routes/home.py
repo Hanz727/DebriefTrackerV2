@@ -16,6 +16,7 @@ from services import Logger
 from services.data_handler import DataHandler
 from web.input._constants import DEBRIEFS_PATH
 from web.input.config.config import WebConfigSingleton
+from web.input.routes.dmpi_db import draw_dynamic_map, _reset_dmpi_cache
 from web.input.tracker_ui.input_data_handler import InputDataHandler
 
 
@@ -238,6 +239,7 @@ def aircrew_to_empty_row(data, aircrew, debrief_id) -> CVW17DatabaseRow:
     )
 
 def insert_tracker_data(data, debrief_id):
+    draw_dynamic_map()
     aircrew_presence = deepcopy(data.get('aircrew', []))
 
     for ag_weapon in data.get('ag_weapons', []):
@@ -263,6 +265,7 @@ def insert_tracker_data(data, debrief_id):
 
         if InputDataHandler.validate_row(row):
             postgres_client.insert(row)
+
 
 def remove_tracker_data(debrief_id):
     postgres_client.update_local()
