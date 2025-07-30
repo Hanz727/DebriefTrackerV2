@@ -3,6 +3,7 @@ import os
 import re
 import threading
 import zipfile
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -133,22 +134,24 @@ def _draw_sam_symbol_from_file(draw, x, y, scale_factor, image_path, symbol_size
     except Exception as e:
         print(f"Could not load symbol from {image_path}: {e}")
 
-
-
 def draw_dynamic_map():
     _reset_dmpi_cache()
     dmpis = _get_dmpis()
     print('drawing map')
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, ), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 0), daemon=True).start()
 
-def _draw_dynamic_map_from_dmpis(dmpis, bw_intensity=0.9, contrast=1.1, darken_shadows=1.5,symbol_size=12):
+
+def _draw_dynamic_map_from_dmpis(dmpis, map_id, bw_intensity=0.9, contrast=1.1, darken_shadows=1.5, symbol_size=12):
     try:
+        deployment_msn_name = get_deployment_msn_path().name
+        current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
+
         if os.path.exists(BASE_DIR / 'web' / 'static'):
             os.makedirs(BASE_DIR / 'web' / 'static' / 'maps', exist_ok=True)
-            img = Image.open(BASE_DIR / 'web' / 'static' / 'maps' / config.current_map_path)
+            img = Image.open(BASE_DIR / 'web' / 'static' / 'maps' / config.maps[map_id])
         else:
             os.makedirs(BASE_DIR / 'web' / 'input' / 'static' / 'maps', exist_ok=True)
-            img = Image.open(BASE_DIR / 'web' / 'input' / 'static' / 'maps' / config.current_map_path)
+            img = Image.open(BASE_DIR / 'web' / 'input' / 'static' / 'maps' / config.maps[map_id])
 
         if bw_intensity > 0:
             img_gray = img.convert('L').convert('RGB')
@@ -181,6 +184,9 @@ def _draw_dynamic_map_from_dmpis(dmpis, bw_intensity=0.9, contrast=1.1, darken_s
     scale_factor = 4
     img_width, img_height = img.size
 
+    img_width_hires = img_width * scale_factor
+    img_height_hires = img_height * scale_factor
+
     # Create high-res version
     img_hires = img.resize((img_width * scale_factor, img_height * scale_factor), Image.LANCZOS)
     draw = ImageDraw.Draw(img_hires)
@@ -201,7 +207,7 @@ def _draw_dynamic_map_from_dmpis(dmpis, bw_intensity=0.9, contrast=1.1, darken_s
         if "SA-3" in dmpi['comment']:
             radius_meters = 25_000
         if "SA-2" in dmpi['comment']:
-             radius_meters = 51_860
+            radius_meters = 51_860
         if "SA-9" in dmpi['comment']:
             radius_meters = 4_640
         if "HAAA" in dmpi['comment']:
@@ -209,14 +215,11 @@ def _draw_dynamic_map_from_dmpis(dmpis, bw_intensity=0.9, contrast=1.1, darken_s
         if "HAWK" in dmpi['comment']:
             radius_meters = 47_410
 
-        mpp = config.map_scale_mpp
+        mpp = config.map_scale_mpp[map_id]
         radius_pixels = (radius_meters / mpp) * scale_factor
 
-        pixel_x = (config.map_origin_x + x / mpp) * scale_factor
-        pixel_y = (config.map_origin_y + y / mpp) * scale_factor
-
-        img_width_hires = img_width * scale_factor
-        img_height_hires = img_height * scale_factor
+        pixel_x = (config.map_origin_x[map_id] + x / mpp) * scale_factor
+        pixel_y = (config.map_origin_y[map_id] + y / mpp) * scale_factor
 
         # Add some margin for the symbol size
         symbol_margin = symbol_size * scale_factor * 2  # 2x symbol size as margin
@@ -245,7 +248,11 @@ def _draw_dynamic_map_from_dmpis(dmpis, bw_intensity=0.9, contrast=1.1, darken_s
         else:
             symbol_path = BASE_DIR / 'web' / 'input' / 'static' / 'img' / 'nato.png'
 
-        _draw_sam_symbol_from_file(draw, pixel_x, pixel_y, scale_factor, symbol_path, symbol_size, not dmpi['collision'])
+        _draw_sam_symbol_from_file(draw, pixel_x, pixel_y, scale_factor, symbol_path, symbol_size,
+                                   not dmpi['collision'])
+
+    # Add watermark with deployment name and current date
+    _draw_watermark(draw, img_width_hires, img_height_hires, deployment_msn_name, current_date, scale_factor)
 
     # Downsample back to original size for antialiasing effect
     img_with_symbols = img_hires.resize((img_width, img_height), Image.LANCZOS)
@@ -254,6 +261,98 @@ def _draw_dynamic_map_from_dmpis(dmpis, bw_intensity=0.9, contrast=1.1, darken_s
         img_with_symbols.save(BASE_DIR / 'web' / 'static' / 'maps' / "interactive_map.png")
     else:
         img_with_symbols.save(BASE_DIR / 'web' / 'input' / 'static' / 'maps' / "interactive_map.png")
+
+def _draw_watermark(draw, img_width, img_height, deployment_name, date_str, scale_factor):
+    """Draw a transparent watermark in the bottom right corner with deployment name and date."""
+    try:
+        # Try to use a system font, fallback to default if not available
+        try:
+            font_size = int(30 * scale_factor)
+            font = ImageFont.truetype("arial.ttf", font_size)
+        except (ImportError, OSError):
+            try:
+                font = ImageFont.load_default()
+            except:
+                font = None
+
+        # Prepare watermark text with title
+        watermark_text = f"CVW-17 TARGET INTELLIGENCE CELL - AIR DEFENCE MAP\n{deployment_name}\n{date_str}"
+        lines = watermark_text.split('\n')
+
+        # Calculate text dimensions
+        if font:
+            line_widths = []
+            line_heights = []
+            for line in lines:
+                bbox = draw.textbbox((0, 0), line, font=font)
+                line_widths.append(bbox[2] - bbox[0])
+                line_heights.append(bbox[3] - bbox[1])
+
+            text_width = max(line_widths)
+            line_spacing = int(4 * scale_factor)
+            text_height = sum(line_heights) + (len(lines) - 1) * line_spacing
+        else:
+            # Rough estimation if no font available
+            text_width = len(max(lines, key=len)) * int(10 * scale_factor)
+            text_height = len(lines) * int(14 * scale_factor)
+
+        # Position in bottom right corner with padding
+        padding = int(20 * scale_factor)
+        bg_padding = int(8 * scale_factor)
+        x_pos = img_width - text_width - padding
+        y_pos = img_height - text_height - padding
+
+        # Get the base image from the draw object
+        base_img = draw._image
+
+        # Create a separate RGBA image for the watermark with transparency
+        watermark_overlay = Image.new('RGBA', (img_width, img_height), (0, 0, 0, 0))
+        watermark_draw = ImageDraw.Draw(watermark_overlay)
+
+        # Draw semi-transparent background rectangle
+        bg_left = x_pos - bg_padding
+        bg_top = y_pos - bg_padding
+        bg_right = x_pos + text_width + bg_padding
+        bg_bottom = y_pos + text_height + bg_padding
+
+        # Semi-transparent dark background (RGBA: black with 60% opacity)
+        bg_color = (0, 0, 0, 153)  # 153 = 60% of 255
+        watermark_draw.rectangle([bg_left, bg_top, bg_right, bg_bottom], fill=bg_color)
+
+        # Draw text with white color (fully opaque on the overlay)
+        text_color = (255, 255, 255, 255)  # White, fully opaque
+
+        if font:
+            current_y = y_pos
+            line_spacing = int(4 * scale_factor)
+            for line in lines:
+                watermark_draw.text((x_pos, current_y), line, fill=text_color, font=font)
+                bbox = watermark_draw.textbbox((x_pos, current_y), line, font=font)
+                current_y += (bbox[3] - bbox[1]) + line_spacing
+        else:
+            # Fallback without font
+            current_y = y_pos
+            for line in lines:
+                watermark_draw.text((x_pos, current_y), line, fill=text_color)
+                current_y += int(14 * scale_factor)
+
+        # Convert base image to RGBA if it isn't already
+        if base_img.mode != 'RGBA':
+            base_img = base_img.convert('RGBA')
+
+        # Composite the watermark overlay onto the base image
+        base_img = Image.alpha_composite(base_img, watermark_overlay)
+
+        # Convert back to RGB if needed (since you're saving as PNG, RGBA should be fine)
+        # If you need RGB: base_img = base_img.convert('RGB')
+
+        # Replace the original image data
+        draw._image.paste(base_img, (0, 0))
+
+    except Exception as e:
+        print(f"Error drawing watermark: {e}")
+        # Continue without watermark if there's an error
+
 
 def load_overrides():
     """Load overrides from the overrides.txt file."""

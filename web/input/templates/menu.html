@@ -115,6 +115,79 @@
             height: 100% !important;
         }
 
+        /* Interactive Map Styles */
+        .map-container {
+            position: relative;
+            width: 100%;
+            border: 1px solid #4f545c;
+            background: #121212;
+            overflow: hidden;
+            cursor: default;
+            max-height: 600px;
+            margin-bottom: 20px;
+        }
+
+        .map-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: none;
+            user-select: none;
+            -webkit-user-drag: none;
+            will-change: transform;
+        }
+
+        .map-img.smooth-transition {
+            transition: transform 0.2s ease;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(31, 31, 31, 0.9);
+            border: 1px solid #4f545c;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+            user-select: none;
+        }
+
+        .zoom-btn:hover {
+            background: rgba(79, 84, 92, 0.9);
+        }
+
+        .zoom-btn:active {
+            background: rgba(100, 100, 100, 0.9);
+        }
+
+        .zoom-level {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(31, 31, 31, 0.9);
+            border: 1px solid #4f545c;
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-family: monospace;
+            z-index: 10;
+        }
+
         /* ===== Responsive Design ===== */
         @media (max-width: 768px) {
             .sidebar {
@@ -138,6 +211,16 @@
 
             body {
                 padding: 0;
+            }
+
+            .map-container {
+                max-height: 400px;
+            }
+
+            .zoom-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 18px;
             }
         }
     </style>
@@ -168,9 +251,21 @@
             <!-- Content Area -->
             <div class="main-content">
                 <div class="content">
+                    <div class="content-title">STRATEGIC AIR CAMPAIGN TARGETS</div>
+                    <div class="divider"></div>
+
+                    <div class="map-container" id="mapContainer">
+                        <img class="map-img" id="mapImage" src="/static/maps/interactive_map.png" alt="Strategic Map">
+                        <div class="map-controls">
+                            <button class="zoom-btn" id="zoomIn" title="Zoom In">+</button>
+                            <button class="zoom-btn" id="zoomOut" title="Zoom Out">−</button>
+                            <button class="zoom-btn" id="resetZoom" title="Reset Zoom">⌂</button>
+                        </div>
+                        <div class="zoom-level" id="zoomLevel">100%</div>
+                    </div>
+
                     <!-- Deployment Presentation Section -->
                     <div class="content-title">DEPLOYMENT PRESENTATION</div>
-
                     <div class="divider"></div>
 
                     <div class="presentation-container">
@@ -228,46 +323,32 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // BDA Images lazy loading (existing functionality)
             const bdaImages = document.querySelectorAll('.bda-img[data-src]');
 
-            // Function to load a single image
             function loadImage(img) {
                 const actualSrc = img.getAttribute('data-src');
-
-                // Skip if it's already the placeholder or empty
                 if (!actualSrc || actualSrc === '/static/img/img-placeholder.webp') {
                     return;
                 }
-
-                // Don't reload if already loaded with correct src
                 if (img.src === actualSrc) {
                     return;
                 }
 
-                // Create a new image element to preload
                 const tempImg = new Image();
-
                 tempImg.onload = function() {
-                    // Image loaded successfully, update the src
                     img.src = actualSrc;
                     img.classList.remove('loading');
                     img.classList.add('loaded');
                 };
-
                 tempImg.onerror = function() {
-                    // Image failed to load, keep placeholder
                     img.classList.remove('loading');
                 };
-
-                // Start loading the image
                 tempImg.src = actualSrc;
             }
 
-            // Function to unload an image (reset to placeholder)
             function unloadImage(img) {
                 const actualSrc = img.getAttribute('data-src');
-
-                // Only unload if it's not already a placeholder
                 if (img.src !== window.location.origin + '/static/img/img-placeholder.webp' &&
                     actualSrc && actualSrc !== '/static/img/img-placeholder.webp') {
                     img.src = '/static/img/img-placeholder.webp';
@@ -276,7 +357,6 @@
                 }
             }
 
-            // Create intersection observer for loading images when they enter viewport
             const loadObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -289,7 +369,6 @@
                 threshold: 0.01
             });
 
-            // Create intersection observer for unloading images when they're far from viewport
             const unloadObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (!entry.isIntersecting) {
@@ -298,16 +377,225 @@
                     }
                 });
             }, {
-                // Unload when image is 400px away from viewport (larger margin to prevent thrashing)
                 rootMargin: '1600px 0px',
                 threshold: 0
             });
 
-            // Start observing all images with both observers
             bdaImages.forEach(img => {
                 loadObserver.observe(img);
                 unloadObserver.observe(img);
             });
+
+            // Interactive Map Functionality
+            const mapContainer = document.getElementById('mapContainer');
+            const mapImage = document.getElementById('mapImage');
+            const zoomInBtn = document.getElementById('zoomIn');
+            const zoomOutBtn = document.getElementById('zoomOut');
+            const resetZoomBtn = document.getElementById('resetZoom');
+            const zoomLevelDisplay = document.getElementById('zoomLevel');
+
+            let currentZoom = 1;
+            let isDragging = false;
+            let startX = 0;
+            let startY = 0;
+            let translateX = 0;
+            let translateY = 0;
+
+            const minZoom = 1;
+            const maxZoom = 4;
+            const zoomStep = 0.2;
+
+            function updateTransform(useTransition = false) {
+                if (useTransition) {
+                    mapImage.classList.add('smooth-transition');
+                } else {
+                    mapImage.classList.remove('smooth-transition');
+                }
+                mapImage.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+                zoomLevelDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
+            }
+
+            function constrainTranslation() {
+                if (currentZoom <= 1) {
+                    translateX = 0;
+                    translateY = 0;
+                    return;
+                }
+
+                const containerRect = mapContainer.getBoundingClientRect();
+                const imageWidth = mapImage.offsetWidth * currentZoom;
+                const imageHeight = mapImage.offsetHeight * currentZoom;
+
+                const maxTranslateX = Math.max(0, (imageWidth - containerRect.width) / 2);
+                const maxTranslateY = Math.max(0, (imageHeight - containerRect.height) / 2);
+
+                translateX = Math.max(-maxTranslateX, Math.min(maxTranslateX, translateX));
+                translateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, translateY));
+            }
+
+            function zoomIn() {
+                if (currentZoom < maxZoom) {
+                    currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
+                    constrainTranslation();
+                    updateTransform(true);
+                }
+            }
+
+            function zoomOut() {
+                if (currentZoom > minZoom) {
+                    currentZoom = Math.max(minZoom, currentZoom - zoomStep);
+                    constrainTranslation();
+                    updateTransform(true);
+                }
+            }
+
+            function resetZoom() {
+                currentZoom = 1;
+                translateX = 0;
+                translateY = 0;
+                updateTransform(true);
+            }
+
+            // Button event listeners
+            zoomInBtn.addEventListener('click', zoomIn);
+            zoomOutBtn.addEventListener('click', zoomOut);
+            resetZoomBtn.addEventListener('click', resetZoom);
+
+            // Mouse wheel zoom
+            mapContainer.addEventListener('wheel', function(e) {
+                e.preventDefault();
+
+                const rect = mapContainer.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                const oldZoom = currentZoom;
+
+                if (e.deltaY < 0) {
+                    zoomIn();
+                } else {
+                    zoomOut();
+                }
+
+                // Adjust translation to zoom towards mouse position
+                if (currentZoom !== oldZoom && currentZoom > 1) {
+                    const zoomRatio = currentZoom / oldZoom;
+                    const containerCenterX = rect.width / 2;
+                    const containerCenterY = rect.height / 2;
+
+                    const offsetX = mouseX - containerCenterX;
+                    const offsetY = mouseY - containerCenterY;
+
+                    translateX = translateX * zoomRatio - offsetX * (zoomRatio - 1) * 0.1;
+                    translateY = translateY * zoomRatio - offsetY * (zoomRatio - 1) * 0.1;
+
+                    constrainTranslation();
+                    updateTransform(true);
+                    updateCursor();
+                }
+            });
+
+            // Mouse drag functionality
+            mapContainer.addEventListener('mousedown', function(e) {
+                if (currentZoom > 1) {
+                    isDragging = true;
+                    startX = e.clientX - translateX;
+                    startY = e.clientY - translateY;
+                    mapContainer.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (isDragging && currentZoom > 1) {
+                    translateX = e.clientX - startX;
+                    translateY = e.clientY - startY;
+                    constrainTranslation();
+                    updateTransform(false);
+                }
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    mapContainer.style.cursor = currentZoom > 1 ? 'grab' : 'default';
+                }
+            });
+
+            // Update cursor when zoom changes
+            function updateCursor() {
+                if (currentZoom > 1) {
+                    mapContainer.style.cursor = isDragging ? 'grabbing' : 'grab';
+                } else {
+                    mapContainer.style.cursor = 'default';
+                }
+            }
+
+            // Touch support for mobile
+            let lastTouchDistance = 0;
+            let lastTouchX = 0;
+            let lastTouchY = 0;
+
+            mapContainer.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1 && currentZoom > 1) {
+                    isDragging = true;
+                    startX = e.touches[0].clientX - translateX;
+                    startY = e.touches[0].clientY - translateY;
+                } else if (e.touches.length === 2) {
+                    isDragging = false;
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    lastTouchDistance = Math.sqrt(
+                        Math.pow(touch2.clientX - touch1.clientX, 2) +
+                        Math.pow(touch2.clientY - touch1.clientY, 2)
+                    );
+                    lastTouchX = (touch1.clientX + touch2.clientX) / 2;
+                    lastTouchY = (touch1.clientY + touch2.clientY) / 2;
+                }
+                e.preventDefault();
+            });
+
+            mapContainer.addEventListener('touchmove', function(e) {
+                if (e.touches.length === 1 && isDragging && currentZoom > 1) {
+                    translateX = e.touches[0].clientX - startX;
+                    translateY = e.touches[0].clientY - startY;
+                    constrainTranslation();
+                    updateTransform();
+                } else if (e.touches.length === 2) {
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    const currentDistance = Math.sqrt(
+                        Math.pow(touch2.clientX - touch1.clientX, 2) +
+                        Math.pow(touch2.clientY - touch1.clientY, 2)
+                    );
+
+                    if (lastTouchDistance > 0) {
+                        const deltaDistance = currentDistance - lastTouchDistance;
+                        const oldZoom = currentZoom;
+
+                        if (deltaDistance > 0) {
+                            currentZoom = Math.min(maxZoom, currentZoom + zoomStep * 0.5);
+                        } else {
+                            currentZoom = Math.max(minZoom, currentZoom - zoomStep * 0.5);
+                        }
+
+                        constrainTranslation();
+                        updateTransform();
+                    }
+
+                    lastTouchDistance = currentDistance;
+                }
+                e.preventDefault();
+            });
+
+            mapContainer.addEventListener('touchend', function(e) {
+                isDragging = false;
+                lastTouchDistance = 0;
+            });
+
+            // Initialize
+            updateTransform(false);
+            updateCursor();
         });
     </script>
 </body>

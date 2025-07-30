@@ -14,7 +14,8 @@ class WebConfig:
     admin_uids: list[str]
     missions_path: Path
     deployment_msn_prefix: str
-    current_map_path: Path
-    map_origin_x: int
-    map_origin_y: int
-    map_scale_mpp: float
+    maps: list[Path]
+    current_map: Path
+    map_origin_x: list[int]
+    map_origin_y: list[int]
+    map_scale_mpp: list[float]
