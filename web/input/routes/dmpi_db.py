@@ -138,20 +138,23 @@ def draw_dynamic_map():
     _reset_dmpi_cache()
     dmpis = _get_dmpis()
     print('drawing map')
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 0), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 0, 'interactive_map.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'interactive_map-z1.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 2, 'interactive_map-z2.png'), daemon=True).start()
 
 
-def _draw_dynamic_map_from_dmpis(dmpis, map_id, bw_intensity=0.9, contrast=1.1, darken_shadows=1.5, symbol_size=12):
+def _draw_dynamic_map_from_dmpis(dmpis, map_id, output_name, bw_intensity=0.9, contrast=1.1, darken_shadows=1.5, symbol_size=12):
     try:
         deployment_msn_name = get_deployment_msn_path().name
         current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
 
         if os.path.exists(BASE_DIR / 'web' / 'static'):
-            os.makedirs(BASE_DIR / 'web' / 'static' / 'maps', exist_ok=True)
-            img = Image.open(BASE_DIR / 'web' / 'static' / 'maps' / config.maps[map_id])
+            ref_dir = BASE_DIR / 'web' / 'static'
         else:
-            os.makedirs(BASE_DIR / 'web' / 'input' / 'static' / 'maps', exist_ok=True)
-            img = Image.open(BASE_DIR / 'web' / 'input' / 'static' / 'maps' / config.maps[map_id])
+            ref_dir = BASE_DIR / 'web' / 'input' / 'static'
+
+        os.makedirs(ref_dir / 'maps', exist_ok=True)
+        img = Image.open(ref_dir / 'maps' / config.maps[map_id])
 
         if bw_intensity > 0:
             img_gray = img.convert('L').convert('RGB')
@@ -192,7 +195,7 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, bw_intensity=0.9, contrast=1.1, 
     draw = ImageDraw.Draw(img_hires)
 
     for dmpi_name in dmpis:
-        if "SAD" not in dmpi_name:
+        if not("SAD" in dmpi_name or ("CCC" in dmpi_name and "EWR" in dmpis[dmpi_name]['comment'])):
             continue
 
         dmpi = dmpis[dmpi_name]
@@ -203,27 +206,13 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, bw_intensity=0.9, contrast=1.1, 
         if x == 0 or y == 0:
             continue
 
-        radius_meters = 35_560  # SA-6 (default)
-        if "SA-3" in dmpi['comment']:
-            radius_meters = 25_000
-        if "SA-2" in dmpi['comment']:
-            radius_meters = 51_860
-        if "SA-9" in dmpi['comment']:
-            radius_meters = 4_640
-        if "HAAA" in dmpi['comment']:
-            radius_meters = 3_000
-        if "HAWK" in dmpi['comment']:
-            radius_meters = 47_410
-
         mpp = config.map_scale_mpp[map_id]
-        radius_pixels = (radius_meters / mpp) * scale_factor
 
         pixel_x = (config.map_origin_x[map_id] + x / mpp) * scale_factor
         pixel_y = (config.map_origin_y[map_id] + y / mpp) * scale_factor
 
         # Add some margin for the symbol size
         symbol_margin = symbol_size * scale_factor * 2  # 2x symbol size as margin
-
         if (pixel_x < -symbol_margin or pixel_x > img_width_hires + symbol_margin or
                 pixel_y < -symbol_margin or pixel_y > img_height_hires + symbol_margin):
             print(f"DMPI '{dmpi}': SKIPPED - outside image bounds")
@@ -232,24 +221,45 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, bw_intensity=0.9, contrast=1.1, 
             print(f"  Image size: {img_width} x {img_height}")
             continue
 
-        # Draw radius circle (same as before)
+        radius_meters = 35_560  # SA-6 (default)
+        ring_color = 'red'
+        render_ring = True
+        symbol_path = ref_dir / 'img' / 'nato-sam.png'
+        if "SA-3" in dmpi['comment']:
+            radius_meters = 25_000
+        if "SA-2" in dmpi['comment']:
+            radius_meters = 51_860
+        if "SA-9" in dmpi['comment']:
+            radius_meters = 4_640
+        if "HAAA" in dmpi['comment']:
+            radius_meters = 3_000
+            symbol_path = ref_dir / 'img' / 'nato-haaa.png'
+        if "EWR" in dmpi['comment']:
+            radius_meters = 463_000
+            ring_color = 'yellow'
+            render_ring = False
+            symbol_path = ref_dir / 'img' / 'nato-ewr.png'
+        if "HAWK" in dmpi['comment']:
+            radius_meters = 47_410
+
+        if ring_color == 'red':
+            x = radius_meters
+            redness = min(255, 1.647e-8*(x**2) - 0.00424*x + 305.808)
+            redness = max(redness, 50)
+            ring_color = (int(redness),0,0)
+
+        radius_pixels = (radius_meters / mpp) * scale_factor
+
         circle_left = pixel_x - radius_pixels
         circle_top = pixel_y - radius_pixels
         circle_right = pixel_x + radius_pixels
         circle_bottom = pixel_y + radius_pixels
 
-        if not dmpi['collision']:
+        if not dmpi['collision'] and render_ring:
             draw.ellipse([circle_left, circle_top, circle_right, circle_bottom],
-                         fill=None, outline='red', width=1 * scale_factor)
+                         fill=None, outline=ring_color, width=int(1.5 * scale_factor))
 
-        # Use external image file - you need to specify the path
-        if os.path.exists(BASE_DIR / 'web' / 'static'):
-            symbol_path = BASE_DIR / 'web' / 'static' / 'img' / 'nato.png'
-        else:
-            symbol_path = BASE_DIR / 'web' / 'input' / 'static' / 'img' / 'nato.png'
-
-        _draw_sam_symbol_from_file(draw, pixel_x, pixel_y, scale_factor, symbol_path, symbol_size,
-                                   not dmpi['collision'])
+        _draw_sam_symbol_from_file(draw, pixel_x, pixel_y, scale_factor, symbol_path, symbol_size, not dmpi['collision'])
 
     # Add watermark with deployment name and current date
     _draw_watermark(draw, img_width_hires, img_height_hires, deployment_msn_name, current_date, scale_factor)
@@ -257,10 +267,7 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, bw_intensity=0.9, contrast=1.1, 
     # Downsample back to original size for antialiasing effect
     img_with_symbols = img_hires.resize((img_width, img_height), Image.LANCZOS)
 
-    if os.path.exists(BASE_DIR / 'web' / 'static'):
-        img_with_symbols.save(BASE_DIR / 'web' / 'static' / 'maps' / "interactive_map.png")
-    else:
-        img_with_symbols.save(BASE_DIR / 'web' / 'input' / 'static' / 'maps' / "interactive_map.png")
+    img_with_symbols.save(ref_dir / 'maps' / output_name)
 
 def _draw_watermark(draw, img_width, img_height, deployment_name, date_str, scale_factor):
     """Draw a transparent watermark in the bottom right corner with deployment name and date."""
