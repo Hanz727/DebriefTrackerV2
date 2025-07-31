@@ -479,12 +479,16 @@ def load_overrides():
 def save_overrides(overrides_text):
     """Save overrides to the overrides.txt file."""
     try:
+        lines = [line.strip().replace(' ', '') for line in overrides_text.split('\n')]
+        cleaned_text = '\n'.join(lines)
+
         with open(_OVERRIDES_FILE, 'w', encoding='utf-8') as f:
-            f.write(overrides_text)
+            f.write(cleaned_text)
         return True
     except Exception as e:
         print(f"Error saving overrides file: {e}")
         return False
+
 
 def _parse_dms(dms_string):
     """Parse DMS string to decimal degrees"""

@@ -594,6 +594,7 @@
                 const subRows = tbody.querySelectorAll('tr.sub-row');
 
                 searchTerm = searchTerm.toLowerCase().trim();
+                const searchTermNoSpaces = searchTerm.replace(/\s+/g, '');
 
                 rows.forEach(row => {
                     const dmpiId = row.dataset.dmpiId;
@@ -606,9 +607,13 @@
                         const cells = row.querySelectorAll('td');
                         for (let cell of cells) {
                             const cellText = cell.textContent.toLowerCase();
+                            const cellTextNoSpaces = cellText.replace(/\s+/g, '');
                             const dataValue = cell.dataset.value ? cell.dataset.value.toLowerCase() : '';
+                            const dataValueNoSpaces = dataValue.replace(/\s+/g, '');
 
-                            if (cellText.includes(searchTerm) || dataValue.includes(searchTerm)) {
+                            // Check both normal and space-removed versions
+                            if (cellText.includes(searchTerm) || dataValue.includes(searchTerm) ||
+                                cellTextNoSpaces.includes(searchTermNoSpaces) || dataValueNoSpaces.includes(searchTermNoSpaces)) {
                                 shouldShow = true;
                                 break;
                             }
@@ -624,9 +629,13 @@
                                 const subCells = subRow.querySelectorAll('td');
                                 for (let cell of subCells) {
                                     const cellText = cell.textContent.toLowerCase();
+                                    const cellTextNoSpaces = cellText.replace(/\s+/g, '');
                                     const dataValue = cell.dataset.value ? cell.dataset.value.toLowerCase() : '';
+                                    const dataValueNoSpaces = dataValue.replace(/\s+/g, '');
 
-                                    if (cellText.includes(searchTerm) || dataValue.includes(searchTerm)) {
+                                    // Check both normal and space-removed versions
+                                    if (cellText.includes(searchTerm) || dataValue.includes(searchTerm) ||
+                                        cellTextNoSpaces.includes(searchTermNoSpaces) || dataValueNoSpaces.includes(searchTermNoSpaces)) {
                                         shouldShow = true;
                                         break;
                                     }
