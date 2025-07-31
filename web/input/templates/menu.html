@@ -124,7 +124,7 @@
             overflow: hidden;
             cursor: default;
             max-height: 600px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .map-img {
@@ -149,6 +149,48 @@
             flex-direction: column;
             gap: 5px;
             z-index: 10;
+        }
+
+        .fullscreen-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(31, 31, 31, 0.9);
+            border: 1px solid #4f545c;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+            user-select: none;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(79, 84, 92, 0.9);
+        }
+
+        .fullscreen-btn:active {
+            background: rgba(100, 100, 100, 0.9);
+        }
+
+        /* Fullscreen styles */
+        .map-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            max-height: none;
+            z-index: 1000;
+            border: none;
+        }
+
+        .map-container.fullscreen .map-img {
+            width: 100%;
+            height: 100vh;
+            object-fit: contain;
         }
 
         .zoom-btn {
@@ -188,6 +230,106 @@
             z-index: 10;
         }
 
+        /* Map Button Styles */
+        .map-buttons {
+            display: flex;
+            width: 100%;
+            gap: 0;
+            margin-bottom: 20px;
+        }
+
+        .map-button {
+            flex: 1;
+            padding: 12px 16px;
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            user-select: none;
+        }
+
+        .map-button:not(:last-child) {
+            border-right: none;
+        }
+
+        .map-button:hover {
+            background: #2a2a2a;
+            border-color: #666;
+        }
+
+        .map-button:active {
+            background: #333;
+        }
+
+        .map-button.active {
+            background: #4f545c;
+            border-color: #666;
+        }
+
+        /* SACT Sub-menu Styles */
+        .sact-submenu {
+            display: none;
+            flex-wrap: wrap;
+            width: 100%;
+            gap: 0;
+            margin-bottom: 10px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .sact-submenu.show {
+            display: flex;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sact-button {
+            flex: 1;
+            min-width: calc(100% / 6);
+            padding: 8px 12px;
+            background: #2a2a2a;
+            border: 1px solid #666;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            user-select: none;
+        }
+
+        .sact-button:not(:last-child) {
+            border-right: none;
+        }
+
+        .sact-button:hover {
+            background: #3a3a3a;
+            border-color: #777;
+        }
+
+        .sact-button:active {
+            background: #444;
+        }
+
+        .sact-button.active {
+            background: #666;
+            border-color: #888;
+        }
+
         /* ===== Responsive Design ===== */
         @media (max-width: 768px) {
             .sidebar {
@@ -217,10 +359,29 @@
                 max-height: 400px;
             }
 
-            .zoom-btn {
+            .fullscreen-btn {
                 width: 35px;
                 height: 35px;
-                font-size: 18px;
+                font-size: 14px;
+            }
+
+            .map-button {
+                font-size: 12px;
+                padding: 10px 8px;
+            }
+
+            .sact-button {
+                min-width: calc(100% / 3);
+                font-size: 11px;
+                padding: 6px 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sact-button {
+                min-width: calc(100% / 2);
+                font-size: 10px;
+                padding: 6px 4px;
             }
         }
     </style>
@@ -255,8 +416,9 @@
                     <div class="divider"></div>
 
                     <div class="map-container" id="mapContainer">
-                        <img class="map-img" id="mapImage" src="/static/maps/interactive_map-z2.png" alt="Strategic Map">
+                        <img class="map-img" id="mapImage" src="/static/maps/interactive_map-air-defence.png" alt="Strategic Map">
                         <div class="map-controls">
+                            <button class="fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>
                             <button class="zoom-btn" id="zoomIn" title="Zoom In">+</button>
                             <button class="zoom-btn" id="zoomOut" title="Zoom Out">−</button>
                             <button class="zoom-btn" id="resetZoom" title="Reset Zoom">⌂</button>
@@ -264,8 +426,31 @@
                         <div class="zoom-level" id="zoomLevel">100%</div>
                     </div>
 
+                    <!-- Map Selection Buttons -->
+                    <div class="map-buttons">
+                        <button class="map-button active" data-map="air-defence">AIR DEFENCE</button>
+                        <button class="map-button" data-map="super-mez">SUPER MEZ</button>
+                        <button class="map-button" data-map="sact-all" id="sactMainButton">STRATEGIC AIR CAMPAIGN TARGETS</button>
+                    </div>
+
+                    <!-- SACT Sub-menu -->
+                    <div class="sact-submenu" id="sactSubmenu">
+                        <button class="sact-button active" data-map="sact-all">ALL</button>
+                        <button class="sact-button" data-map="sact-c">C</button>
+                        <button class="sact-button" data-map="sact-l">L</button>
+                        <button class="sact-button" data-map="sact-ccc">CCC</button>
+                        <button class="sact-button" data-map="sact-e">E</button>
+                        <button class="sact-button" data-map="sact-o">O</button>
+                        <button class="sact-button" data-map="sact-rr">RR</button>
+                        <button class="sact-button" data-map="sact-a">A</button>
+                        <button class="sact-button" data-map="sact-n">N</button>
+                        <button class="sact-button" data-map="sact-ms">MS</button>
+                        <button class="sact-button" data-map="sact-sc">SC</button>
+                        <button class="sact-button" data-map="sact-rg">RG</button>
+                    </div>
+
                     <!-- Deployment Presentation Section -->
-                    <div class="content-title">DEPLOYMENT PRESENTATION</div>
+                    <div class="content-title" style="margin-top: 40px">DEPLOYMENT PRESENTATION</div>
                     <div class="divider"></div>
 
                     <div class="presentation-container">
@@ -386,12 +571,68 @@
                 unloadObserver.observe(img);
             });
 
+            // Map Button Functionality
+            const mapButtons = document.querySelectorAll('.map-button');
+            const sactButtons = document.querySelectorAll('.sact-button');
+            const mapImage = document.getElementById('mapImage');
+            const sactSubmenu = document.getElementById('sactSubmenu');
+            const sactMainButton = document.getElementById('sactMainButton');
+
+            // Map sources for different button types
+            const mapsPath = '/static/maps/interactive_map-';
+
+            // Main map buttons functionality
+            mapButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all main buttons
+                    mapButtons.forEach(btn => btn.classList.remove('active'));
+
+                    // Add active class to clicked button
+                    this.classList.add('active');
+
+                    const mapType = this.getAttribute('data-map');
+
+                    // Show/hide SACT submenu
+                    if (mapType === 'sact-all') {
+                        sactSubmenu.classList.add('show');
+                        // Set the first SACT button (ALL) as active
+                        sactButtons.forEach(btn => btn.classList.remove('active'));
+                        sactButtons[0].classList.add('active');
+                    } else {
+                        sactSubmenu.classList.remove('show');
+                    }
+
+                    // Change map image source
+                    mapImage.src = mapsPath + mapType + '.png';
+
+                    // Reset zoom when changing maps
+                    resetZoom();
+                });
+            });
+
+            // SACT sub-buttons functionality
+            sactButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all SACT buttons
+                    sactButtons.forEach(btn => btn.classList.remove('active'));
+
+                    // Add active class to clicked button
+                    this.classList.add('active');
+
+                    // Change map image source
+                    const mapType = this.getAttribute('data-map');
+                    mapImage.src = mapsPath + mapType + '.png';
+
+                    // Don't reset zoom for SACT sub-categories - keep current zoom level
+                });
+            });
+
             // Interactive Map Functionality
             const mapContainer = document.getElementById('mapContainer');
-            const mapImage = document.getElementById('mapImage');
             const zoomInBtn = document.getElementById('zoomIn');
             const zoomOutBtn = document.getElementById('zoomOut');
             const resetZoomBtn = document.getElementById('resetZoom');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
             const zoomLevelDisplay = document.getElementById('zoomLevel');
 
             let currentZoom = 1;
@@ -400,9 +641,10 @@
             let startY = 0;
             let translateX = 0;
             let translateY = 0;
+            let isFullscreen = false;
 
             const minZoom = 1;
-            const maxZoom = 6;
+            const maxZoom = 4;
             const zoomStep = 0.2;
 
             function updateTransform(useTransition = false) {
@@ -456,10 +698,38 @@
                 updateTransform(true);
             }
 
+            function toggleFullscreen() {
+                isFullscreen = !isFullscreen;
+
+                if (isFullscreen) {
+                    mapContainer.classList.add('fullscreen');
+                    fullscreenBtn.innerHTML = '⛶';
+                    fullscreenBtn.title = 'Exit Fullscreen';
+                } else {
+                    mapContainer.classList.remove('fullscreen');
+                    fullscreenBtn.innerHTML = '⛶';
+                    fullscreenBtn.title = 'Toggle Fullscreen';
+                }
+
+                // Recalculate constraints after fullscreen toggle
+                setTimeout(() => {
+                    constrainTranslation();
+                    updateTransform(true);
+                }, 100);
+            }
+
             // Button event listeners
             zoomInBtn.addEventListener('click', zoomIn);
             zoomOutBtn.addEventListener('click', zoomOut);
             resetZoomBtn.addEventListener('click', resetZoom);
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+            // ESC key to exit fullscreen
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && isFullscreen) {
+                    toggleFullscreen();
+                }
+            });
 
             // Mouse wheel zoom
             mapContainer.addEventListener('wheel', function(e) {

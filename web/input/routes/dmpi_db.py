@@ -8,6 +8,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from PIL.Image import Resampling
 from flask import Blueprint, session, redirect, render_template, request, jsonify
 
 from core.constants import BASE_DIR
@@ -93,6 +94,7 @@ def _get_dmpis():
     return dmpis
 
 
+resampling = Resampling.BICUBIC
 def _draw_sam_symbol_from_file(draw, x, y, scale_factor, image_path, symbol_size=12, active=True):
     try:
         # Load the symbol image
@@ -100,7 +102,7 @@ def _draw_sam_symbol_from_file(draw, x, y, scale_factor, image_path, symbol_size
 
         # Resize to desired size
         target_size = int(symbol_size * scale_factor * 2)  # *2 for good visibility
-        symbol_img = symbol_img.resize((target_size, target_size), Image.LANCZOS)
+        symbol_img = symbol_img.resize((target_size, target_size), resampling)
 
         # Make very dark gray if not active
         if not active:
@@ -138,12 +140,24 @@ def draw_dynamic_map():
     _reset_dmpi_cache()
     dmpis = _get_dmpis()
     print('drawing map')
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 0, 'interactive_map.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'interactive_map-z1.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 2, 'interactive_map-z2.png'), daemon=True).start()
+    #threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 0, 'SAD', 'interactive_map.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SAD', 'interactive_map-air-defence.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 2, 'SAD', 'interactive_map-super-mez.png'), daemon=True).start()
 
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SST', 'interactive_map-sact-all.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-C', 'interactive_map-sact-C.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-L', 'interactive_map-sact-L.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-CCC', 'interactive_map-sact-CCC.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-E', 'interactive_map-sact-E.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-O', 'interactive_map-sact-O.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-RR', 'interactive_map-sact-RR.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-A', 'interactive_map-sact-A.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-N', 'interactive_map-sact-N.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-MS', 'interactive_map-sact-MS.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-SC', 'interactive_map-sact-SC.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-RG', 'interactive_map-sact-RG.png'), daemon=True).start()
 
-def _draw_dynamic_map_from_dmpis(dmpis, map_id, output_name, bw_intensity=0.9, contrast=1.1, darken_shadows=1.5, symbol_size=12):
+def _draw_dynamic_map_from_dmpis(dmpis, map_id, display_type,  output_name, bw_intensity=0.9, contrast=1.1, darken_shadows=1.5, symbol_size=12):
     try:
         deployment_msn_name = get_deployment_msn_path().name
         current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
@@ -184,19 +198,29 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, output_name, bw_intensity=0.9, c
         return
 
     # Create a copy for drawing at higher resolution for antialiasing
-    scale_factor = 4
+    scale_factor = 8
     img_width, img_height = img.size
 
     img_width_hires = img_width * scale_factor
     img_height_hires = img_height * scale_factor
 
     # Create high-res version
-    img_hires = img.resize((img_width * scale_factor, img_height * scale_factor), Image.LANCZOS)
+    img_hires = img.resize((img_width * scale_factor, img_height * scale_factor), resampling)
     draw = ImageDraw.Draw(img_hires)
 
     for dmpi_name in dmpis:
-        if not("SAD" in dmpi_name or ("CCC" in dmpi_name and "EWR" in dmpis[dmpi_name]['comment'])):
-            continue
+        if display_type == "SAD":
+            if not("SAD" in dmpi_name or ("CCC" in dmpi_name and "EWR" in dmpis[dmpi_name]['comment'])):
+                continue
+
+        if display_type == "SST":
+            if "SAD" in dmpi_name or ("CCC" in dmpi_name and "EWR" in dmpis[dmpi_name]['comment']):
+                continue
+
+        if display_type.startswith("SACT"):
+            target_cat = "-" + display_type.split("-")[1].strip() + "-"
+            if not target_cat in dmpi_name:
+                continue
 
         dmpi = dmpis[dmpi_name]
 
@@ -215,32 +239,97 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, output_name, bw_intensity=0.9, c
         symbol_margin = symbol_size * scale_factor * 2  # 2x symbol size as margin
         if (pixel_x < -symbol_margin or pixel_x > img_width_hires + symbol_margin or
                 pixel_y < -symbol_margin or pixel_y > img_height_hires + symbol_margin):
-            print(f"DMPI '{dmpi}': SKIPPED - outside image bounds")
-            print(f"  World coords: ({x:.1f}, {y:.1f})")
-            print(f"  Pixel coords: ({pixel_x / scale_factor:.1f}, {pixel_y / scale_factor:.1f})")
-            print(f"  Image size: {img_width} x {img_height}")
             continue
 
-        radius_meters = 35_560  # SA-6 (default)
+        radius_meters = 0
         ring_color = 'red'
-        render_ring = True
-        symbol_path = ref_dir / 'img' / 'nato-sam.png'
+
+        symbol_path = ''
+        render_icon = False
+        render_ring = False
+        symbol_size_multiplier = 1.8
+
+        if "SA-6" in dmpi['comment']:
+            radius_meters = 35_560
+            symbol_path = ref_dir / 'img' / 'nato-sam.png'
+            render_ring = True
+            render_icon = True
         if "SA-3" in dmpi['comment']:
             radius_meters = 25_000
+            symbol_path = ref_dir / 'img' / 'nato-sam.png'
+            render_ring = True
+            render_icon = True
         if "SA-2" in dmpi['comment']:
             radius_meters = 51_860
+            symbol_path = ref_dir / 'img' / 'nato-sam.png'
+            render_ring = True
+            render_icon = True
         if "SA-9" in dmpi['comment']:
             radius_meters = 4_640
+            symbol_path = ref_dir / 'img' / 'nato-sam.png'
+            render_ring = True
+            render_icon = True
         if "HAAA" in dmpi['comment']:
             radius_meters = 3_000
             symbol_path = ref_dir / 'img' / 'nato-haaa.png'
+            render_ring = True
+            render_icon = True
         if "EWR" in dmpi['comment']:
             radius_meters = 463_000
+            symbol_path = ref_dir / 'img' / 'nato-ewr.png'
             ring_color = 'yellow'
             render_ring = False
-            symbol_path = ref_dir / 'img' / 'nato-ewr.png'
+            render_icon = True
         if "HAWK" in dmpi['comment']:
             radius_meters = 47_410
+            symbol_path = ref_dir / 'img' / 'nato-sam.png'
+            render_ring = False
+            render_icon = True
+
+        if "-A-" in dmpi_name:
+            symbol_path = ref_dir / 'img' / 'nato-airfield.png'
+            render_ring = False
+            render_icon = True
+        if "-RG-" in dmpi_name:
+            symbol_path = ref_dir / 'img' / 'nato-rg.png'
+            render_ring = False
+            render_icon = True
+        if "-SC-" in dmpi_name:
+            symbol_path = ref_dir / 'img' / 'nato-sc.png'
+            render_ring = False
+            render_icon = True
+        if "-MS-" in dmpi_name:
+            symbol_path = ref_dir / 'img' / 'nato-ms.png'
+            render_ring = False
+            render_icon = True
+        if "-N-" in dmpi_name:
+            symbol_path = ref_dir / 'img' / 'nato-n.png'
+            render_ring = False
+            render_icon = True
+        if "-RR-" in dmpi_name:
+            symbol_path = ref_dir / 'img' / 'nato-rr.png'
+            render_ring = False
+            render_icon = True
+        if "-O-" in dmpi_name:
+            symbol_path = ref_dir / 'img' / 'nato-o.png'
+            render_ring = False
+            render_icon = True
+        if "-E-" in dmpi_name:
+            symbol_path = ref_dir / 'img' / 'nato-e.png'
+            render_ring = False
+            render_icon = True
+        if "-CCC-" in dmpi_name and radius_meters == 0:
+            symbol_path = ref_dir / 'img' / 'nato-ccc.png'
+            render_ring = False
+            render_icon = True
+        if "-L-" in dmpi_name:
+            symbol_path = ref_dir / 'img' / 'nato-l.png'
+            render_ring = False
+            render_icon = True
+        if "-C-" in dmpi_name:
+            symbol_path = ref_dir / 'img' / 'nato-c.png'
+            render_ring = False
+            render_icon = True
 
         if ring_color == 'red':
             x = radius_meters
@@ -259,13 +348,14 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, output_name, bw_intensity=0.9, c
             draw.ellipse([circle_left, circle_top, circle_right, circle_bottom],
                          fill=None, outline=ring_color, width=int(1.5 * scale_factor))
 
-        _draw_sam_symbol_from_file(draw, pixel_x, pixel_y, scale_factor, symbol_path, symbol_size, not dmpi['collision'])
+        if render_icon:
+            _draw_sam_symbol_from_file(draw, pixel_x, pixel_y, scale_factor, symbol_path, symbol_size*symbol_size_multiplier, not dmpi['collision'])
 
     # Add watermark with deployment name and current date
     _draw_watermark(draw, img_width_hires, img_height_hires, deployment_msn_name, current_date, scale_factor)
 
     # Downsample back to original size for antialiasing effect
-    img_with_symbols = img_hires.resize((img_width, img_height), Image.LANCZOS)
+    img_with_symbols = img_hires.resize((img_width, img_height), resampling)
 
     img_with_symbols.save(ref_dir / 'maps' / output_name)
 
