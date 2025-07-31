@@ -519,8 +519,8 @@ def _parse_dms(dms_string):
 
     return decimal
 
-def _decimal_to_dms(decimal_degrees, coord_type='lat'):
-    """Convert decimal degrees to DMS format"""
+def _decimal_to_ddm(decimal_degrees, coord_type='lat'):
+    """Convert decimal degrees to DDM (Degrees Decimal Minutes) format"""
     if coord_type.lower() == 'lat':
         direction = 'N' if decimal_degrees >= 0 else 'S'
     else:
@@ -528,13 +528,11 @@ def _decimal_to_dms(decimal_degrees, coord_type='lat'):
 
     abs_degrees = abs(decimal_degrees)
     degrees = int(abs_degrees)
-    minutes_float = (abs_degrees - degrees) * 60
-    minutes = int(minutes_float)
-    seconds = (minutes_float - minutes) * 60
+    minutes = (abs_degrees - degrees) * 60
 
-    return f"{direction} {degrees}°{minutes:02d}'{seconds:02.0f}\""
+    return f"{direction} {degrees}°{minutes:06.3f}'"
 
-def _convert_xy_to_dms(x, y, reference_dms):
+def _convert_xy_to_ddm(x, y, reference_dms):
     """
     Convert DCS x,y coordinates to DMS coordinates using UTM projection
 
@@ -601,8 +599,8 @@ def _convert_xy_to_dms(x, y, reference_dms):
     lon, lat = from_utm.transform(actual_x, actual_y)
 
     # Convert to DMS
-    lat_dms = _decimal_to_dms(lat, 'lat')
-    lon_dms = _decimal_to_dms(lon, 'lon')
+    lat_dms = _decimal_to_ddm(lat, 'lat')
+    lon_dms = _decimal_to_ddm(lon, 'lon')
 
     return lat_dms, lon_dms
 
@@ -619,12 +617,18 @@ def _load_dmpis_from_mission(dmpis):
             dmpis[dmpi_name] = _create_dmpi_entry(in_msn=True)
             dmpis[dmpi_name]['coords']['x'] = nav_point['x']
             dmpis[dmpi_name]['coords']['y'] = nav_point['y']
-            lat, lon = _convert_xy_to_dms(nav_point['y'], nav_point['x'], config.map_reference[_get_map_id()])
-            dmpis[dmpi_name]['coords']['lat_dms'] = lat
-            dmpis[dmpi_name]['coords']['lon_dms'] = lon
             dmpis[dmpi_name]['comment'] = nav_point['comment']
 
-        dmpis[dmpi_name]["aim_points"][aim_point] = {"bda": None, "debrief_id": None}
+        # Calculate lat/lon for this specific aim point
+        lat, lon = _convert_xy_to_ddm(nav_point['y'], nav_point['x'], config.map_reference[_get_map_id()])
+
+        dmpis[dmpi_name]["aim_points"][aim_point] = {
+            "bda": None,
+            "debrief_id": None,
+            "lat": lat,
+            "lon": lon
+        }
+
 
 def _load_dmpis_from_debriefs(dmpis):
     """Load DMPIs from debrief files."""
@@ -671,8 +675,8 @@ def _create_dmpi_entry(in_msn=False):
         "in_msn": in_msn,
         "collision": False,
         "comment": "",
-        "coords": {"x": 0, "y": 0, "lat_dms": "", "lon_dms": ""},
-        "aim_points": {"01": {"bda": None, "debrief_id": None, "date": None}}
+        "coords": {"x": 0, "y": 0},  # Removed lat_dms and lon_dms from here
+        "aim_points": {"01": {"bda": None, "debrief_id": None, "date": None, "lat": "", "lon": ""}}
     }
 
 def _update_dmpi_entry(dmpis, dmpi_name, aim_point, bda_result, debrief_id, date):
@@ -680,10 +684,19 @@ def _update_dmpi_entry(dmpis, dmpi_name, aim_point, bda_result, debrief_id, date
     if dmpi_name in dmpis:
         # Update existing DMPI
         if _should_update_bda(dmpis[dmpi_name], aim_point, bda_result):
+            # Preserve existing lat/lon if they exist, otherwise set empty
+            existing_lat = ""
+            existing_lon = ""
+            if aim_point in dmpis[dmpi_name]['aim_points']:
+                existing_lat = dmpis[dmpi_name]['aim_points'][aim_point].get('lat', '')
+                existing_lon = dmpis[dmpi_name]['aim_points'][aim_point].get('lon', '')
+
             dmpis[dmpi_name]['aim_points'][aim_point] = {
                 "bda": bda_result,
                 "debrief_id": debrief_id,
-                "date": date
+                "date": date,
+                "lat": existing_lat,
+                "lon": existing_lon
             }
 
         dmpis[dmpi_name]['collision'] = True
@@ -693,7 +706,9 @@ def _update_dmpi_entry(dmpis, dmpi_name, aim_point, bda_result, debrief_id, date
         dmpis[dmpi_name]['aim_points'][aim_point] = {
             "bda": bda_result,
             "debrief_id": debrief_id,
-            "date": date
+            "date": date,
+            "lat": "",
+            "lon": ""
         }
 
 def _should_update_bda(dmpi_entry, aim_point, new_bda_result):
@@ -731,15 +746,27 @@ def _apply_overrides(dmpis):
 
             # Ensure the aim_points dictionary has the specific aim point
             if aim_point not in dmpis[dmpi_name]['aim_points']:
-                dmpis[dmpi_name]['aim_points'][aim_point] = {"bda": None, "debrief_id": None}
+                dmpis[dmpi_name]['aim_points'][aim_point] = {
+                    "bda": None,
+                    "debrief_id": None,
+                    "lat": "",
+                    "lon": ""
+                }
 
             # Set the BDA to "1 - Direct Hit Visual" for this aim point
+            # Preserve existing lat/lon coordinates
+            existing_lat = dmpis[dmpi_name]['aim_points'][aim_point].get('lat', '')
+            existing_lon = dmpis[dmpi_name]['aim_points'][aim_point].get('lon', '')
+
             dmpis[dmpi_name]['aim_points'][aim_point]['bda'] = "1 - Direct Hit Visual"
             dmpis[dmpi_name]['aim_points'][aim_point]['debrief_id'] = None
+            dmpis[dmpi_name]['aim_points'][aim_point]['lat'] = existing_lat
+            dmpis[dmpi_name]['aim_points'][aim_point]['lon'] = existing_lon
             dmpis[dmpi_name]['collision'] = True
 
     except Exception as e:
         print(f"Error applying overrides: {e}")
+
 
 @app.route('/dmpi_override', methods=['POST'])
 def dmpi_override():
@@ -778,7 +805,6 @@ def dmpi_override():
             'success': False,
             'message': 'Failed to process override data'
         }), 500
-
 
 @app.route('/dmpi_db')
 def dmpi_db():

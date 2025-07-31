@@ -140,15 +140,13 @@
 
         .file-table .comment-text {
             color: var(--text-secondary);
-            font-style: italic;
+            font-weight: bold;
             text-align: left;
             padding-left: var(--spacing-lg);
         }
 
         .file-table .dms-text {
             color: var(--text-secondary);
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
             font-weight: bold;
             line-height: 1.3;
             white-space: pre-line;
@@ -157,12 +155,11 @@
         .file-table .date-text {
             color: var(--text-secondary);
             font-weight: bold;
-            font-family: 'Courier New', monospace;
         }
 
         .file-table .date-none {
             color: var(--text-muted);
-            font-style: italic;
+            font-weight: bold;
         }
 
         .file-table .bda-link {
@@ -444,7 +441,7 @@
                             <tr>
                                 <th class="dmpi-id-header sortable" data-column="dmpi-id" data-type="text">DMPI ID</th>
                                 <th class="comment-header sortable" data-column="comment" data-type="text">COMMENT</th>
-                                <th class="dms-header sortable" data-column="dms" data-type="text">DMS</th>
+                                <th class="dms-header sortable" data-column="dms" data-type="text">DDM</th>
                                 <th class="in-msn-header sortable" data-column="in-msn" data-type="boolean">IN MSN</th>
                                 <th class="bda-header sortable" data-column="bda" data-type="text">BDA</th>
                                 <th class="date-header sortable" data-column="date" data-type="date">DATE</th>
@@ -456,7 +453,7 @@
                                 {% set first_aim_data = dmpi_data.aim_points[first_aim_point] %}
                                 {% set is_collision = dmpi_data.collision %}
                                 {% set has_multiple_aims = dmpi_data.aim_points|length > 1 %}
-                                {% set dms_coords = dmpi_data.coords.lat_dms + '\n' + dmpi_data.coords.lon_dms %}
+                                {% set first_dms_coords = first_aim_data.lat + '\n' + first_aim_data.lon %}
 
                                 <tr class="{% if has_multiple_aims %}clickable{% else %}non-clickable{% endif %}{% if is_collision %} collision{% endif %}"
                                     data-dmpi-id="{{ dmpi_id }}"
@@ -473,8 +470,8 @@
                                     <td data-value="{{ dmpi_data.comment }}">
                                         <span class="comment-text">{{ dmpi_data.comment }}</span>
                                     </td>
-                                    <td data-value="{{ dms_coords }}">
-                                        <span class="dms-text">{{ dms_coords }}</span>
+                                    <td data-value="{{ first_dms_coords }}">
+                                        <span class="dms-text">{{ first_dms_coords }}</span>
                                     </td>
                                     <td data-value="{{ dmpi_data.in_msn }}">
                                         <span class="boolean-indicator {% if dmpi_data.in_msn %}boolean-true{% else %}boolean-false{% endif %}">
@@ -500,6 +497,7 @@
                                 {% if has_multiple_aims %}
                                     {% for aim_point, aim_data in dmpi_data.aim_points.items() %}
                                         {% if aim_point != first_aim_point %}
+                                            {% set sub_dms_coords = aim_data.lat + '\n' + aim_data.lon %}
                                             <tr class="sub-row" style="display: none;" data-parent="{{ dmpi_id }}">
                                                 <td class="sub-row-indent" data-value="{{ dmpi_id }}">
                                                     <span class="file-name">{{ dmpi_id }} - {{ aim_point }}</span>
@@ -507,8 +505,8 @@
                                                 <td data-value="{{ dmpi_data.comment }}">
                                                     <span class="comment-text">{{ dmpi_data.comment }}</span>
                                                 </td>
-                                                <td data-value="{{ dms_coords }}">
-                                                    <span class="dms-text">{{ dms_coords }}</span>
+                                                <td data-value="{{ sub_dms_coords }}">
+                                                    <span class="dms-text">{{ sub_dms_coords }}</span>
                                                 </td>
                                                 <td data-value="{{ dmpi_data.in_msn }}">
                                                     <span class="boolean-indicator {% if dmpi_data.in_msn %}boolean-true{% else %}boolean-false{% endif %}">
