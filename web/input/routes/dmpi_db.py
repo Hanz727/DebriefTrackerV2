@@ -7,9 +7,11 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+import pyproj
 from PIL import Image, ImageDraw, ImageFont
 from PIL.Image import Resampling
 from flask import Blueprint, session, redirect, render_template, request, jsonify
+from pyproj import Transformer
 
 from core.constants import BASE_DIR
 from services.file_handler import FileHandler
@@ -136,26 +138,36 @@ def _draw_sam_symbol_from_file(draw, x, y, scale_factor, image_path, symbol_size
     except Exception as e:
         print(f"Could not load symbol from {image_path}: {e}")
 
+def _get_map_id():
+    current_map = config.current_map
+    id_ = 0
+    for i, map in enumerate(config.maps):
+        if current_map in map:
+            id_ = i
+            break
+    return id_
+
 def draw_dynamic_map():
     _reset_dmpi_cache()
     dmpis = _get_dmpis()
+    map_id = _get_map_id()
     print('drawing map')
     #threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 0, 'SAD', 'interactive_map.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SAD', 'interactive_map-air-defence.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 2, 'SAD', 'interactive_map-super-mez.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SAD', 'interactive_map-air-defence.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id+1, 'SAD', 'interactive_map-super-mez.png'), daemon=True).start()
 
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SST', 'interactive_map-sact-all.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-C', 'interactive_map-sact-C.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-L', 'interactive_map-sact-L.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-CCC', 'interactive_map-sact-CCC.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-E', 'interactive_map-sact-E.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-O', 'interactive_map-sact-O.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-RR', 'interactive_map-sact-RR.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-A', 'interactive_map-sact-A.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-N', 'interactive_map-sact-N.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-MS', 'interactive_map-sact-MS.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-SC', 'interactive_map-sact-SC.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 1, 'SACT-RG', 'interactive_map-sact-RG.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SST', 'interactive_map-sact-all.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-C', 'interactive_map-sact-C.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-L', 'interactive_map-sact-L.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-CCC', 'interactive_map-sact-CCC.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-E', 'interactive_map-sact-E.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-O', 'interactive_map-sact-O.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-RR', 'interactive_map-sact-RR.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-A', 'interactive_map-sact-A.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-N', 'interactive_map-sact-N.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-MS', 'interactive_map-sact-MS.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-SC', 'interactive_map-sact-SC.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-RG', 'interactive_map-sact-RG.png'), daemon=True).start()
 
 def _draw_dynamic_map_from_dmpis(dmpis, map_id, display_type,  output_name, bw_intensity=0.9, contrast=1.1, darken_shadows=1.5, symbol_size=12):
     try:
@@ -450,7 +462,6 @@ def _draw_watermark(draw, img_width, img_height, deployment_name, date_str, scal
         print(f"Error drawing watermark: {e}")
         # Continue without watermark if there's an error
 
-
 def load_overrides():
     """Load overrides from the overrides.txt file."""
     try:
@@ -475,6 +486,126 @@ def save_overrides(overrides_text):
         print(f"Error saving overrides file: {e}")
         return False
 
+def _parse_dms(dms_string):
+    """Parse DMS string to decimal degrees"""
+    dms = dms_string.strip().upper()
+
+    # Extract direction
+    direction = None
+    for char in ['N', 'S', 'E', 'W']:
+        if char in dms:
+            direction = char
+            dms = dms.replace(char, '').strip()
+            break
+
+    if not direction:
+        raise ValueError(f"Could not find direction in: {dms_string}")
+
+    # Extract degrees, minutes, seconds
+    pattern = r"(\d+)[°](\d+)[']([0-9.]+)[\"]*"
+    match = re.search(pattern, dms)
+
+    if not match:
+        raise ValueError(f"Could not parse DMS format: {dms_string}")
+
+    degrees = float(match.group(1))
+    minutes = float(match.group(2))
+    seconds = float(match.group(3))
+
+    decimal = degrees + minutes/60.0 + seconds/3600.0
+
+    if direction in ['S', 'W']:
+        decimal = -decimal
+
+    return decimal
+
+def _decimal_to_dms(decimal_degrees, coord_type='lat'):
+    """Convert decimal degrees to DMS format"""
+    if coord_type.lower() == 'lat':
+        direction = 'N' if decimal_degrees >= 0 else 'S'
+    else:
+        direction = 'E' if decimal_degrees >= 0 else 'W'
+
+    abs_degrees = abs(decimal_degrees)
+    degrees = int(abs_degrees)
+    minutes_float = (abs_degrees - degrees) * 60
+    minutes = int(minutes_float)
+    seconds = (minutes_float - minutes) * 60
+
+    return f"{direction} {degrees}°{minutes:02d}'{seconds:02.0f}\""
+
+def _convert_xy_to_dms(x, y, reference_dms):
+    """
+    Convert DCS x,y coordinates to DMS coordinates using UTM projection
+
+    Args:
+        x, y: DCS coordinates in meters
+        reference_dms: Reference coordinates in DMS (e.g., "N 30°02'49\" E 31°14'41\"")
+
+    Returns:
+        tuple: (lat_dms, lon_dms) in DMS format
+    """
+    # Clean up encoding issues with degree symbol
+    reference_dms = reference_dms.replace('Â°', '°')
+
+    # Use regex to find lat and lon patterns
+    # Pattern matches: direction + degrees°minutes'seconds"
+    pattern = r'([NSEW])\s*(\d+)[°](\d+)\'([0-9.]+)"?'
+    matches = re.findall(pattern, reference_dms)
+
+    if len(matches) != 2:
+        raise ValueError(f"Could not find 2 coordinates in: {reference_dms}")
+
+    # Separate lat and lon
+    lat_match = None
+    lon_match = None
+
+    for match in matches:
+        direction, degrees, minutes, seconds = match
+        if direction in ['N', 'S']:
+            lat_match = match
+        else:  # E, W
+            lon_match = match
+
+    if not lat_match or not lon_match:
+        raise ValueError(f"Could not find both lat and lon in: {reference_dms}")
+
+    # Convert to decimal
+    def dms_match_to_decimal(match):
+        direction, degrees, minutes, seconds = match
+        decimal = float(degrees) + float(minutes)/60.0 + float(seconds)/3600.0
+        if direction in ['S', 'W']:
+            decimal = -decimal
+        return decimal
+
+    ref_lat = dms_match_to_decimal(lat_match)
+    ref_lon = dms_match_to_decimal(lon_match)
+
+    # Determine UTM zone
+    utm_zone = int((ref_lon + 180) / 6) + 1
+    utm_crs = pyproj.CRS.from_proj4(
+        f"+proj=utm +zone={utm_zone} "
+        f"+{'south' if ref_lat < 0 else 'north'} +datum=WGS84"
+    )
+
+    # Create transformers
+    to_utm = Transformer.from_crs('EPSG:4326', utm_crs, always_xy=True)
+    from_utm = Transformer.from_crs(utm_crs, 'EPSG:4326', always_xy=True)
+
+    # Convert reference to UTM
+    ref_x, ref_y = to_utm.transform(ref_lon, ref_lat)
+
+    # Add DCS offset and convert back
+    actual_x = ref_x + x
+    actual_y = ref_y + y
+    lon, lat = from_utm.transform(actual_x, actual_y)
+
+    # Convert to DMS
+    lat_dms = _decimal_to_dms(lat, 'lat')
+    lon_dms = _decimal_to_dms(lon, 'lon')
+
+    return lat_dms, lon_dms
+
 def _load_dmpis_from_mission(dmpis):
     deployment_msn_path = get_deployment_msn_path()
     if not deployment_msn_path:
@@ -488,6 +619,9 @@ def _load_dmpis_from_mission(dmpis):
             dmpis[dmpi_name] = _create_dmpi_entry(in_msn=True)
             dmpis[dmpi_name]['coords']['x'] = nav_point['x']
             dmpis[dmpi_name]['coords']['y'] = nav_point['y']
+            lat, lon = _convert_xy_to_dms(nav_point['y'], nav_point['x'], config.map_reference[_get_map_id()])
+            dmpis[dmpi_name]['coords']['lat_dms'] = lat
+            dmpis[dmpi_name]['coords']['lon_dms'] = lon
             dmpis[dmpi_name]['comment'] = nav_point['comment']
 
         dmpis[dmpi_name]["aim_points"][aim_point] = {"bda": None, "debrief_id": None}
@@ -537,10 +671,9 @@ def _create_dmpi_entry(in_msn=False):
         "in_msn": in_msn,
         "collision": False,
         "comment": "",
-        "coords": {"x": 0, "y": 0},
+        "coords": {"x": 0, "y": 0, "lat_dms": "", "lon_dms": ""},
         "aim_points": {"01": {"bda": None, "debrief_id": None, "date": None}}
     }
-
 
 def _update_dmpi_entry(dmpis, dmpi_name, aim_point, bda_result, debrief_id, date):
     """Update or create a DMPI entry with new data."""

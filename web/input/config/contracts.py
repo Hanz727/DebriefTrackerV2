@@ -19,3 +19,4 @@ class WebConfig:
     map_origin_x: list[int]
     map_origin_y: list[int]
     map_scale_mpp: list[float]
+    map_reference: list[str]

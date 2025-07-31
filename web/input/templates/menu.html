@@ -20,7 +20,6 @@
             text-decoration: none;
             color: inherit;
             display: block;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .bda-card-link:hover {
@@ -39,7 +38,6 @@
             border: 1px solid #4f545c;
             padding: 15px;
             cursor: pointer;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         .bda-weapon {
@@ -271,18 +269,18 @@
             border-color: #666;
         }
 
-        /* SACT Sub-menu Styles */
+        /* SACT Sub-menu Styles - FIXED */
         .sact-submenu {
             display: none;
-            flex-wrap: wrap;
             width: 100%;
-            gap: 0;
             margin-bottom: 10px;
             animation: slideDown 0.3s ease-out;
+            border: 1px solid #666;
         }
 
         .sact-submenu.show {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
         }
 
         @keyframes slideDown {
@@ -297,28 +295,36 @@
         }
 
         .sact-button {
-            flex: 1;
-            min-width: calc(100% / 6);
-            padding: 8px 12px;
+            padding: 10px 12px;
             background: #2a2a2a;
-            border: 1px solid #666;
+            border: none;
+            border-right: 1px solid #666;
+            border-bottom: 1px solid #666;
             color: white;
             font-size: 12px;
             font-weight: bold;
             text-transform: uppercase;
             cursor: pointer;
-            transition: all 0.2s ease;
             text-align: center;
             user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
         }
 
-        .sact-button:not(:last-child) {
+        /* Remove right border from last button in each row */
+        .sact-button:nth-child(6n) {
             border-right: none;
+        }
+
+        /* Remove bottom border from buttons in the last row */
+        .sact-button:nth-last-child(-n+6) {
+            border-bottom: none;
         }
 
         .sact-button:hover {
             background: #3a3a3a;
-            border-color: #777;
         }
 
         .sact-button:active {
@@ -327,7 +333,6 @@
 
         .sact-button.active {
             background: #666;
-            border-color: #888;
         }
 
         /* ===== Responsive Design ===== */
@@ -370,18 +375,60 @@
                 padding: 10px 8px;
             }
 
+            .sact-submenu.show {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
             .sact-button {
-                min-width: calc(100% / 3);
                 font-size: 11px;
-                padding: 6px 8px;
+                padding: 8px 6px;
+                min-height: 36px;
+            }
+
+            /* Update responsive border rules */
+            .sact-button:nth-child(6n) {
+                border-right: 1px solid #666;
+            }
+
+            .sact-button:nth-child(3n) {
+                border-right: none;
+            }
+
+            .sact-button:nth-last-child(-n+6) {
+                border-bottom: 1px solid #666;
+            }
+
+            .sact-button:nth-last-child(-n+3) {
+                border-bottom: none;
             }
         }
 
         @media (max-width: 480px) {
+            .sact-submenu.show {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
             .sact-button {
-                min-width: calc(100% / 2);
                 font-size: 10px;
-                padding: 6px 4px;
+                padding: 8px 4px;
+                min-height: 34px;
+            }
+
+            /* Update responsive border rules for 2-column layout */
+            .sact-button:nth-child(3n) {
+                border-right: 1px solid #666;
+            }
+
+            .sact-button:nth-child(2n) {
+                border-right: none;
+            }
+
+            .sact-button:nth-last-child(-n+3) {
+                border-bottom: 1px solid #666;
+            }
+
+            .sact-button:nth-last-child(-n+2) {
+                border-bottom: none;
             }
         }
     </style>
