@@ -16,7 +16,7 @@ from services import Logger
 from services.data_handler import DataHandler
 from web.input._constants import DEBRIEFS_PATH
 from web.input.config.config import WebConfigSingleton
-from web.input.routes.dmpi_db import draw_dynamic_map, _reset_dmpi_cache
+from web.input.routes.dmpi_db import draw_dynamic_map, _reset_dmpi_cache, get_draw_dmpis
 from web.input.tracker_ui.input_data_handler import InputDataHandler
 
 
@@ -540,5 +540,6 @@ def file_report():
 @app.route('/')
 def home():
     if session.get('authed', False) or config.bypass_auth_debug:
-        return render_template('menu.html', bdas=get_bda_list())
+        return render_template('menu.html', bdas=get_bda_list(), drawables=get_draw_dmpis())
+
     return redirect('/login')

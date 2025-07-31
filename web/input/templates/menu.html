@@ -122,7 +122,7 @@
             overflow: hidden;
             cursor: default;
             max-height: 600px;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
 
         .map-img {
@@ -136,6 +136,111 @@
         }
 
         .map-img.smooth-transition {
+            transition: transform 0.2s ease;
+        }
+
+        /* Map Symbol Overlay */
+        .map-symbols {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .map-symbol {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            transform: translate(-50%, -50%);
+            transition: none;
+            filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .map-symbol.smooth-transition {
+            transition: transform 0.2s ease;
+        }
+
+        .map-symbol:hover {
+            filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+
+        /* Collision styling */
+        .map-symbol.collision {
+            filter: grayscale(100%) brightness(1.0) drop-shadow(0 0 2px rgba(160, 160, 160, 0.8));
+            opacity: 1;
+        }
+
+        .map-symbol.collision:hover {
+            filter: grayscale(100%) brightness(1.2) drop-shadow(0 0 4px rgba(180, 180, 180, 0.8));
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+
+        /* Collision without report - much darker */
+        .map-symbol.collision-no-report {
+            filter: grayscale(100%) brightness(0.3) drop-shadow(0 0 2px rgba(80, 80, 80, 0.8));
+            opacity: 1;
+        }
+
+        .map-symbol.collision-no-report:hover {
+            filter: grayscale(100%) brightness(0.5) drop-shadow(0 0 4px rgba(100, 100, 100, 0.8));
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+
+        /* Clickable symbol styling */
+        .map-symbol.clickable {
+            cursor: pointer;
+        }
+
+        .map-symbol.clickable:hover {
+            filter: drop-shadow(0 0 6px rgba(100, 200, 255, 0.9));
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+
+        .map-symbol.collision.clickable:hover {
+            filter: grayscale(100%) brightness(1.2) drop-shadow(0 0 6px rgba(100, 200, 255, 0.9));
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+
+        /* Destroyed without report styling */
+        .map-symbol.destroyed-no-report {
+            filter: brightness(0.4) saturate(0.6);
+            opacity: 1;
+        }
+
+        .map-symbol.destroyed-no-report:hover {
+            filter: brightness(0.6) saturate(0.8) drop-shadow(0 0 4px rgba(120, 120, 120, 0.8));
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+
+        .map-ring.collision {
+            border-color: #ff6b6b;
+            animation: collision-pulse 2s infinite;
+        }
+
+        @keyframes collision-pulse {
+            0%, 50%, 100% { opacity: 0.7; }
+            25%, 75% { opacity: 1; }
+        }
+
+        /* Map Range Rings */
+        .map-ring {
+            position: absolute;
+            border: 1px solid #ff0000;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: none;
+            pointer-events: none;
+            opacity: 0.7;
+            z-index: 4; /* Behind symbols but above map */
+        }
+
+        .map-ring.smooth-transition {
             transition: transform 0.2s ease;
         }
 
@@ -228,111 +333,171 @@
             z-index: 10;
         }
 
-        /* Map Button Styles */
-        .map-buttons {
-            display: flex;
-            width: 100%;
-            gap: 0;
-            margin-bottom: 20px;
+        /* Symbol Tooltip */
+        .symbol-tooltip {
+            position: absolute;
+            background: rgba(31, 31, 31, 0.95);
+            border: 1px solid #4f545c;
+            color: white;
+            padding: 8px 12px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 15;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            min-width: 120px;
         }
 
-        .map-button {
-            flex: 1;
-            padding: 12px 16px;
+        .tooltip-comment {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .tooltip-coords {
+            font-size: 11px;
+            color: #a0a0a0;
+            line-height: 1.3;
+        }
+
+        .symbol-tooltip.show {
+            opacity: 1;
+        }
+
+        /* Map Selector Buttons */
+        .map-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .map-selector-btn {
             background: #1f1f1f;
             border: 1px solid #4f545c;
             color: white;
+            padding: 12px 24px;
             font-size: 14px;
             font-weight: bold;
-            text-transform: uppercase;
             cursor: pointer;
             transition: all 0.2s ease;
-            text-align: center;
-            user-select: none;
+            text-transform: uppercase;
+            min-width: 140px;
         }
 
-        .map-button:not(:last-child) {
-            border-right: none;
-        }
-
-        .map-button:hover {
+        .map-selector-btn:hover {
             background: #2a2a2a;
             border-color: #666;
         }
 
-        .map-button:active {
-            background: #333;
+        .map-selector-btn.active {
+            background: #4a5568;
+            border-color: #718096;
+            color: white;
         }
 
-        .map-button.active {
-            background: #4f545c;
-            border-color: #666;
+        .map-selector-btn:active {
+            background: #2d3748;
         }
 
-        /* SACT Sub-menu Styles - FIXED */
-        .sact-submenu {
-            display: none;
-            width: 100%;
-            margin-bottom: 10px;
-            animation: slideDown 0.3s ease-out;
-            border: 1px solid #666;
+        /* Strategic Filters */
+        .strategic-filters {
+            margin-top: 20px;
+            background: #1f1f1f;
+            border: 1px solid #4f545c;
+            padding: 20px;
+            transition: all 0.3s ease;
         }
 
-        .sact-submenu.show {
+        .filter-title {
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .filter-grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+        /* Responsive behavior for smaller screens */
+        @media (max-width: 768px) {
+            .filter-grid {
+                grid-template-columns: repeat(3, 1fr);
             }
         }
 
-        .sact-button {
-            padding: 10px 12px;
-            background: #2a2a2a;
-            border: none;
-            border-right: 1px solid #666;
-            border-bottom: 1px solid #666;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            cursor: pointer;
-            text-align: center;
-            user-select: none;
+        @media (max-width: 480px) {
+            .filter-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        .filter-checkbox {
             display: flex;
             align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 8px 12px;
+            background: #2a2a2a;
+            border: 1px solid #4f545c;
+            transition: all 0.2s ease;
             justify-content: center;
-            min-height: 40px;
         }
 
-        /* Remove right border from last button in each row */
-        .sact-button:nth-child(6n) {
-            border-right: none;
-        }
-
-        /* Remove bottom border from buttons in the last row */
-        .sact-button:nth-last-child(-n+6) {
-            border-bottom: none;
-        }
-
-        .sact-button:hover {
+        .filter-checkbox:hover {
             background: #3a3a3a;
+            border-color: #666;
         }
 
-        .sact-button:active {
-            background: #444;
+        .filter-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #4a5568;
         }
 
-        .sact-button.active {
-            background: #666;
+        .filter-checkbox input[type="checkbox"]:checked + span {
+            color: #90cdf4;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: #2a2a2a;
+            border: 1px solid #4f545c;
+            color: white;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        .filter-btn:hover {
+            background: #3a3a3a;
+            border-color: #666;
+        }
+
+        .filter-btn.primary {
+            background: #4a5568;
+            border-color: #718096;
+        }
+
+        .filter-btn.primary:hover {
+            background: #5a6578;
         }
 
         /* ===== Responsive Design ===== */
@@ -370,65 +535,9 @@
                 font-size: 14px;
             }
 
-            .map-button {
-                font-size: 12px;
-                padding: 10px 8px;
-            }
-
-            .sact-submenu.show {
-                grid-template-columns: repeat(3, 1fr);
-            }
-
-            .sact-button {
-                font-size: 11px;
-                padding: 8px 6px;
-                min-height: 36px;
-            }
-
-            /* Update responsive border rules */
-            .sact-button:nth-child(6n) {
-                border-right: 1px solid #666;
-            }
-
-            .sact-button:nth-child(3n) {
-                border-right: none;
-            }
-
-            .sact-button:nth-last-child(-n+6) {
-                border-bottom: 1px solid #666;
-            }
-
-            .sact-button:nth-last-child(-n+3) {
-                border-bottom: none;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .sact-submenu.show {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .sact-button {
-                font-size: 10px;
-                padding: 8px 4px;
-                min-height: 34px;
-            }
-
-            /* Update responsive border rules for 2-column layout */
-            .sact-button:nth-child(3n) {
-                border-right: 1px solid #666;
-            }
-
-            .sact-button:nth-child(2n) {
-                border-right: none;
-            }
-
-            .sact-button:nth-last-child(-n+3) {
-                border-bottom: 1px solid #666;
-            }
-
-            .sact-button:nth-last-child(-n+2) {
-                border-bottom: none;
+            .map-symbol {
+                width: 30px;
+                height: 30px;
             }
         }
     </style>
@@ -459,11 +568,122 @@
             <!-- Content Area -->
             <div class="main-content">
                 <div class="content">
-                    <div class="content-title">STRATEGIC AIR CAMPAIGN TARGETS</div>
+                    <div class="content-title">INTERACTIVE MAP</div>
                     <div class="divider"></div>
 
                     <div class="map-container" id="mapContainer">
-                        <img class="map-img" id="mapImage" src="/static/maps/interactive_map-air-defence.png" alt="Strategic Map">
+                        <img class="map-img" id="mapImage" src="/static/maps/interactive_map_z1.png" alt="Interactive Map">
+
+                        <!-- Map Symbols Overlay -->
+                        <div class="map-symbols" id="mapSymbols">
+                            {% if drawables %}
+                                {% for drawable_id, drawable_data in drawables.items() %}
+                                    {% if drawable_data and drawable_data.draw %}
+                                        {% for map_key, map_data in drawable_data.draw.items() %}
+                                            {% if map_data and map_data.render_icon %}
+                                                <!-- Range Ring (drawn first, behind icon) -->
+                                                {% if map_data.render_ring and map_data.radius_px and map_data.radius_px > 0 and not drawable_data.collision %}
+                                                    <div class="map-ring"
+                                                         id="ring-{{ drawable_id }}-{{ loop.index0 }}"
+                                                         data-x="{{ map_data.x }}"
+                                                         data-y="{{ map_data.y }}"
+                                                         data-radius="{{ map_data.radius_px }}"
+                                                         data-type="{{ map_data.type or '' }}"
+                                                         data-map="{{ map_key }}"
+                                                         style="width: {{ map_data.radius_px * 2 }}px; height: {{ map_data.radius_px * 2 }}px;">
+                                                    </div>
+                                                {% endif %}
+
+                                                <!-- Replace the existing aim point logic section with this improved version -->
+                                                {% if drawable_data.aim_points %}
+                                                    {% set ns = namespace(best_ap_key='01',best_bda='', best_debrief_id='', best_score=999, has_valid_pair=false ) %}
+
+                                                    {% for ap_key, ap_data in drawable_data.aim_points.items() %}
+                                                        {% if ap_data.bda and ap_data.bda != 'None' and ap_data.debrief_id and ap_data.debrief_id != 'None' %}
+                                                            {% set bda_parts = ap_data.bda.split(' - ') %}
+                                                            {% if bda_parts|length > 0 %}
+                                                                {% set bda_score = bda_parts[0]|int(999) if bda_parts|length > 0 else 999 %}
+                                                                {% if bda_score < ns.best_score %}
+                                                                    {% set ns.best_ap_key = ap_key %}
+                                                                    {% set ns.best_bda = ap_data.bda %}
+                                                                    {% set ns.best_debrief_id = ap_data.debrief_id %}
+                                                                    {% set ns.best_score = bda_score %}
+                                                                    {% set ns.has_valid_pair = true %}
+                                                                {% endif %}
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    {% endfor %}
+
+                                                    <!-- Second pass: If no valid pair found, prioritize by debrief_id availability -->
+                                                    {% if not ns.has_valid_pair %}
+                                                        {% set ns.best_score = 999 %}
+                                                        {% for ap_key, ap_data in drawable_data.aim_points.items() %}
+                                                            {% if ap_data.debrief_id and ap_data.debrief_id != 'None' %}
+                                                                {% if ap_data.bda and ap_data.bda != 'None' %}
+                                                                    {% set bda_parts = ap_data.bda.split(' - ') %}
+                                                                    {% if bda_parts|length > 0 %}
+                                                                        {% set bda_score = bda_parts[0]|int(999) if bda_parts|length > 0 else 999 %}
+                                                                        {% if bda_score < ns.best_score %}
+                                                                            {% set ns.best_ap_key = ap_key %}
+                                                                            {% set ns.best_bda = ap_data.bda %}
+                                                                            {% set ns.best_debrief_id = ap_data.debrief_id %}
+                                                                            {% set ns.best_score = bda_score %}
+                                                                        {% endif %}
+                                                                    {% endif %}
+                                                                {% else %}
+                                                                    <!-- Has debrief_id but no BDA, consider it if no better option -->
+                                                                    {% if ns.best_score == 999 %}
+                                                                        {% set ns.best_ap_key = ap_key %}
+                                                                        {% set ns.best_bda = '' %}
+                                                                        {% set ns.best_debrief_id = ap_data.debrief_id %}
+                                                                    {% endif %}
+                                                                {% endif %}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% endif %}
+
+                                                    <!-- Third pass: If still nothing, try BDA only -->
+                                                    {% if ns.best_debrief_id == '' %}
+                                                        {% set ns.best_score = 999 %}
+                                                        {% for ap_key, ap_data in drawable_data.aim_points.items() %}
+                                                            {% if ap_data.bda and ap_data.bda != 'None' %}
+                                                                {% set bda_parts = ap_data.bda.split(' - ') %}
+                                                                {% if bda_parts|length > 0 %}
+                                                                    {% set bda_score = bda_parts[0]|int(999) if bda_parts|length > 0 else 999 %}
+                                                                    {% if bda_score < ns.best_score %}
+                                                                        {% set ns.best_ap_key = ap_key %}
+                                                                        {% set ns.best_bda = ap_data.bda %}
+                                                                        {% set ns.best_score = bda_score %}
+                                                                    {% endif %}
+                                                                {% endif %}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                {% endif %}
+
+                                                <!-- Now use the selected values in your map symbol -->
+                                                <img class="map-symbol {% if drawable_data.collision %}collision{% endif %} {% if drawable_data.aim_points and ns.best_debrief_id %}clickable{% endif %} {% if drawable_data.collision and drawable_data.aim_points and not ns.best_debrief_id %}collision-no-report{% endif %}"
+                                                     id="symbol-{{ drawable_id }}-{{ loop.index0 }}"
+                                                     src="{{ map_data.symbol }}"
+                                                     alt="{{ drawable_data.comment or drawable_id }}"
+                                                     data-x="{{ map_data.x }}"
+                                                     data-y="{{ map_data.y }}"
+                                                     data-id="{{ drawable_id }}"
+                                                     data-comment="{{ drawable_data.comment or '' }}"
+                                                     data-type="{{ map_data.type or '' }}"
+                                                     data-map="{{ map_key }}"
+                                                     data-collision="{{ drawable_data.collision or '' }}"
+                                                     data-bda="{{ ns.best_bda }}"
+                                                     data-debrief-id="{{ ns.best_debrief_id }}"
+                                                     data-lat="{{ map_data.lat or (drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lat) or '' }}"
+                                                     data-lon="{{ map_data.lon or (drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lon) or '' }}">
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
                         <div class="map-controls">
                             <button class="fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>
                             <button class="zoom-btn" id="zoomIn" title="Zoom In">+</button>
@@ -471,29 +691,71 @@
                             <button class="zoom-btn" id="resetZoom" title="Reset Zoom">⌂</button>
                         </div>
                         <div class="zoom-level" id="zoomLevel">100%</div>
+
+                        <!-- Symbol Tooltip -->
+                        <div class="symbol-tooltip" id="symbolTooltip"></div>
                     </div>
 
-                    <!-- Map Selection Buttons -->
-                    <div class="map-buttons">
-                        <button class="map-button active" data-map="air-defence">AIR DEFENCE</button>
-                        <button class="map-button" data-map="super-mez">SUPER MEZ</button>
-                        <button class="map-button" data-map="sact-all" id="sactMainButton">STRATEGIC AIR CAMPAIGN TARGETS</button>
+                    <!-- Map Selector Buttons -->
+                    <div class="map-selector">
+                        <button class="map-selector-btn active" id="airDefenceBtn" data-map="z1" data-filter="SAD">AIR DEFENCE</button>
+                        <button class="map-selector-btn" id="superMezBtn" data-map="z2" data-filter="SAD">SUPER MEZ</button>
+                        <button class="map-selector-btn" id="strategicBtn" data-map="z1" data-filter="strategic">STRATEGIC AIR CAMPAIGN TARGETS</button>
                     </div>
 
-                    <!-- SACT Sub-menu -->
-                    <div class="sact-submenu" id="sactSubmenu">
-                        <button class="sact-button active" data-map="sact-all">ALL</button>
-                        <button class="sact-button" data-map="sact-c">C</button>
-                        <button class="sact-button" data-map="sact-l">L</button>
-                        <button class="sact-button" data-map="sact-ccc">CCC</button>
-                        <button class="sact-button" data-map="sact-e">E</button>
-                        <button class="sact-button" data-map="sact-o">O</button>
-                        <button class="sact-button" data-map="sact-rr">RR</button>
-                        <button class="sact-button" data-map="sact-a">A</button>
-                        <button class="sact-button" data-map="sact-n">N</button>
-                        <button class="sact-button" data-map="sact-ms">MS</button>
-                        <button class="sact-button" data-map="sact-sc">SC</button>
-                        <button class="sact-button" data-map="sact-rg">RG</button>
+                    <!-- Strategic Filter Options (initially hidden) -->
+                    <div class="strategic-filters" id="strategicFilters" style="display: none;">
+                        <div class="filter-title">SELECT TARGET TYPES:</div>
+                        <div class="filter-grid">
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="SAD">
+                                <span>SAD</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="C" checked>
+                                <span>C</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="L" checked>
+                                <span>L</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="CCC" checked>
+                                <span>CCC</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="E" checked>
+                                <span>E</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="O" checked>
+                                <span>O</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="RR" checked>
+                                <span>RR</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="A" checked>
+                                <span>A</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="N" checked>
+                                <span>N</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="MS" checked>
+                                <span>MS</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="SC" checked>
+                                <span>SC</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="RG" checked>
+                                <span>RG</span>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Deployment Presentation Section -->
@@ -618,69 +880,20 @@
                 unloadObserver.observe(img);
             });
 
-            // Map Button Functionality
-            const mapButtons = document.querySelectorAll('.map-button');
-            const sactButtons = document.querySelectorAll('.sact-button');
-            const mapImage = document.getElementById('mapImage');
-            const sactSubmenu = document.getElementById('sactSubmenu');
-            const sactMainButton = document.getElementById('sactMainButton');
-
-            // Map sources for different button types
-            const mapsPath = '/static/maps/interactive_map-';
-
-            // Main map buttons functionality
-            mapButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    // Remove active class from all main buttons
-                    mapButtons.forEach(btn => btn.classList.remove('active'));
-
-                    // Add active class to clicked button
-                    this.classList.add('active');
-
-                    const mapType = this.getAttribute('data-map');
-
-                    // Show/hide SACT submenu
-                    if (mapType === 'sact-all') {
-                        sactSubmenu.classList.add('show');
-                        // Set the first SACT button (ALL) as active
-                        sactButtons.forEach(btn => btn.classList.remove('active'));
-                        sactButtons[0].classList.add('active');
-                    } else {
-                        sactSubmenu.classList.remove('show');
-                    }
-
-                    // Change map image source
-                    mapImage.src = mapsPath + mapType + '.png';
-
-                    // Reset zoom when changing maps
-                    resetZoom();
-                });
-            });
-
-            // SACT sub-buttons functionality
-            sactButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    // Remove active class from all SACT buttons
-                    sactButtons.forEach(btn => btn.classList.remove('active'));
-
-                    // Add active class to clicked button
-                    this.classList.add('active');
-
-                    // Change map image source
-                    const mapType = this.getAttribute('data-map');
-                    mapImage.src = mapsPath + mapType + '.png';
-
-                    // Don't reset zoom for SACT sub-categories - keep current zoom level
-                });
-            });
-
             // Interactive Map Functionality
             const mapContainer = document.getElementById('mapContainer');
+            const mapImage = document.getElementById('mapImage');
+            const mapSymbols = document.getElementById('mapSymbols');
+            const symbolTooltip = document.getElementById('symbolTooltip');
             const zoomInBtn = document.getElementById('zoomIn');
             const zoomOutBtn = document.getElementById('zoomOut');
             const resetZoomBtn = document.getElementById('resetZoom');
             const fullscreenBtn = document.getElementById('fullscreenBtn');
             const zoomLevelDisplay = document.getElementById('zoomLevel');
+            const airDefenceBtn = document.getElementById('airDefenceBtn');
+            const superMezBtn = document.getElementById('superMezBtn');
+            const strategicBtn = document.getElementById('strategicBtn');
+            const strategicFilters = document.getElementById('strategicFilters');
 
             let currentZoom = 1;
             let isDragging = false;
@@ -689,18 +902,423 @@
             let translateX = 0;
             let translateY = 0;
             let isFullscreen = false;
+            let currentMapType = 'z1'; // Track current map
+            let currentFilter = 'SAD'; // Track current filter
+            let selectedStrategicTypes = ['C', 'L', 'CCC', 'E', 'O', 'RR', 'A', 'N', 'MS', 'SC', 'RG']; // Default: all except SAD
 
             const minZoom = 1;
             const maxZoom = 4;
             const zoomStep = 0.2;
 
+            function switchMap(mapType, filterType) {
+                const isMapChange = currentMapType !== mapType;
+
+                currentMapType = mapType;
+                currentFilter = filterType;
+
+                // ALWAYS reset zoom and pan when switching maps for clean rendering
+                currentZoom = 1;
+                translateX = 0;
+                translateY = 0;
+                updateTransform(false); // Apply reset immediately without transition
+
+                if (isMapChange) {
+                    // Hide all symbols during map change to prevent flickering
+                    const symbols = document.querySelectorAll('.map-symbol');
+                    const rings = document.querySelectorAll('.map-ring');
+                    symbols.forEach(symbol => symbol.style.display = 'none');
+                    rings.forEach(ring => ring.style.display = 'none');
+
+                    // Update map image source
+                    mapImage.src = `/static/maps/interactive_map_${mapType}.png`;
+
+                    // Handle image loading with proper sequencing
+                    const handleImageLoad = () => {
+                        // Wait for browser to complete layout after image load
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                // Now reposition symbols with clean state
+                                positionSymbols();
+
+                                // Then filter and show appropriate symbols
+                                filterAndShowSymbols();
+
+                                // Finally apply smooth transition for any remaining adjustments
+                                updateTransform(true);
+                            });
+                        });
+                    };
+
+                    if (mapImage.complete && mapImage.naturalWidth > 0) {
+                        // Image already loaded
+                        handleImageLoad();
+                    } else {
+                        // Wait for image to load
+                        mapImage.onload = handleImageLoad;
+                        mapImage.onerror = () => {
+                            console.error('Failed to load map image:', mapImage.src);
+                        };
+                    }
+                } else {
+                    // Same map, just filter - but still reset zoom for consistency
+                    filterAndShowSymbols();
+                    updateTransform(true);
+                }
+            }
+
+
+            function repositionSymbols() {
+                // Store current zoom and pan
+                const oldZoom = currentZoom;
+                const oldTranslateX = translateX;
+                const oldTranslateY = translateY;
+
+                // Temporarily reset transforms to get accurate measurements
+                currentZoom = 1;
+                translateX = 0;
+                translateY = 0;
+                updateTransform(false);
+
+                // Wait a frame for layout to settle
+                requestAnimationFrame(() => {
+                    // Reposition symbols with new container size
+                    positionSymbols();
+
+                    // Restore zoom and pan
+                    currentZoom = oldZoom;
+                    translateX = oldTranslateX;
+                    translateY = oldTranslateY;
+
+                    // Constrain to new bounds
+                    constrainTranslation();
+
+                    // Apply final transform
+                    updateTransform(false);
+                });
+            }
+
+            function filterAndShowSymbols() {
+                const symbols = document.querySelectorAll('.map-symbol');
+                const rings = document.querySelectorAll('.map-ring');
+
+                // Filter symbols
+                symbols.forEach(symbol => {
+                    const symbolMap = symbol.getAttribute('data-map');
+                    const symbolType = symbol.getAttribute('data-type');
+
+                    // Determine if this symbol should be visible
+                    const mapMatches = isMapMatch(symbolMap, currentMapType);
+                    let typeMatches = false;
+
+                    if (currentFilter === 'strategic') {
+                        // Strategic mode: show selected types
+                        typeMatches = selectedStrategicTypes.includes(symbolType);
+                    } else {
+                        // Regular mode: exact match or no filter
+                        typeMatches = currentFilter === '' || symbolType === currentFilter;
+                    }
+
+                    if (mapMatches && typeMatches) {
+                        symbol.style.display = 'block';
+                    } else {
+                        symbol.style.display = 'none';
+                    }
+                });
+
+                // Filter rings
+                rings.forEach(ring => {
+                    const ringMap = ring.getAttribute('data-map');
+                    const ringType = ring.getAttribute('data-type');
+
+                    // Determine if this ring should be visible
+                    const mapMatches = isMapMatch(ringMap, currentMapType);
+                    let typeMatches = false;
+
+                    if (currentFilter === 'strategic') {
+                        // Strategic mode: show selected types
+                        typeMatches = selectedStrategicTypes.includes(ringType);
+                    } else {
+                        // Regular mode: exact match or no filter
+                        typeMatches = currentFilter === '' || ringType === currentFilter;
+                    }
+
+                    if (mapMatches && typeMatches) {
+                        ring.style.display = 'block';
+                    } else {
+                        ring.style.display = 'none';
+                    }
+                });
+
+                // DO NOT call positionSymbols() here - symbols are already positioned correctly
+            }
+
+
+            // Function to determine if a symbol's map matches the current map type
+            function isMapMatch(symbolMap, targetMapType) {
+                if (!symbolMap) return false;
+
+                // Check for zoom1/z1 patterns
+                if (targetMapType === 'z1') {
+                    return symbolMap.includes('zoom1') || symbolMap.includes('z1');
+                }
+
+                // Check for zoom2/z2 patterns
+                if (targetMapType === 'z2') {
+                    return symbolMap.includes('zoom2') || symbolMap.includes('z2');
+                }
+
+                return false;
+            }
+
+            airDefenceBtn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.map-selector-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Add active class to clicked button
+                this.classList.add('active');
+
+                // Hide strategic filters
+                strategicFilters.style.display = 'none';
+
+                // Switch to air defence map and filter for SAD type
+                switchMap('z1', 'SAD');
+            });
+
+            superMezBtn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.map-selector-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Add active class to clicked button
+                this.classList.add('active');
+
+                // Hide strategic filters
+                strategicFilters.style.display = 'none';
+
+                // Switch to super mez map and filter for SAD type (same as Air Defence)
+                switchMap('z2', 'SAD');
+            });
+
+            strategicBtn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.map-selector-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Add active class to clicked button
+                this.classList.add('active');
+
+                // Show strategic filters
+                strategicFilters.style.display = 'block';
+
+                // Switch to strategic map with strategic filtering
+                // Add longer delay to account for filter panel animation
+                switchMap('z1', 'strategic');
+
+                // Force reposition after layout settles
+                setTimeout(() => {
+                    positionSymbols();
+                }, 150);
+            });
+
+            function setupFilterAutoApply() {
+                const checkboxes = strategicFilters.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        updateSelectedStrategicTypes();
+                        filterAndShowSymbols(); // Only filter, don't reposition
+                    });
+                });
+            }
+
+
+            // Function to update selectedStrategicTypes array
+            function updateSelectedStrategicTypes() {
+                const checkboxes = strategicFilters.querySelectorAll('input[type="checkbox"]:checked');
+                selectedStrategicTypes = Array.from(checkboxes).map(cb => cb.value);
+            }
+
+            // Initialize auto-apply functionality
+            setupFilterAutoApply();
+
+            function positionSymbols() {
+                const symbols = document.querySelectorAll('.map-symbol');
+                const rings = document.querySelectorAll('.map-ring');
+
+                // Get the natural dimensions of the image
+                const naturalWidth = mapImage.naturalWidth;
+                const naturalHeight = mapImage.naturalHeight;
+
+                if (!naturalWidth || !naturalHeight) return; // Wait for image to load
+
+                let displayWidth, displayHeight, offsetX = 0, offsetY = 0;
+
+                if (isFullscreen) {
+                    // In fullscreen mode, calculate the actual displayed size with object-fit: contain
+                    const containerRect = mapContainer.getBoundingClientRect();
+                    const containerWidth = containerRect.width;
+                    const containerHeight = containerRect.height;
+
+                    // Calculate the aspect ratios
+                    const imageAspect = naturalWidth / naturalHeight;
+                    const containerAspect = containerWidth / containerHeight;
+
+                    if (imageAspect > containerAspect) {
+                        // Image is wider - limited by container width
+                        displayWidth = containerWidth;
+                        displayHeight = containerWidth / imageAspect;
+                        offsetX = 0;
+                        offsetY = (containerHeight - displayHeight) / 2;
+                    } else {
+                        // Image is taller - limited by container height
+                        displayWidth = containerHeight * imageAspect;
+                        displayHeight = containerHeight;
+                        offsetX = (containerWidth - displayWidth) / 2;
+                        offsetY = 0;
+                    }
+                } else {
+                    // In normal mode, use the current displayed size
+                    displayWidth = mapImage.offsetWidth;
+                    displayHeight = mapImage.offsetHeight;
+
+                    // Calculate offset from container
+                    const containerRect = mapContainer.getBoundingClientRect();
+                    const imageRect = mapImage.getBoundingClientRect();
+                    offsetX = imageRect.left - containerRect.left;
+                    offsetY = imageRect.top - containerRect.top;
+                }
+
+                // Calculate scaling factors (image display size vs natural size)
+                const baseScaleX = displayWidth / naturalWidth;
+                const baseScaleY = displayHeight / naturalHeight;
+
+                // Position symbols - these positions are in the UNTRANSFORMED coordinate system
+                symbols.forEach(symbol => {
+                    const dataX = parseFloat(symbol.getAttribute('data-x'));
+                    const dataY = parseFloat(symbol.getAttribute('data-y'));
+
+                    // Convert to display coordinates at base scale (zoom 1)
+                    const displayX = dataX * baseScaleX + offsetX;
+                    const displayY = dataY * baseScaleY + offsetY;
+
+                    // Check if symbol is within image bounds (add small buffer for symbols on edges)
+                    const buffer = -10; // pixels
+                    const withinBounds = (
+                        displayX >= (offsetX - buffer) &&
+                        displayX <= (offsetX + displayWidth + buffer) &&
+                        displayY >= (offsetY - buffer) &&
+                        displayY <= (offsetY + displayHeight + buffer)
+                    );
+
+                    if (withinBounds) {
+                        // Set position - this will be transformed by the symbols container
+                        symbol.style.left = displayX + 'px';
+                        symbol.style.top = displayY + 'px';
+                        symbol.style.transform = `translate(-50%, -50%)`;
+                        // Make sure symbol is visible (in case it was hidden before)
+                        if (symbol.style.visibility === 'hidden') {
+                            symbol.style.visibility = 'visible';
+                        }
+                    } else {
+                        // Hide symbols that are outside image bounds
+                        symbol.style.visibility = 'hidden';
+                    }
+                });
+
+                // Position rings
+                rings.forEach(ring => {
+                    const dataX = parseFloat(ring.getAttribute('data-x'));
+                    const dataY = parseFloat(ring.getAttribute('data-y'));
+                    const radius = parseFloat(ring.getAttribute('data-radius'));
+
+                    // Convert to display coordinates at base scale (zoom 1)
+                    const displayX = dataX * baseScaleX + offsetX;
+                    const displayY = dataY * baseScaleY + offsetY;
+
+                    // Check if ring center is within image bounds (rings can extend outside)
+                    const withinBounds = (
+                        displayX >= offsetX &&
+                        displayX <= (offsetX + displayWidth) &&
+                        displayY >= offsetY &&
+                        displayY <= (offsetY + displayHeight)
+                    );
+
+                    if (withinBounds) {
+                        // Set position
+                        ring.style.left = displayX + 'px';
+                        ring.style.top = displayY + 'px';
+
+                        // Set ring size
+                        const scaledRadius = radius * baseScaleX;
+                        ring.style.width = (scaledRadius * 2) + 'px';
+                        ring.style.height = (scaledRadius * 2) + 'px';
+                        ring.style.transform = `translate(-50%, -50%)`;
+                        // Make sure ring is visible
+                        if (ring.style.visibility === 'hidden') {
+                            ring.style.visibility = 'visible';
+                        }
+                    } else {
+                        // Hide rings that are outside image bounds
+                        ring.style.visibility = 'hidden';
+                    }
+                });
+            }
+
+            // Initialize with air defence map
+            if (mapImage.complete) {
+                filterAndShowSymbols();
+                positionSymbols();
+            } else {
+                mapImage.addEventListener('load', function() {
+                    filterAndShowSymbols();
+                    positionSymbols();
+                });
+            }
+
+            function handleResize() {
+                repositionSymbols();
+            }
+
+            // Reposition symbols when window is resized
+            window.addEventListener('resize', handleResize);
+
             function updateTransform(useTransition = false) {
                 if (useTransition) {
                     mapImage.classList.add('smooth-transition');
+                    mapSymbols.classList.add('smooth-transition');
+                    document.querySelectorAll('.map-symbol').forEach(symbol => {
+                        symbol.classList.add('smooth-transition');
+                    });
+                    document.querySelectorAll('.map-ring').forEach(ring => {
+                        ring.classList.add('smooth-transition');
+                    });
                 } else {
                     mapImage.classList.remove('smooth-transition');
+                    mapSymbols.classList.remove('smooth-transition');
+                    document.querySelectorAll('.map-symbol').forEach(symbol => {
+                        symbol.classList.remove('smooth-transition');
+                    });
+                    document.querySelectorAll('.map-ring').forEach(ring => {
+                        ring.classList.remove('smooth-transition');
+                    });
                 }
+
+                // Apply transform to map image
                 mapImage.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+
+                // Apply the SAME transform to symbols container - this is key!
+                mapSymbols.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+
+                // Update symbol transforms to maintain constant size
+                const symbols = document.querySelectorAll('.map-symbol');
+                symbols.forEach(symbol => {
+                    symbol.style.transform = `translate(-50%, -50%) scale(${1/currentZoom})`;
+                });
+
+                // Update zoom level display
                 zoomLevelDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
             }
 
@@ -726,7 +1344,7 @@
                 if (currentZoom < maxZoom) {
                     currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
                     constrainTranslation();
-                    updateTransform(true);
+                    // Don't call updateTransform here, let the caller handle it
                 }
             }
 
@@ -734,7 +1352,7 @@
                 if (currentZoom > minZoom) {
                     currentZoom = Math.max(minZoom, currentZoom - zoomStep);
                     constrainTranslation();
-                    updateTransform(true);
+                    // Don't call updateTransform here, let the caller handle it
                 }
             }
 
@@ -758,16 +1376,106 @@
                     fullscreenBtn.title = 'Toggle Fullscreen';
                 }
 
-                // Recalculate constraints after fullscreen toggle
+                // Use repositionSymbols for fullscreen transitions to handle coordinate system changes
                 setTimeout(() => {
-                    constrainTranslation();
-                    updateTransform(true);
+                    repositionSymbols();
                 }, 100);
             }
 
+            // Symbol tooltip functionality
+            function showTooltip(symbol, e) {
+                const id = symbol.getAttribute('data-id');
+                const comment = symbol.getAttribute('data-comment');
+                const lat = symbol.getAttribute('data-lat');
+                const lon = symbol.getAttribute('data-lon');
+                const bda = symbol.getAttribute('data-bda');
+                const debriefId = symbol.getAttribute('data-debrief-id');
+
+                // Build tooltip content
+                let tooltipContent = '';
+
+                // Add comment/ID
+                const displayText = comment || id;
+                tooltipContent += `<div class="tooltip-comment">${displayText}</div>`;
+                if (displayText === comment) {
+                    tooltipContent += `<div class="tooltip-comment">${id}-01</div>`;
+                }
+
+                // Add BDA if available and not "None"
+                if (bda && bda !== 'None' && bda !== '') {
+                    tooltipContent += `<div style="color: #90cdf4; font-weight: bold; margin-bottom: 4px;">BDA: ${bda}</div>`;
+                }
+
+                // Add clickable indicator if debrief available
+                if (debriefId && debriefId !== 'None' && debriefId !== '') {
+                    tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Report</div>`;
+                }
+
+                // Add coordinates if available
+                if (lat && lon) {
+                    tooltipContent += `<div class="tooltip-coords">LAT: ${lat}<br>LON: ${lon}</div>`;
+                }
+
+                symbolTooltip.innerHTML = tooltipContent;
+                symbolTooltip.classList.add('show');
+
+                // Position tooltip near the cursor
+                const rect = mapContainer.getBoundingClientRect();
+                const x = e.clientX - rect.left + 15;
+                const y = e.clientY - rect.top - 10;
+
+                symbolTooltip.style.left = x + 'px';
+                symbolTooltip.style.top = y + 'px';
+            }
+
+            function hideTooltip() {
+                symbolTooltip.classList.remove('show');
+            }
+
+            // Add event listeners to symbols
+            document.querySelectorAll('.map-symbol').forEach(symbol => {
+                symbol.addEventListener('mouseenter', function(e) {
+                    showTooltip(this, e);
+                });
+
+                symbol.addEventListener('mouseleave', hideTooltip);
+
+                symbol.addEventListener('mousemove', function(e) {
+                    const rect = mapContainer.getBoundingClientRect();
+                    const x = e.clientX - rect.left + 15;
+                    const y = e.clientY - rect.top - 10;
+
+                    symbolTooltip.style.left = x + 'px';
+                    symbolTooltip.style.top = y + 'px';
+                });
+
+                symbol.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const debriefId = this.getAttribute('data-debrief-id');
+
+                    // Only navigate if there's a valid debrief ID
+                    if (debriefId && debriefId !== 'None' && debriefId !== '') {
+                        window.location.href = `/debrief/${debriefId}`;
+                    } else {
+                        // Optional: could show a message or do nothing for non-clickable symbols
+                        const id = this.getAttribute('data-id');
+                        const comment = this.getAttribute('data-comment');
+                        console.log('Symbol clicked:', comment || id, '(no debrief available)');
+                    }
+                });
+            });
+
             // Button event listeners
-            zoomInBtn.addEventListener('click', zoomIn);
-            zoomOutBtn.addEventListener('click', zoomOut);
+            zoomInBtn.addEventListener('click', function() {
+                zoomIn();
+                updateTransform(true);
+            });
+
+            zoomOutBtn.addEventListener('click', function() {
+                zoomOut();
+                updateTransform(true);
+            });
+
             resetZoomBtn.addEventListener('click', resetZoom);
             fullscreenBtn.addEventListener('click', toggleFullscreen);
 
@@ -794,20 +1502,22 @@
                     zoomOut();
                 }
 
-                // Adjust translation to zoom towards mouse position
-                if (currentZoom !== oldZoom && currentZoom > 1) {
-                    const zoomRatio = currentZoom / oldZoom;
-                    const containerCenterX = rect.width / 2;
-                    const containerCenterY = rect.height / 2;
+                // Adjust translation to zoom towards mouse position and update with transition
+                if (currentZoom !== oldZoom) {
+                    if (currentZoom > 1) {
+                        const zoomRatio = currentZoom / oldZoom;
+                        const containerCenterX = rect.width / 2;
+                        const containerCenterY = rect.height / 2;
 
-                    const offsetX = mouseX - containerCenterX;
-                    const offsetY = mouseY - containerCenterY;
+                        const offsetX = mouseX - containerCenterX;
+                        const offsetY = mouseY - containerCenterY;
 
-                    translateX = translateX * zoomRatio - offsetX * (zoomRatio - 1) * 0.1;
-                    translateY = translateY * zoomRatio - offsetY * (zoomRatio - 1) * 0.1;
+                        translateX = translateX * zoomRatio - offsetX * (zoomRatio - 1) * 0.1;
+                        translateY = translateY * zoomRatio - offsetY * (zoomRatio - 1) * 0.1;
 
-                    constrainTranslation();
-                    updateTransform(true);
+                        constrainTranslation();
+                    }
+                    updateTransform(true); // Always use smooth transition for wheel zoom
                     updateCursor();
                 }
             });

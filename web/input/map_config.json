@@ -1,0 +1,121 @@
+{
+    "maps": ["sinai-zoom1.png", "sinai-zoom2.png"],
+    "current_map": "sinai",
+    "map_origin_x": [715, 537],
+    "map_origin_y": [575, 726],
+    "map_scale_mpp": [306.116, 176.381],
+    "map_reference": ["N 30°02'49\" E 31°14'41\"",
+        "N 30°02'49\" E 31°14'41\""],
+    "comments": {
+        "SA-6": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 35560,
+            "symbol": "/static/img/nato-sam.png"
+        },
+        "SA-3": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 25000,
+            "symbol": "/static/img/nato-sam.png"
+        },
+        "SA-2": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 51860,
+            "symbol": "/static/img/nato-sam.png"
+        },
+        "SA-9": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 4640,
+            "symbol": "/static/img/nato-sam.png"
+        },
+        "HAAA": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 3000,
+            "symbol": "/static/img/nato-haaa.png"
+        },
+        "EWR": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 463000,
+            "symbol": "/static/img/nato-ewr.png"
+        },
+        "HAWK": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 47410,
+            "symbol": "/static/img/nato-sam.png"
+        }
+    },
+    "names": {
+        "-A-": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-airfield.png"
+        },
+        "-RG-": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-rg.png"
+        },
+        "-SC-": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-sc.png"
+        },
+        "-MS-": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-ms.png"
+        },
+        "-N-": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-n.png"
+        },
+        "-RR-": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-rr.png"
+        },
+        "-O-": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-o.png"
+        },
+        "-E-": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-e.png"
+        },
+        "-CCC-": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-ccc.png"
+        },
+        "-L-": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-l.png"
+        },
+        "-C-": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-c.png"
+        }
+    }
+}

@@ -8,11 +8,5 @@
   "tracks_dir": "C:\\Users\\rocks\\Desktop\\tacview",
   "admin_uids": ["222470066854297600", "364838090855940096"],
   "missions_path": "D:\\projects\\DCS\\Missions",
-  "deployment_msn_prefix": "CVW-17_2025_Deployment",
-  "maps": ["sinai-zoom1.png", "sinai-zoom2.png"],
-  "current_map": "sinai",
-  "map_origin_x": [715, 537],
-  "map_origin_y": [575, 726],
-  "map_scale_mpp": [306.116, 176.381],
-  "map_reference": ["N 30°02'49\" E 31°14'41\"", "N 30°02'49\" E 31°14'41\""]
+  "deployment_msn_prefix": "CVW-17_2025_Deployment"
 }

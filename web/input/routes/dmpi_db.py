@@ -3,6 +3,7 @@ import os
 import re
 import threading
 import zipfile
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
@@ -16,17 +17,20 @@ from pyproj import Transformer
 from core.constants import BASE_DIR
 from services.file_handler import FileHandler
 from web.input._constants import DEBRIEFS_PATH
-from web.input.config.config import WebConfigSingleton
+from web.input.config.config import WebConfigSingleton, InteractiveMapConfigSingleton
 
 from slpp import slpp as lua
 
 dmpi_db_blueprint = Blueprint('dmpi_db_blueprint', __name__)
 config = WebConfigSingleton.get_instance()
+map_config = InteractiveMapConfigSingleton.get_instance()
+
 app = dmpi_db_blueprint
 
 # Define the overrides file path
 _OVERRIDES_FILE = Path('overrides.txt')
 _dmpi_cache = {}
+_draw_dmpi_cache = {}
 
 def get_deployment_msn_path() -> Path | None:
     deployment_miz_path = None
@@ -72,7 +76,75 @@ def _get_miz_nav_points(path: Path) -> list[dict]:
 
 def _reset_dmpi_cache():
     global _dmpi_cache
+    global _draw_dmpi_cache
     _dmpi_cache = {}
+    _draw_dmpi_cache = {}
+
+def get_draw_dmpis():
+    global _draw_dmpi_cache
+    if _draw_dmpi_cache != {}:
+        return _draw_dmpi_cache
+
+    draw_dmpis = deepcopy(_get_dmpis())
+
+    for dmpi_name in draw_dmpis:
+        dmpi = draw_dmpis[dmpi_name]
+
+        if not dmpi['in_msn']:
+            continue
+        if not dmpi['coords']['x'] or not dmpi['coords']['y']:
+            continue
+
+        dmpi['draw'] = {}
+        for i, map in enumerate(map_config.maps):
+            mpp = map_config.map_scale_mpp[i]
+            x = map_config.map_origin_x[i] + (dmpi['coords']['y'] / mpp)
+            y = map_config.map_origin_y[i] - (dmpi['coords']['x'] / mpp)
+
+            render_icon = False
+            render_ring = False
+            radius_meters = 0
+            type_ = ''
+            symbol = ''
+
+            for comment in map_config.comments:
+                if comment not in dmpi['comment']:
+                    continue
+
+                comment_info = map_config.comments[comment]
+
+                render_icon = comment_info.get('render_icon', False)
+                render_ring = comment_info.get('render_ring', False)
+                radius_meters = comment_info.get('radius_meters', 0)
+                symbol = comment_info.get('symbol', '')
+                type_ = 'SAD'
+                break
+
+            if radius_meters == 0 and symbol == '':
+                for name in map_config.names:
+                    if not name in dmpi_name:
+                        continue
+
+                    name_info = map_config.names[name]
+                    render_icon = name_info.get('render_icon', False)
+                    render_ring = name_info.get('render_ring', False)
+                    radius_meters = name_info.get('radius_meters', 0)
+                    symbol = name_info.get('symbol', '')
+                    type_ = name.replace('-','').strip()
+
+            dmpi['draw'][map] = {
+                "x": x,
+                "y": y,
+                "symbol": symbol,
+                "render_icon": render_icon,
+                "render_ring": render_ring,
+                "radius_meters": radius_meters,
+                "radius_px": radius_meters / mpp,
+                "type": type_
+            }
+
+    _draw_dmpi_cache = draw_dmpis
+    return draw_dmpis
 
 def _get_dmpis():
     dmpis = {}
@@ -139,9 +211,9 @@ def _draw_sam_symbol_from_file(draw, x, y, scale_factor, image_path, symbol_size
         print(f"Could not load symbol from {image_path}: {e}")
 
 def _get_map_id():
-    current_map = config.current_map
+    current_map = map_config.current_map
     id_ = 0
-    for i, map in enumerate(config.maps):
+    for i, map in enumerate(map_config.maps):
         if current_map in map:
             id_ = i
             break
@@ -152,22 +224,8 @@ def draw_dynamic_map():
     dmpis = _get_dmpis()
     map_id = _get_map_id()
     print('drawing map')
-    #threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, 0, 'SAD', 'interactive_map.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SAD', 'interactive_map-air-defence.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id+1, 'SAD', 'interactive_map-super-mez.png'), daemon=True).start()
-
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SST', 'interactive_map-sact-all.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-C', 'interactive_map-sact-C.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-L', 'interactive_map-sact-L.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-CCC', 'interactive_map-sact-CCC.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-E', 'interactive_map-sact-E.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-O', 'interactive_map-sact-O.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-RR', 'interactive_map-sact-RR.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-A', 'interactive_map-sact-A.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-N', 'interactive_map-sact-N.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-MS', 'interactive_map-sact-MS.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-SC', 'interactive_map-sact-SC.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'SACT-RG', 'interactive_map-sact-RG.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'EMPTY', 'interactive_map_z1.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id+1, 'EMPTY', 'interactive_map_z2.png'), daemon=True).start()
 
 def _draw_dynamic_map_from_dmpis(dmpis, map_id, display_type,  output_name, bw_intensity=0.9, contrast=1.1, darken_shadows=1.5, symbol_size=12):
     try:
@@ -180,7 +238,7 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, display_type,  output_name, bw_i
             ref_dir = BASE_DIR / 'web' / 'input' / 'static'
 
         os.makedirs(ref_dir / 'maps', exist_ok=True)
-        img = Image.open(ref_dir / 'maps' / config.maps[map_id])
+        img = Image.open(ref_dir / 'maps' / map_config.maps[map_id])
 
         if bw_intensity > 0:
             img_gray = img.convert('L').convert('RGB')
@@ -221,6 +279,9 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, display_type,  output_name, bw_i
     draw = ImageDraw.Draw(img_hires)
 
     for dmpi_name in dmpis:
+        if display_type == "EMPTY":
+            break
+
         if display_type == "SAD":
             if not("SAD" in dmpi_name or ("CCC" in dmpi_name and "EWR" in dmpis[dmpi_name]['comment'])):
                 continue
@@ -242,10 +303,10 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, display_type,  output_name, bw_i
         if x == 0 or y == 0:
             continue
 
-        mpp = config.map_scale_mpp[map_id]
+        mpp = map_config.map_scale_mpp[map_id]
 
-        pixel_x = (config.map_origin_x[map_id] + x / mpp) * scale_factor
-        pixel_y = (config.map_origin_y[map_id] + y / mpp) * scale_factor
+        pixel_x = (map_config.map_origin_x[map_id] + x / mpp) * scale_factor
+        pixel_y = (map_config.map_origin_y[map_id] + y / mpp) * scale_factor
 
         # Add some margin for the symbol size
         symbol_margin = symbol_size * scale_factor * 2  # 2x symbol size as margin
@@ -489,7 +550,6 @@ def save_overrides(overrides_text):
         print(f"Error saving overrides file: {e}")
         return False
 
-
 def _parse_dms(dms_string):
     """Parse DMS string to decimal degrees"""
     dms = dms_string.strip().upper()
@@ -624,7 +684,7 @@ def _load_dmpis_from_mission(dmpis):
             dmpis[dmpi_name]['comment'] = nav_point['comment']
 
         # Calculate lat/lon for this specific aim point
-        lat, lon = _convert_xy_to_ddm(nav_point['y'], nav_point['x'], config.map_reference[_get_map_id()])
+        lat, lon = _convert_xy_to_ddm(nav_point['y'], nav_point['x'], map_config.map_reference[_get_map_id()])
 
         dmpis[dmpi_name]["aim_points"][aim_point] = {
             "bda": None,
@@ -632,7 +692,6 @@ def _load_dmpis_from_mission(dmpis):
             "lat": lat,
             "lon": lon
         }
-
 
 def _load_dmpis_from_debriefs(dmpis):
     """Load DMPIs from debrief files."""
@@ -770,7 +829,6 @@ def _apply_overrides(dmpis):
 
     except Exception as e:
         print(f"Error applying overrides: {e}")
-
 
 @app.route('/dmpi_override', methods=['POST'])
 def dmpi_override():

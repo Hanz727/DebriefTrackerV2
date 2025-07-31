@@ -14,9 +14,14 @@ class WebConfig:
     admin_uids: list[str]
     missions_path: Path
     deployment_msn_prefix: str
+
+@dataclass
+class InteractiveMapConfig:
     maps: list[Path]
     current_map: Path
     map_origin_x: list[int]
     map_origin_y: list[int]
     map_scale_mpp: list[float]
     map_reference: list[str]
+    comments: dict
+    names: dict
