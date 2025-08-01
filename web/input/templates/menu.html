@@ -213,6 +213,7 @@
         }
 
         .map-ring {
+            aspect-ratio: 1;
             position: absolute;
             border: 2px solid #ff0000;
             border-radius: 50%;
@@ -1129,11 +1130,15 @@
                         const scaledRadius = radius * baseScaleX;
                         ring.style.width = (scaledRadius * 2) + 'px';
                         ring.style.height = (scaledRadius * 2) + 'px';
-                        ring.style.transform = `translate(-50%, -50%)`;
+
+                        // ADD THIS CODE HERE - Counter the distortion
+                        const scaleRatio = baseScaleX / baseScaleY;
+                        ring.style.transform = `translate(-50%, -50%) scaleY(${1/scaleRatio})`;
 
                         if (ring.style.visibility === 'hidden') {
                             ring.style.visibility = 'visible';
                         }
+
                     } else {
                         ring.style.visibility = 'hidden';
                     }
@@ -1174,10 +1179,17 @@
                 symbols.forEach(symbol => {
                     symbol.style.transform = `translate(-50%, -50%) scale(${1/currentZoom})`;
                 });
+
                 const rings = document.querySelectorAll('.map-ring');
-                rings.forEach(ring=> {
+                rings.forEach(ring => {
+                    const currentTransform = ring.style.transform;
+                    const scaleYMatch = currentTransform.match(/scaleY\(([^)]+)\)/);
+                    const scaleYValue = scaleYMatch ? scaleYMatch[1] : '1';
+
                     ring.style.borderWidth = `${2/currentZoom}px`;
+                    ring.style.transform = `translate(-50%, -50%) scaleY(${scaleYValue})`;
                 });
+
                 zoomLevelDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
             }
 
