@@ -4,6 +4,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from htmlmin import minify
 
 from flask import abort, session, redirect, request, render_template, Blueprint, jsonify, send_from_directory, flash
 from werkzeug.utils import secure_filename
@@ -540,6 +541,7 @@ def file_report():
 @app.route('/')
 def home():
     if session.get('authed', False) or config.bypass_auth_debug:
-        return render_template('menu.html', bdas=get_bda_list(), drawables=get_draw_dmpis())
+        html = render_template('menu.html', bdas=get_bda_list(), drawables=get_draw_dmpis())
+        return minify(html, remove_comments=True, remove_empty_space=True)
 
     return redirect('/login')

@@ -10,19 +10,19 @@
         "SA-6": {
             "render_icon": true,
             "render_ring": true,
-            "radius_meters": 35560,
+            "radius_meters": 25000,
             "symbol": "/static/img/nato-sam.png"
         },
         "SA-3": {
             "render_icon": true,
             "render_ring": true,
-            "radius_meters": 25000,
+            "radius_meters": 17000,
             "symbol": "/static/img/nato-sam.png"
         },
         "SA-2": {
             "render_icon": true,
             "render_ring": true,
-            "radius_meters": 51860,
+            "radius_meters": 44000,
             "symbol": "/static/img/nato-sam.png"
         },
         "SA-9": {
@@ -45,11 +45,12 @@
         },
         "HAWK": {
             "render_icon": true,
-            "render_ring": false,
-            "radius_meters": 47410,
+            "render_ring": true,
+            "radius_meters": 45000,
             "symbol": "/static/img/nato-sam.png"
         }
     },
+
     "names": {
         "-A-": {
             "render_icon": true,

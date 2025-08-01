@@ -6,6 +6,8 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo2.png') }}">
     <title>CVIC MENU</title>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
         @import url('static/css/color-palette.css');
         @import url('static/css/cvic.css');
@@ -159,6 +161,7 @@
             filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
             pointer-events: auto;
             cursor: pointer;
+            z-index: 6;
         }
 
         .map-symbol.smooth-transition {
@@ -176,6 +179,12 @@
             opacity: 1;
         }
 
+        .map-symbol.hidden {
+            display: None !important;
+        }
+        .map-ring.hidden {
+            display: None !important;
+        }
         .map-symbol.collision:hover {
             filter: grayscale(100%) brightness(1.2) drop-shadow(0 0 4px rgba(180, 180, 180, 0.8));
             transform: translate(-50%, -50%) scale(1.2);
@@ -220,18 +229,12 @@
 
         .map-ring.collision {
             border-color: #ff6b6b;
-            animation: collision-pulse 2s infinite;
-        }
-
-        @keyframes collision-pulse {
-            0%, 50%, 100% { opacity: 0.7; }
-            25%, 75% { opacity: 1; }
         }
 
         /* Map Range Rings */
         .map-ring {
             position: absolute;
-            border: 1px solid #ff0000;
+            border: 2px solid #ff0000;
             border-radius: 50%;
             transform: translate(-50%, -50%);
             transition: none;
@@ -368,11 +371,13 @@
         .map-selector {
             display: flex;
             gap: 10px;
+            width: 100%;
             margin-top: 15px;
             justify-content: center;
         }
 
         .map-selector-btn {
+            width: 100%;
             background: #1f1f1f;
             border: 1px solid #4f545c;
             color: white;
@@ -568,11 +573,11 @@
             <!-- Content Area -->
             <div class="main-content">
                 <div class="content">
-                    <div class="content-title">INTERACTIVE MAP</div>
+                    <div class="content-title">STRATEGIC AIR CAMPAIGN TARGETS</div>
                     <div class="divider"></div>
 
                     <div class="map-container" id="mapContainer">
-                        <img class="map-img" id="mapImage" src="/static/maps/interactive_map_z1.png" alt="Interactive Map">
+                        <img class="map-img" id="mapImage" src="/static/maps/interactive_map_z1.jpg" alt="Interactive Map">
 
                         <!-- Map Symbols Overlay -->
                         <div class="map-symbols" id="mapSymbols">
@@ -583,7 +588,7 @@
                                             {% if map_data and map_data.render_icon %}
                                                 <!-- RING -->
                                                 {% if map_data.render_ring and map_data.radius_px and map_data.radius_px > 0 and not drawable_data.collision %}
-                                                    <div class="map-ring"
+                                                    <div class="map-ring hidden"
                                                          id="ring-{{ drawable_id }}-{{ loop.index0 }}"
                                                          data-x="{{ map_data.x }}"
                                                          data-y="{{ map_data.y }}"
@@ -595,7 +600,7 @@
                                                 {% endif %}
 
                                                 <!-- SYMBOL -->
-                                                <img class="map-symbol {% if drawable_data.collision %}collision{% endif %} {% if drawable_data.aim_points and drawable_data.aim_points["01"].debrief_id %}clickable{% endif %} {% if drawable_data.collision and drawable_data.aim_points and not drawable_data.aim_points["01"].debrief_id %}collision-no-report{% endif %}"
+                                                <img class="map-symbol hidden {% if drawable_data.collision %}collision{% endif %} {% if drawable_data.aim_points and drawable_data.aim_points["01"].debrief_id %}clickable{% endif %} {% if drawable_data.collision and drawable_data.aim_points and not drawable_data.aim_points["01"].debrief_id %}collision-no-report{% endif %}"
                                                      id="symbol-{{ drawable_id }}-{{ loop.index0 }}"
                                                      src="{{ map_data.symbol }}"
                                                      alt="{{ drawable_data.comment or drawable_id }}"
@@ -618,6 +623,7 @@
                         </div>
 
                         <div class="map-controls">
+                            <button class="fullscreen-btn" id="downloadBtn" title="Download Image">⬇</button>
                             <button class="fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>
                             <button class="zoom-btn" id="zoomIn" title="Zoom In">+</button>
                             <button class="zoom-btn" id="zoomOut" title="Zoom Out">−</button>
@@ -633,7 +639,7 @@
                     <div class="map-selector">
                         <button class="map-selector-btn active" id="airDefenceBtn" data-map="z1" data-filter="SAD">AIR DEFENCES</button>
                         <button class="map-selector-btn" id="superMezBtn" data-map="z2" data-filter="SAD">SUPER MEZ</button>
-                        <button class="map-selector-btn" id="strategicBtn" data-map="z1" data-filter="strategic">STRATEGIC AIR CAMPAIGN TARGETS</button>
+                        <button class="map-selector-btn" id="strategicBtn" data-map="z1" data-filter="strategic">DMPIS</button>
                     </div>
 
                     <!-- Strategic Filter Options (initially hidden) -->
@@ -750,6 +756,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+
             // BDA Images lazy loading (existing functionality)
             const bdaImages = document.querySelectorAll('.bda-img[data-src]');
 
@@ -840,7 +847,7 @@
             let selectedStrategicTypes = ['C', 'L', 'CCC', 'E', 'O', 'RR', 'A', 'N', 'MS', 'SC', 'RG']; // Default: all except SAD
 
             const minZoom = 1;
-            const maxZoom = 4;
+            const maxZoom = 8;
             const zoomStep = 0.2;
 
             function switchMap(mapType, filterType) {
@@ -849,11 +856,9 @@
                 currentMapType = mapType;
                 currentFilter = filterType;
 
-                // ALWAYS reset zoom and pan when switching maps for clean rendering
                 currentZoom = 1;
                 translateX = 0;
                 translateY = 0;
-                updateTransform(false); // Apply reset immediately without transition
 
                 if (isMapChange) {
                     // Hide all symbols during map change to prevent flickering
@@ -863,43 +868,13 @@
                     rings.forEach(ring => ring.style.display = 'none');
 
                     // Update map image source
-                    mapImage.src = `/static/maps/interactive_map_${mapType}.png`;
-
-                    // Handle image loading with proper sequencing
-                    const handleImageLoad = () => {
-                        // Wait for browser to complete layout after image load
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
-                                // Now reposition symbols with clean state
-                                positionSymbols();
-
-                                // Then filter and show appropriate symbols
-                                filterAndShowSymbols();
-
-                                // Finally apply smooth transition for any remaining adjustments
-                                updateTransform(true);
-                            });
-                        });
-                    };
-
-                    if (mapImage.complete && mapImage.naturalWidth > 0) {
-                        // Image already loaded
-                        handleImageLoad();
-                    } else {
-                        // Wait for image to load
-                        mapImage.onload = handleImageLoad;
-                        mapImage.onerror = () => {
-                            console.error('Failed to load map image:', mapImage.src);
-                        };
-                    }
+                    mapImage.src = `/static/maps/interactive_map_${mapType}.jpg`;
                 } else {
                     // Same map, just filter - but still reset zoom for consistency
-                    positionSymbols()
+                    repositionSymbols()
                     filterAndShowSymbols();
-                    updateTransform(true);
                 }
             }
-
 
             function repositionSymbols() {
                 // Store current zoom and pan
@@ -912,6 +887,7 @@
                 translateX = 0;
                 translateY = 0;
                 updateTransform(false);
+                console.log("reposition")
 
                 // Wait a frame for layout to settle
                 requestAnimationFrame(() => {
@@ -985,7 +961,6 @@
 
                 // DO NOT call positionSymbols() here - symbols are already positioned correctly
             }
-
 
             // Function to determine if a symbol's map matches the current map type
             function isMapMatch(symbolMap, targetMapType) {
@@ -1067,7 +1042,6 @@
                     });
                 });
             }
-
 
             // Function to update selectedStrategicTypes array
             function updateSelectedStrategicTypes() {
@@ -1201,16 +1175,26 @@
                 });
             }
 
-            // Initialize with air defence map
-            if (mapImage.complete) {
-                filterAndShowSymbols();
-                positionSymbols();
-            } else {
-                mapImage.addEventListener('load', function() {
-                    filterAndShowSymbols();
-                    positionSymbols();
+            function removeHidden() {
+                document.querySelectorAll('.map-symbol').forEach(sym => {
+                    sym.classList.remove('hidden');
+                });
+                document.querySelectorAll('.map-ring').forEach(ring => {
+                    ring.classList.remove('hidden');
                 });
             }
+
+            // first load
+            if (mapImage.complete) {
+                filterAndShowSymbols();
+                repositionSymbols();
+                removeHidden()
+            }
+            mapImage.addEventListener('load', function() {
+                filterAndShowSymbols();
+                repositionSymbols();
+                removeHidden()
+            });
 
             function handleResize() {
                 repositionSymbols();
@@ -1251,7 +1235,10 @@
                 symbols.forEach(symbol => {
                     symbol.style.transform = `translate(-50%, -50%) scale(${1/currentZoom})`;
                 });
-
+                const rings = document.querySelectorAll('.map-ring');
+                rings.forEach(ring=> {
+                    ring.style.borderWidth = `${2/currentZoom}px`;
+                });
                 // Update zoom level display
                 zoomLevelDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
             }
@@ -1294,7 +1281,7 @@
                 currentZoom = 1;
                 translateX = 0;
                 translateY = 0;
-                updateTransform(true);
+                updateTransform(false);
             }
 
             function toggleFullscreen() {
@@ -1402,12 +1389,12 @@
             // Button event listeners
             zoomInBtn.addEventListener('click', function() {
                 zoomIn();
-                updateTransform(true);
+                updateTransform(false);
             });
 
             zoomOutBtn.addEventListener('click', function() {
                 zoomOut();
-                updateTransform(true);
+                updateTransform(false);
             });
 
             resetZoomBtn.addEventListener('click', resetZoom);
@@ -1451,7 +1438,7 @@
 
                         constrainTranslation();
                     }
-                    updateTransform(true); // Always use smooth transition for wheel zoom
+                    updateTransform(false); // Always use smooth transition for wheel zoom
                     updateCursor();
                 }
             });
@@ -1553,6 +1540,188 @@
                 isDragging = false;
                 lastTouchDistance = 0;
             });
+
+            async function captureMapWithCanvas(symbolSizeMultiplier = 1.0) {
+                const mapContainer = document.getElementById('mapContainer');
+                const mapImage = document.getElementById('mapImage');
+                const symbols = document.querySelectorAll('.map-symbol:not([style*="display: none"])');
+                const rings = document.querySelectorAll('.map-ring:not([style*="display: none"])');
+
+                // Create canvas with proper dimensions
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Get actual container dimensions
+                const containerRect = mapContainer.getBoundingClientRect();
+                const scale = 2; // High DPI scaling
+
+                // Set canvas size to match visible container
+                canvas.width = containerRect.width * scale;
+                canvas.height = containerRect.height * scale;
+
+                // Scale context for high DPI
+                ctx.scale(scale, scale);
+
+                // Enable high-quality rendering
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+
+                // Fill background
+                ctx.fillStyle = '#121212';
+                ctx.fillRect(0, 0, containerRect.width, containerRect.height);
+
+                try {
+                    // Load map image
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = reject;
+                        img.src = mapImage.src;
+                    });
+
+                    // Extract transform values from the map image
+                    const transform = getComputedStyle(mapImage).transform;
+                    let scaleX = 1, scaleY = 1, translateX = 0, translateY = 0;
+
+                    if (transform && transform !== 'none') {
+                        const matrix = new DOMMatrix(transform);
+                        scaleX = matrix.a;
+                        scaleY = matrix.d;
+                        translateX = matrix.e;
+                        translateY = matrix.f;
+                    }
+
+                    // Save context state
+                    ctx.save();
+
+                    // Apply the same transform that's applied to the map
+                    ctx.translate(translateX, translateY);
+                    ctx.scale(scaleX, scaleY);
+
+                    // Draw the map image at its natural position (0,0 after transform)
+                    const naturalWidth = mapImage.offsetWidth / scaleX;
+                    const naturalHeight = mapImage.offsetHeight / scaleY;
+                    ctx.drawImage(img, 0, 0, naturalWidth, naturalHeight);
+
+                    // Restore context to draw overlays in container coordinates
+                    ctx.restore();
+
+                    // Draw rings with size multiplier
+                    for (const ring of rings) {
+                        const ringRect = ring.getBoundingClientRect();
+                        const centerX = ringRect.left - containerRect.left + ringRect.width / 2;
+                        const centerY = ringRect.top - containerRect.top + ringRect.height / 2;
+                        const radius = (ringRect.width / 2) * symbolSizeMultiplier;
+
+                        ctx.strokeStyle = window.getComputedStyle(ring).borderColor || '#ff0000';
+                        ctx.lineWidth = Math.max(1, 2 * symbolSizeMultiplier); // Minimum line width of 1
+                        ctx.globalAlpha = 0.7;
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                        ctx.stroke();
+                        ctx.globalAlpha = 1;
+                    }
+
+                    // Batch load symbol images with higher resolution handling
+                    const symbolImages = new Map();
+                    const uniqueSrcs = [...new Set(Array.from(symbols).map(s => s.src))];
+
+                    await Promise.all(uniqueSrcs.map(src => {
+                        return new Promise((resolve) => {
+                            if (symbolImages.has(src)) {
+                                resolve();
+                                return;
+                            }
+                            const img = new Image();
+                            img.crossOrigin = 'anonymous';
+                            img.onload = () => {
+                                symbolImages.set(src, img);
+                                resolve();
+                            };
+                            img.onerror = () => {
+                                console.warn('Failed to load symbol:', src);
+                                resolve();
+                            };
+                            img.src = src;
+                        });
+                    }));
+
+                    // Draw symbols with improved scaling
+                    for (const symbol of symbols) {
+                        const img = symbolImages.get(symbol.src);
+                        if (!img) continue;
+
+                        const symbolRect = symbol.getBoundingClientRect();
+                        const baseCenterX = symbolRect.left - containerRect.left + symbolRect.width / 2;
+                        const baseCenterY = symbolRect.top - containerRect.top + symbolRect.height / 2;
+
+                        // Calculate scaled dimensions - use higher base resolution for small scales
+                        let scaledWidth = symbolRect.width * symbolSizeMultiplier;
+                        let scaledHeight = symbolRect.height * symbolSizeMultiplier;
+
+                        // For very small scales, maintain minimum quality
+                        const minRenderSize = 12; // Minimum pixels to render at
+                        if (scaledWidth < minRenderSize || scaledHeight < minRenderSize) {
+                            const ratio = Math.max(minRenderSize / scaledWidth, minRenderSize / scaledHeight);
+                            scaledWidth *= ratio;
+                            scaledHeight *= ratio;
+                        }
+
+                        // Center the scaled symbol
+                        const x = baseCenterX - scaledWidth / 2;
+                        const y = baseCenterY - scaledHeight / 2;
+
+                        // Apply filters and enhanced rendering
+                        ctx.save();
+
+                        // Enable best quality scaling for this symbol
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+
+                        if (symbol.classList.contains('collision-no-report')) {
+                            ctx.filter = 'grayscale(100%) brightness(0.3)';
+                        } else if (symbol.classList.contains('collision')) {
+                            ctx.filter = 'grayscale(100%) brightness(1.0)';
+                        } else if (symbol.classList.contains('destroyed-no-report')) {
+                            ctx.filter = 'brightness(0.4) saturate(0.6)';
+                        }
+
+                        // Use drawImage with high-quality scaling
+                        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+                        ctx.restore();
+                    }
+
+                    // Create download
+                    const link = document.createElement('a');
+                    link.download = `interactive-map-${Date.now()}.jpg`;
+                    link.href = canvas.toDataURL('image/jpeg', 0.9); // Higher quality for better symbol rendering
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                } catch (error) {
+                    console.error('Canvas capture failed:', error);
+                    throw error;
+                }
+            }
+
+
+            const downloadBtn = document.getElementById('downloadBtn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', async function() {
+                    try {
+                        // Method 1 is usually fastest for many elements
+                        if (!isFullscreen)
+                            await captureMapWithCanvas(0.6);
+                        else
+                            await captureMapWithCanvas(1.2);
+                    } catch (error) {
+                        console.error('Canvas capture failed, falling back to simplified method:', error);
+                        alert('Failed to capture image. Please try again.');
+                    }
+                });
+            }
 
             // Initialize
             updateTransform(false);

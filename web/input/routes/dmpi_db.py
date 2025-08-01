@@ -253,8 +253,8 @@ def draw_dynamic_map():
     map_id = _get_map_id()
 
     print('drawing map')
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'EMPTY', 'interactive_map_z1.png'), daemon=True).start()
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id+1, 'EMPTY', 'interactive_map_z2.png'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'EMPTY', 'interactive_map_z1.jpg'), daemon=True).start()
+    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id+1, 'EMPTY', 'interactive_map_z2.jpg'), daemon=True).start()
 
 def _draw_dynamic_map_from_dmpis(dmpis, map_id, display_type,  output_name, bw_intensity=0.9, contrast=1.1, darken_shadows=1.5, symbol_size=12):
     try:
@@ -300,7 +300,7 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, display_type,  output_name, bw_i
     if display_type == 'EMPTY':
         draw = ImageDraw.Draw(img)
         _draw_watermark(draw, img_width, img_height, deployment_msn_name, current_date, 1)
-        img.save(ref_dir / 'maps' / output_name)
+        img.save(ref_dir / 'maps' / output_name, format='JPEG')
         return
 
     # Create a copy for drawing at higher resolution for antialiasing
