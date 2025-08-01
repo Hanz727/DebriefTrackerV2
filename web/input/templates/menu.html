@@ -1050,8 +1050,12 @@
 
                 let displayWidth, displayHeight, offsetX = 0, offsetY = 0;
 
+                const containerRect = mapContainer.getBoundingClientRect();
+                const imageRect = mapImage.getBoundingClientRect();
+                console.log('container: ', containerRect);
+                console.log('image: ', imageRect);
+
                 if (isFullscreen) {
-                    const containerRect = mapContainer.getBoundingClientRect();
                     const containerWidth = containerRect.width;
                     const containerHeight = containerRect.height;
 
@@ -1074,7 +1078,6 @@
                     displayHeight = mapImage.offsetHeight;
 
                     const containerRect = mapContainer.getBoundingClientRect();
-                    const imageRect = mapImage.getBoundingClientRect();
                     offsetX = imageRect.left - containerRect.left;
                     offsetY = imageRect.top - containerRect.top;
                 }
@@ -1132,7 +1135,6 @@
                         ring.style.width = (scaledRadius * 2) + 'px';
                         ring.style.height = (scaledRadius * 2) + 'px';
 
-                        // ADD THIS CODE HERE - Counter the distortion
                         const scaleRatio = baseScaleX / baseScaleY;
                         ring.style.transform = `translate(-50%, -50%) scaleY(${1/scaleRatio})`;
 
@@ -1468,30 +1470,41 @@
                 lastTouchDistance = 0;
             });
 
-            async function captureMapWithCanvas(symbolSizeMultiplier = 1.0) {
+            async function captureVisibleArea(symbolSizeMultiplier = 1.0) {
                 const mapContainer = document.getElementById('mapContainer');
-                const mapImage = document.getElementById('mapImage');
-                const symbols = document.querySelectorAll('.map-symbol:not([style*="display: none"])');
-                const rings = document.querySelectorAll('.map-ring:not([style*="display: none"])');
-
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
 
                 const containerRect = mapContainer.getBoundingClientRect();
-                const scale = 2;
+                const scale = 4; // Higher resolution
 
                 canvas.width = containerRect.width * scale;
                 canvas.height = containerRect.height * scale;
 
+                // Apply scaling but ensure we account for it in positioning
                 ctx.scale(scale, scale);
-
                 ctx.imageSmoothingEnabled = true;
                 ctx.imageSmoothingQuality = 'high';
 
+                // Fill background
                 ctx.fillStyle = '#121212';
                 ctx.fillRect(0, 0, containerRect.width, containerRect.height);
 
                 try {
+                    // Get all visible elements within the container
+                    const mapImage = document.getElementById('mapImage');
+                    const visibleSymbols = Array.from(document.querySelectorAll('.map-symbol'))
+                        .filter(symbol => {
+                            const style = window.getComputedStyle(symbol);
+                            return style.display !== 'none' && style.visibility !== 'hidden';
+                        });
+                    const visibleRings = Array.from(document.querySelectorAll('.map-ring'))
+                        .filter(ring => {
+                            const style = window.getComputedStyle(ring);
+                            return style.display !== 'none' && style.visibility !== 'hidden';
+                        });
+
+                    // Draw the map image as it appears on screen
                     const img = new Image();
                     img.crossOrigin = 'anonymous';
                     await new Promise((resolve, reject) => {
@@ -1500,45 +1513,49 @@
                         img.src = mapImage.src;
                     });
 
-                    const transform = getComputedStyle(mapImage).transform;
-                    let scaleX = 1, scaleY = 1, translateX = 0, translateY = 0;
+                    const imageRect = mapImage.getBoundingClientRect();
 
-                    if (transform && transform !== 'none') {
-                        const matrix = new DOMMatrix(transform);
-                        scaleX = matrix.a;
-                        scaleY = matrix.d;
-                        translateX = matrix.e;
-                        translateY = matrix.f;
+                    // Calculate the actual content position within the image element
+                    let contentX, contentY, contentWidth, contentHeight;
+
+                    if (isFullscreen) {
+                        // In fullscreen mode with object-fit: contain, we need to calculate where the actual image is
+                        const naturalWidth = img.naturalWidth;
+                        const naturalHeight = img.naturalHeight;
+                        const containerWidth = imageRect.width;
+                        const containerHeight = imageRect.height;
+
+                        const imageAspect = naturalWidth / naturalHeight;
+                        const containerAspect = containerWidth / containerHeight;
+
+                        if (imageAspect > containerAspect) {
+                            // Image is wider - it will be scaled to fit width with bars on top/bottom
+                            contentWidth = containerWidth;
+                            contentHeight = containerWidth / imageAspect;
+                            contentX = 0;
+                            contentY = (containerHeight - contentHeight) / 2;
+                        } else {
+                            // Image is taller - it will be scaled to fit height with bars on left/right
+                            contentWidth = containerHeight * imageAspect;
+                            contentHeight = containerHeight;
+                            contentX = (containerWidth - contentWidth) / 2;
+                            contentY = 0;
+                        }
+
+                        // Draw the image with the calculated content area
+                        const relativeX = (imageRect.left - containerRect.left) + contentX;
+                        const relativeY = (imageRect.top - containerRect.top) + contentY;
+                        ctx.drawImage(img, relativeX, relativeY, contentWidth, contentHeight);
+                    } else {
+                        // Non-fullscreen mode - image fills its container
+                        const relativeX = imageRect.left - containerRect.left;
+                        const relativeY = imageRect.top - containerRect.top;
+                        ctx.drawImage(img, relativeX, relativeY, imageRect.width, imageRect.height);
                     }
 
-                    ctx.save();
-
-                    ctx.translate(translateX, translateY);
-                    ctx.scale(scaleX, scaleY);
-
-                    const naturalWidth = mapImage.offsetWidth / scaleX;
-                    const naturalHeight = mapImage.offsetHeight / scaleY;
-                    ctx.drawImage(img, 0, 0, naturalWidth, naturalHeight);
-
-                    ctx.restore();
-
-                    for (const ring of rings) {
-                        const ringRect = ring.getBoundingClientRect();
-                        const centerX = ringRect.left - containerRect.left + ringRect.width / 2;
-                        const centerY = ringRect.top - containerRect.top + ringRect.height / 2;
-                        const radius = (ringRect.width / 2) * symbolSizeMultiplier;
-
-                        ctx.strokeStyle = window.getComputedStyle(ring).borderColor || '#ff0000';
-                        ctx.lineWidth = Math.max(1, 2 * symbolSizeMultiplier);
-                        ctx.globalAlpha = 0.7;
-                        ctx.beginPath();
-                        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-                        ctx.stroke();
-                        ctx.globalAlpha = 1;
-                    }
-
+                    // Load symbol images
                     const symbolImages = new Map();
-                    const uniqueSrcs = [...new Set(Array.from(symbols).map(s => s.src))];
+                    const uniqueSrcs = [...new Set(visibleSymbols.map(s => s.src))];
 
                     await Promise.all(uniqueSrcs.map(src => {
                         return new Promise((resolve) => {
@@ -1560,31 +1577,50 @@
                         });
                     }));
 
-                    for (const symbol of symbols) {
+                    // Draw rings as they appear on screen
+                    for (const ring of visibleRings) {
+                        const ringRect = ring.getBoundingClientRect();
+
+                        // Calculate position relative to container
+                        const relativeX = ringRect.left - containerRect.left;
+                        const relativeY = ringRect.top - containerRect.top;
+                        const centerX = relativeX + ringRect.width / 2;
+                        const centerY = relativeY + ringRect.height / 2;
+
+                        const actualRadius = ringRect.width / 2;
+
+                        ctx.strokeStyle = window.getComputedStyle(ring).borderColor || '#ff0000';
+                        const currentBorderWidth = parseFloat(window.getComputedStyle(ring).borderWidth) || 2;
+                        ctx.lineWidth = currentBorderWidth * currentZoom;
+
+                        ctx.globalAlpha = 0.7;
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, actualRadius, 0, 2 * Math.PI);
+                        ctx.stroke();
+                        ctx.globalAlpha = 1;
+                    }
+
+                    // Draw symbols
+                    for (const symbol of visibleSymbols) {
                         const img = symbolImages.get(symbol.src);
                         if (!img) continue;
 
                         const symbolRect = symbol.getBoundingClientRect();
-                        const baseCenterX = symbolRect.left - containerRect.left + symbolRect.width / 2;
-                        const baseCenterY = symbolRect.top - containerRect.top + symbolRect.height / 2;
 
-                        let scaledWidth = symbolRect.width * symbolSizeMultiplier;
-                        let scaledHeight = symbolRect.height * symbolSizeMultiplier;
+                        const relativeX = symbolRect.left - containerRect.left;
+                        const relativeY = symbolRect.top - containerRect.top;
 
-                        const minRenderSize = 12;
-                        if (scaledWidth < minRenderSize || scaledHeight < minRenderSize) {
-                            const ratio = Math.max(minRenderSize / scaledWidth, minRenderSize / scaledHeight);
-                            scaledWidth *= ratio;
-                            scaledHeight *= ratio;
-                        }
+                        const originalWidth = symbolRect.width;
+                        const originalHeight = symbolRect.height;
+                        const scaledWidth = originalWidth * symbolSizeMultiplier;
+                        const scaledHeight = originalHeight * symbolSizeMultiplier;
 
-                        const x = baseCenterX - scaledWidth / 2;
-                        const y = baseCenterY - scaledHeight / 2;
+                        const centerX = relativeX + originalWidth / 2;
+                        const centerY = relativeY + originalHeight / 2;
+                        const scaledX = centerX - scaledWidth / 2;
+                        const scaledY = centerY - scaledHeight / 2;
 
                         ctx.save();
-
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
 
                         if (symbol.classList.contains('collision-no-report')) {
                             ctx.filter = 'grayscale(100%) brightness(0.3)';
@@ -1594,10 +1630,11 @@
                             ctx.filter = 'brightness(0.4) saturate(0.6)';
                         }
 
-                        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+                        ctx.drawImage(img, scaledX, scaledY, scaledWidth, scaledHeight);
                         ctx.restore();
                     }
 
+                    // Create download
                     const link = document.createElement('a');
                     link.download = `interactive-map-${Date.now()}.jpg`;
                     link.href = canvas.toDataURL('image/jpeg', 0.9);
@@ -1606,20 +1643,19 @@
                     document.body.removeChild(link);
 
                 } catch (error) {
-                    console.error('Canvas capture failed:', error);
-                    throw error;
+                    console.error('Manual capture failed:', error);
+                    alert('Failed to capture image. Please try again.');
                 }
             }
-
 
             const downloadBtn = document.getElementById('downloadBtn');
             if (downloadBtn) {
                 downloadBtn.addEventListener('click', async function() {
                     try {
                         if (!isFullscreen)
-                            await captureMapWithCanvas(0.6);
+                            await captureVisibleArea(0.6);
                         else
-                            await captureMapWithCanvas(1.2);
+                            await captureVisibleArea(1.2);
                     } catch (error) {
                         console.error('Canvas capture failed, falling back to simplified method:', error);
                         alert('Failed to capture image. Please try again.');
