@@ -75,7 +75,6 @@ def _get_miz_nav_points(path: Path) -> list[dict]:
                 return []
 
             # Count braces to find the matching closing brace
-            t1 = time.time()
             pos = brace_start + 1
 
             brace_open = 1
@@ -297,9 +296,15 @@ def _draw_dynamic_map_from_dmpis(dmpis, map_id, display_type,  output_name, bw_i
         print(f"Error loading image: {e}")
         return
 
+    img_width, img_height = img.size
+    if display_type == 'EMPTY':
+        draw = ImageDraw.Draw(img)
+        _draw_watermark(draw, img_width, img_height, deployment_msn_name, current_date, 1)
+        img.save(ref_dir / 'maps' / output_name)
+        return
+
     # Create a copy for drawing at higher resolution for antialiasing
     scale_factor = 8
-    img_width, img_height = img.size
 
     img_width_hires = img_width * scale_factor
     img_height_hires = img_height * scale_factor
@@ -685,9 +690,7 @@ def _load_dmpis_from_mission(dmpis):
     if not deployment_msn_path:
         return
 
-    t1 = time.time()
     nav_points = _get_miz_nav_points(deployment_msn_path)
-    print("msn_load:", time.time() - t1)
 
     reference_dms = map_config.map_reference[_get_map_id()].replace('Â°', '°')
     ref_lat, ref_lon, to_utm, from_utm = _create_transformers(reference_dms)
