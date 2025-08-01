@@ -2,6 +2,7 @@ import json
 import os
 import re
 import threading
+import time
 import zipfile
 from copy import deepcopy
 from datetime import datetime
@@ -12,6 +13,7 @@ import pyproj
 from PIL import Image, ImageDraw, ImageFont
 from PIL.Image import Resampling
 from flask import Blueprint, session, redirect, render_template, request, jsonify
+from fontTools.misc.psCharStrings import t1Operators
 from pyproj import Transformer
 
 from core.constants import BASE_DIR
@@ -50,29 +52,55 @@ def get_deployment_msn_path() -> Path | None:
 def _get_miz_nav_points(path: Path) -> list[dict]:
     try:
         with zipfile.ZipFile(path, 'r') as miz_archive:
-            # Read the mission file
             mission_content = miz_archive.read('mission').decode('utf-8')
 
-            # Extract the table part after "mission = "
-            # Find the start of the table
-            match = re.search(r'mission\s*=\s*(\{.*\})', mission_content, re.DOTALL)
-            if not match:
-                raise ValueError("Could not find mission table in file")
+            coalition_start = mission_content.find('["coalition"]')
+            if coalition_start == -1:
+                return []
 
-            table_content = match.group(1)
+            red_start = mission_content.find('["red"]', coalition_start)
+            if red_start == -1:
+                return []
 
-            # Parse the Lua table
-            mission_table = lua.decode(table_content)
+            nav_start = mission_content.find('["nav_points"]', red_start)
+            if nav_start == -1:
+                return []
+
+            equals_pos = mission_content.find('=', nav_start)
+            if equals_pos == -1:
+                return []
+
+            brace_start = mission_content.find('{', equals_pos)
+            if brace_start == -1:
+                return []
+
+            # Count braces to find the matching closing brace
+            t1 = time.time()
+            pos = brace_start + 1
+
+            brace_open = 1
+            brace_close = 0
+
+            while brace_open != brace_close:
+                if mission_content[pos] == '{':
+                    brace_open += 1
+                elif mission_content[pos] == '}':
+                    brace_close += 1
+                pos += 1
+
+            # Extract the red coalition content
+            nav_content = mission_content[brace_start:pos]
+            nav_points = lua.decode(nav_content)
 
             dmpi_pattern = re.compile(r'^[^-]+-[^-]+-\d{5}-\d{2}$')
-            filtered_nav_points = [x for x in mission_table['coalition']['red']['nav_points'].values()
-                     if dmpi_pattern.match(x['callsignStr'])]
-
-            return filtered_nav_points
+            result = [x for x in nav_points.values()
+                      if dmpi_pattern.match(x.get('callsignStr', ''))]
+            return result
 
     except Exception as e:
         print(f"Error parsing mission file: {e}")
         return []
+
 
 def _reset_dmpi_cache():
     global _dmpi_cache
@@ -221,8 +249,10 @@ def _get_map_id():
 
 def draw_dynamic_map():
     _reset_dmpi_cache()
-    dmpis = _get_dmpis()
+
+    dmpis = get_draw_dmpis()
     map_id = _get_map_id()
+
     print('drawing map')
     threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'EMPTY', 'interactive_map_z1.png'), daemon=True).start()
     threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id+1, 'EMPTY', 'interactive_map_z2.png'), daemon=True).start()
@@ -596,29 +626,26 @@ def _decimal_to_ddm(decimal_degrees, coord_type='lat'):
 
     return f"{direction} {degrees}°{minutes:06.3f}'"
 
-def _convert_xy_to_ddm(x, y, reference_dms):
-    """
-    Convert DCS x,y coordinates to DMS coordinates using UTM projection
 
-    Args:
-        x, y: DCS coordinates in meters
-        reference_dms: Reference coordinates in DMS (e.g., "N 30°02'49\" E 31°14'41\"")
 
-    Returns:
-        tuple: (lat_dms, lon_dms) in DMS format
-    """
-    # Clean up encoding issues with degree symbol
-    reference_dms = reference_dms.replace('Â°', '°')
+def _convert_xy_to_ddm(x, y, ref_lat, ref_lon, to_utm, from_utm):
+    ref_x, ref_y = to_utm.transform(ref_lon, ref_lat)
 
-    # Use regex to find lat and lon patterns
-    # Pattern matches: direction + degrees°minutes'seconds"
+    actual_x = ref_x + x
+    actual_y = ref_y + y
+    lon, lat = from_utm.transform(actual_x, actual_y)
+
+    lat_dms = _decimal_to_ddm(lat, 'lat')
+    lon_dms = _decimal_to_ddm(lon, 'lon')
+
+    return lat_dms, lon_dms
+
+def _create_transformers(reference_dms):
     pattern = r'([NSEW])\s*(\d+)[°](\d+)\'([0-9.]+)"?'
     matches = re.findall(pattern, reference_dms)
-
     if len(matches) != 2:
         raise ValueError(f"Could not find 2 coordinates in: {reference_dms}")
 
-    # Separate lat and lon
     lat_match = None
     lon_match = None
 
@@ -632,48 +659,40 @@ def _convert_xy_to_ddm(x, y, reference_dms):
     if not lat_match or not lon_match:
         raise ValueError(f"Could not find both lat and lon in: {reference_dms}")
 
-    # Convert to decimal
-    def dms_match_to_decimal(match):
-        direction, degrees, minutes, seconds = match
-        decimal = float(degrees) + float(minutes)/60.0 + float(seconds)/3600.0
-        if direction in ['S', 'W']:
-            decimal = -decimal
-        return decimal
+    ref_lat = _dms_match_to_decimal(lat_match)
+    ref_lon = _dms_match_to_decimal(lon_match)
 
-    ref_lat = dms_match_to_decimal(lat_match)
-    ref_lon = dms_match_to_decimal(lon_match)
-
-    # Determine UTM zone
     utm_zone = int((ref_lon + 180) / 6) + 1
     utm_crs = pyproj.CRS.from_proj4(
         f"+proj=utm +zone={utm_zone} "
         f"+{'south' if ref_lat < 0 else 'north'} +datum=WGS84"
     )
 
-    # Create transformers
     to_utm = Transformer.from_crs('EPSG:4326', utm_crs, always_xy=True)
     from_utm = Transformer.from_crs(utm_crs, 'EPSG:4326', always_xy=True)
 
-    # Convert reference to UTM
-    ref_x, ref_y = to_utm.transform(ref_lon, ref_lat)
+    return ref_lat, ref_lon, to_utm, from_utm
 
-    # Add DCS offset and convert back
-    actual_x = ref_x + x
-    actual_y = ref_y + y
-    lon, lat = from_utm.transform(actual_x, actual_y)
-
-    # Convert to DMS
-    lat_dms = _decimal_to_ddm(lat, 'lat')
-    lon_dms = _decimal_to_ddm(lon, 'lon')
-
-    return lat_dms, lon_dms
+def _dms_match_to_decimal(match):
+    direction, degrees, minutes, seconds = match
+    decimal = float(degrees) + float(minutes) / 60.0 + float(seconds) / 3600.0
+    if direction in ['S', 'W']:
+        decimal = -decimal
+    return decimal
 
 def _load_dmpis_from_mission(dmpis):
     deployment_msn_path = get_deployment_msn_path()
     if not deployment_msn_path:
         return
 
-    for nav_point in _get_miz_nav_points(deployment_msn_path):
+    t1 = time.time()
+    nav_points = _get_miz_nav_points(deployment_msn_path)
+    print("msn_load:", time.time() - t1)
+
+    reference_dms = map_config.map_reference[_get_map_id()].replace('Â°', '°')
+    ref_lat, ref_lon, to_utm, from_utm = _create_transformers(reference_dms)
+
+    for nav_point in nav_points:
         dmpi = nav_point['callsignStr'].upper().strip()
         dmpi_name, aim_point = _parse_dmpi_name(dmpi)
 
@@ -684,7 +703,7 @@ def _load_dmpis_from_mission(dmpis):
             dmpis[dmpi_name]['comment'] = nav_point['comment']
 
         # Calculate lat/lon for this specific aim point
-        lat, lon = _convert_xy_to_ddm(nav_point['y'], nav_point['x'], map_config.map_reference[_get_map_id()])
+        lat, lon = _convert_xy_to_ddm(nav_point['y'], nav_point['x'], ref_lat, ref_lon, to_utm, from_utm)
 
         dmpis[dmpi_name]["aim_points"][aim_point] = {
             "bda": None,

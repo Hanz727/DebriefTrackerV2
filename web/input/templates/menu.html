@@ -581,7 +581,7 @@
                                     {% if drawable_data and drawable_data.draw %}
                                         {% for map_key, map_data in drawable_data.draw.items() %}
                                             {% if map_data and map_data.render_icon %}
-                                                <!-- Range Ring (drawn first, behind icon) -->
+                                                <!-- RING -->
                                                 {% if map_data.render_ring and map_data.radius_px and map_data.radius_px > 0 and not drawable_data.collision %}
                                                     <div class="map-ring"
                                                          id="ring-{{ drawable_id }}-{{ loop.index0 }}"
@@ -594,75 +594,8 @@
                                                     </div>
                                                 {% endif %}
 
-                                                <!-- Replace the existing aim point logic section with this improved version -->
-                                                {% if drawable_data.aim_points %}
-                                                    {% set ns = namespace(best_ap_key='01',best_bda='', best_debrief_id='', best_score=999, has_valid_pair=false ) %}
-
-                                                    {% for ap_key, ap_data in drawable_data.aim_points.items() %}
-                                                        {% if ap_data.bda and ap_data.bda != 'None' and ap_data.debrief_id and ap_data.debrief_id != 'None' %}
-                                                            {% set bda_parts = ap_data.bda.split(' - ') %}
-                                                            {% if bda_parts|length > 0 %}
-                                                                {% set bda_score = bda_parts[0]|int(999) if bda_parts|length > 0 else 999 %}
-                                                                {% if bda_score < ns.best_score %}
-                                                                    {% set ns.best_ap_key = ap_key %}
-                                                                    {% set ns.best_bda = ap_data.bda %}
-                                                                    {% set ns.best_debrief_id = ap_data.debrief_id %}
-                                                                    {% set ns.best_score = bda_score %}
-                                                                    {% set ns.has_valid_pair = true %}
-                                                                {% endif %}
-                                                            {% endif %}
-                                                        {% endif %}
-                                                    {% endfor %}
-
-                                                    <!-- Second pass: If no valid pair found, prioritize by debrief_id availability -->
-                                                    {% if not ns.has_valid_pair %}
-                                                        {% set ns.best_score = 999 %}
-                                                        {% for ap_key, ap_data in drawable_data.aim_points.items() %}
-                                                            {% if ap_data.debrief_id and ap_data.debrief_id != 'None' %}
-                                                                {% if ap_data.bda and ap_data.bda != 'None' %}
-                                                                    {% set bda_parts = ap_data.bda.split(' - ') %}
-                                                                    {% if bda_parts|length > 0 %}
-                                                                        {% set bda_score = bda_parts[0]|int(999) if bda_parts|length > 0 else 999 %}
-                                                                        {% if bda_score < ns.best_score %}
-                                                                            {% set ns.best_ap_key = ap_key %}
-                                                                            {% set ns.best_bda = ap_data.bda %}
-                                                                            {% set ns.best_debrief_id = ap_data.debrief_id %}
-                                                                            {% set ns.best_score = bda_score %}
-                                                                        {% endif %}
-                                                                    {% endif %}
-                                                                {% else %}
-                                                                    <!-- Has debrief_id but no BDA, consider it if no better option -->
-                                                                    {% if ns.best_score == 999 %}
-                                                                        {% set ns.best_ap_key = ap_key %}
-                                                                        {% set ns.best_bda = '' %}
-                                                                        {% set ns.best_debrief_id = ap_data.debrief_id %}
-                                                                    {% endif %}
-                                                                {% endif %}
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    {% endif %}
-
-                                                    <!-- Third pass: If still nothing, try BDA only -->
-                                                    {% if ns.best_debrief_id == '' %}
-                                                        {% set ns.best_score = 999 %}
-                                                        {% for ap_key, ap_data in drawable_data.aim_points.items() %}
-                                                            {% if ap_data.bda and ap_data.bda != 'None' %}
-                                                                {% set bda_parts = ap_data.bda.split(' - ') %}
-                                                                {% if bda_parts|length > 0 %}
-                                                                    {% set bda_score = bda_parts[0]|int(999) if bda_parts|length > 0 else 999 %}
-                                                                    {% if bda_score < ns.best_score %}
-                                                                        {% set ns.best_ap_key = ap_key %}
-                                                                        {% set ns.best_bda = ap_data.bda %}
-                                                                        {% set ns.best_score = bda_score %}
-                                                                    {% endif %}
-                                                                {% endif %}
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    {% endif %}
-                                                {% endif %}
-
-                                                <!-- Now use the selected values in your map symbol -->
-                                                <img class="map-symbol {% if drawable_data.collision %}collision{% endif %} {% if drawable_data.aim_points and ns.best_debrief_id %}clickable{% endif %} {% if drawable_data.collision and drawable_data.aim_points and not ns.best_debrief_id %}collision-no-report{% endif %}"
+                                                <!-- SYMBOL -->
+                                                <img class="map-symbol {% if drawable_data.collision %}collision{% endif %} {% if drawable_data.aim_points and drawable_data.aim_points["01"].debrief_id %}clickable{% endif %} {% if drawable_data.collision and drawable_data.aim_points and not drawable_data.aim_points["01"].debrief_id %}collision-no-report{% endif %}"
                                                      id="symbol-{{ drawable_id }}-{{ loop.index0 }}"
                                                      src="{{ map_data.symbol }}"
                                                      alt="{{ drawable_data.comment or drawable_id }}"
@@ -673,10 +606,10 @@
                                                      data-type="{{ map_data.type or '' }}"
                                                      data-map="{{ map_key }}"
                                                      data-collision="{{ drawable_data.collision or '' }}"
-                                                     data-bda="{{ ns.best_bda }}"
-                                                     data-debrief-id="{{ ns.best_debrief_id }}"
-                                                     data-lat="{{ map_data.lat or (drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lat) or '' }}"
-                                                     data-lon="{{ map_data.lon or (drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lon) or '' }}">
+                                                     data-bda="{{ drawable_data.aim_points["01"].bda}}"
+                                                     data-debrief-id="{{ drawable_data.aim_points["01"].debrief_id}}"
+                                                     data-lat="{{ drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lat or '' }}"
+                                                     data-lon="{{ drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lon or '' }}">
                                             {% endif %}
                                         {% endfor %}
                                     {% endif %}
@@ -698,7 +631,7 @@
 
                     <!-- Map Selector Buttons -->
                     <div class="map-selector">
-                        <button class="map-selector-btn active" id="airDefenceBtn" data-map="z1" data-filter="SAD">AIR DEFENCE</button>
+                        <button class="map-selector-btn active" id="airDefenceBtn" data-map="z1" data-filter="SAD">AIR DEFENCES</button>
                         <button class="map-selector-btn" id="superMezBtn" data-map="z2" data-filter="SAD">SUPER MEZ</button>
                         <button class="map-selector-btn" id="strategicBtn" data-map="z1" data-filter="strategic">STRATEGIC AIR CAMPAIGN TARGETS</button>
                     </div>
@@ -961,6 +894,7 @@
                     }
                 } else {
                     // Same map, just filter - but still reset zoom for consistency
+                    positionSymbols()
                     filterAndShowSymbols();
                     updateTransform(true);
                 }
