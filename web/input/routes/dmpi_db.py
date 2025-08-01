@@ -12,7 +12,7 @@ import numpy as np
 import pyproj
 from PIL import Image, ImageDraw, ImageFont
 from PIL.Image import Resampling
-from flask import Blueprint, session, redirect, render_template, request, jsonify
+from flask import Blueprint, session, redirect, render_template, request, jsonify, send_from_directory
 from fontTools.misc.psCharStrings import t1Operators
 from pyproj import Transformer
 
@@ -900,3 +900,10 @@ def dmpi_db():
                            dmpis=_get_dmpis(),
                            admin=session.get('discord_uid') in config.admin_uids
                            )
+
+@app.route('/planmsn')
+def download_msn():
+    if session.get('authed', False) or config.bypass_auth_debug:
+        return send_from_directory(get_deployment_msn_path().parent, get_deployment_msn_path().name, as_attachment=True)
+
+    return redirect('/login')
