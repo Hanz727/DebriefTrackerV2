@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from htmlmin import minify
+from functools import lru_cache
+from hashlib import md5
 
 from flask import abort, session, redirect, request, render_template, Blueprint, jsonify, send_from_directory, flash
 from werkzeug.utils import secure_filename
@@ -538,10 +540,52 @@ def file_report():
     return render_template('submit.html')
 
 
+def get_data_hash():
+    """Generate a hash based on the current state of your data sources"""
+    bdas = get_bda_list()
+    drawables = get_draw_dmpis()
+
+    # Create a combined hash of both data sources
+    combined_data = {
+        'bdas': bdas,
+        'drawables': drawables
+    }
+
+    # Convert to JSON string for consistent hashing
+    data_string = json.dumps(combined_data, sort_keys=True, default=str)
+    return md5(data_string.encode()).hexdigest()
+
+@lru_cache(maxsize=256)
+def render_and_minify_cached(data_hash, bdas_json, drawables_json):
+    bdas = json.loads(bdas_json)
+    drawables = json.loads(drawables_json)
+
+    html = render_template('menu.html', bdas=bdas, drawables=drawables)
+    print('new hash')
+    return minify(html,
+                  remove_comments=True,
+                  remove_empty_space=True,
+                  remove_all_empty_space=True,
+                  reduce_empty_attributes=True,
+                  reduce_boolean_attributes=True,
+                  remove_optional_attribute_quotes=True,
+                  convert_charrefs=True,
+                  keep_pre=True,
+    )
+
+
 @app.route('/')
 def home():
     if session.get('authed', False) or config.bypass_auth_debug:
-        html = render_template('menu.html', bdas=get_bda_list(), drawables=get_draw_dmpis())
-        return minify(html, remove_comments=True, remove_empty_space=True)
+        bdas = get_bda_list()
+        drawables = get_draw_dmpis()
+
+        data_hash = get_data_hash()
+
+        bdas_json = json.dumps(bdas, sort_keys=True, default=str)
+        drawables_json = json.dumps(drawables, sort_keys=True, default=str)
+
+        return render_and_minify_cached(data_hash, bdas_json, drawables_json)
 
     return redirect('/login')
+

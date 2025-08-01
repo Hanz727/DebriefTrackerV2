@@ -98,7 +98,7 @@
 
         .presentation-container {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 Ratio */
+            padding-bottom: 56.25%;
             height: 0;
             border: 1px solid #4f545c;
             background: #121212;
@@ -113,14 +113,12 @@
             height: 100% !important;
         }
 
-        /* Interactive Map Styles */
         .map-container {
             position: relative;
             width: 100%;
             border: 1px solid #4f545c;
             background: #121212;
             overflow: hidden;
-            cursor: default;
             max-height: 600px;
             margin-bottom: 10px;
         }
@@ -135,18 +133,12 @@
             will-change: transform;
         }
 
-        .map-img.smooth-transition {
-            transition: transform 0.2s ease;
-        }
-
-        /* Map Symbol Overlay */
         .map-symbols {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
             z-index: 5;
         }
 
@@ -154,7 +146,6 @@
             position: absolute;
             width: 36px;
             height: 36px;
-            transform: translate(-50%, -50%);
             transition: none;
             filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
             pointer-events: auto;
@@ -162,16 +153,11 @@
             z-index: 6;
         }
 
-        .map-symbol.smooth-transition {
-            transition: transform 0.2s ease;
-        }
-
         .map-symbol:hover {
             filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
             transform: translate(-50%, -50%) scale(1.2);
         }
 
-        /* Collision styling */
         .map-symbol.collision {
             filter: grayscale(100%) brightness(1.0) drop-shadow(0 0 2px rgba(160, 160, 160, 0.8));
             opacity: 1;
@@ -188,7 +174,6 @@
             transform: translate(-50%, -50%) scale(1.2);
         }
 
-        /* Collision without report - much darker */
         .map-symbol.collision-no-report {
             filter: grayscale(100%) brightness(0.3) drop-shadow(0 0 2px rgba(80, 80, 80, 0.8));
             opacity: 1;
@@ -199,7 +184,6 @@
             transform: translate(-50%, -50%) scale(1.2);
         }
 
-        /* Clickable symbol styling */
         .map-symbol.clickable {
             cursor: pointer;
         }
@@ -214,7 +198,6 @@
             transform: translate(-50%, -50%) scale(1.3);
         }
 
-        /* Destroyed without report styling */
         .map-symbol.destroyed-no-report {
             filter: brightness(0.4) saturate(0.6);
             opacity: 1;
@@ -229,7 +212,6 @@
             border-color: #ff6b6b;
         }
 
-        /* Map Range Rings */
         .map-ring {
             position: absolute;
             border: 2px solid #ff0000;
@@ -238,11 +220,7 @@
             transition: none;
             pointer-events: none;
             opacity: 0.7;
-            z-index: 4; /* Behind symbols but above map */
-        }
-
-        .map-ring.smooth-transition {
-            transition: transform 0.2s ease;
+            z-index: 4;
         }
 
         .map-controls {
@@ -279,7 +257,6 @@
             background: rgba(100, 100, 100, 0.9);
         }
 
-        /* Fullscreen styles */
         .map-container.fullscreen {
             position: fixed;
             top: 0;
@@ -334,7 +311,6 @@
             z-index: 10;
         }
 
-        /* Symbol Tooltip */
         .symbol-tooltip {
             position: absolute;
             background: rgba(31, 31, 31, 0.95);
@@ -365,7 +341,6 @@
             opacity: 1;
         }
 
-        /* Map Selector Buttons */
         .map-selector {
             display: flex;
             gap: 10px;
@@ -401,7 +376,6 @@
             background: #2d3748;
         }
 
-        /* Strategic Filters */
         .strategic-filters {
             margin-top: 20px;
             background: #1f1f1f;
@@ -425,7 +399,6 @@
             margin-bottom: 20px;
         }
 
-        /* Responsive behavior for smaller screens */
         @media (max-width: 768px) {
             .filter-grid {
                 grid-template-columns: repeat(3, 1fr);
@@ -498,7 +471,6 @@
             background: rgba(185, 187, 190, 0.15);
         }
 
-        /* ===== Responsive Design ===== */
         @media (max-width: 768px) {
             .sidebar {
                 position: relative;
@@ -521,10 +493,6 @@
 
             body {
                 padding: 0;
-            }
-
-            .map-container {
-                max-height: 400px;
             }
 
             .fullscreen-btn {
@@ -604,7 +572,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .presentation-load-btn {
                 padding: 15px 30px;
@@ -625,16 +592,13 @@
 
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <img src="/static/img/logo2.png" class="header-logo" alt="CVW-17 Logo">
             <div class="title">CVIC MENU</div>
             <div class="subtitle">CARRIER AIR WING 17</div>
         </div>
 
-        <!-- Main layout with sidebar and content -->
         <div class="main-layout">
-            <!-- Sidebar Navigation -->
             <div class="sidebar">
                 <a href="#" class="nav-link">HOME</a>
                 <a href="/reports" class="nav-link">AP STRIKE REPORTS</a>
@@ -645,7 +609,6 @@
                 <a href="https://virtualcvw17.com/" class="nav-link">CVW-17 WEBSITE</a>
             </div>
 
-            <!-- Content Area -->
             <div class="main-content">
                 <div class="content">
                     <div class="content-title">STRATEGIC AIR CAMPAIGN TARGETS</div>
@@ -654,14 +617,12 @@
                     <div class="map-container" id="mapContainer">
                         <img class="map-img" id="mapImage" src="/static/maps/interactive_map_z1.jpg" alt="Interactive Map">
 
-                        <!-- Map Symbols Overlay -->
                         <div class="map-symbols" id="mapSymbols">
                             {% if drawables %}
                                 {% for drawable_id, drawable_data in drawables.items() %}
                                     {% if drawable_data and drawable_data.draw %}
                                         {% for map_key, map_data in drawable_data.draw.items() %}
                                             {% if map_data and map_data.render_icon %}
-                                                <!-- RING -->
                                                 {% if map_data.render_ring and map_data.radius_px and map_data.radius_px > 0 and not drawable_data.collision %}
                                                     <div class="map-ring hidden"
                                                          id="ring-{{ drawable_id }}-{{ loop.index0 }}"
@@ -674,7 +635,6 @@
                                                     </div>
                                                 {% endif %}
 
-                                                <!-- SYMBOL -->
                                                 <img class="map-symbol hidden {% if drawable_data.collision %}collision{% endif %} {% if drawable_data.aim_points and drawable_data.aim_points["01"].debrief_id %}clickable{% endif %} {% if drawable_data.collision and drawable_data.aim_points and not drawable_data.aim_points["01"].debrief_id %}collision-no-report{% endif %}"
                                                      id="symbol-{{ drawable_id }}-{{ loop.index0 }}"
                                                      src="{{ map_data.symbol }}"
@@ -706,18 +666,15 @@
                         </div>
                         <div class="zoom-level" id="zoomLevel">100%</div>
 
-                        <!-- Symbol Tooltip -->
                         <div class="symbol-tooltip" id="symbolTooltip"></div>
                     </div>
 
-                    <!-- Map Selector Buttons -->
                     <div class="map-selector">
                         <button class="map-selector-btn active" id="airDefenceBtn" data-map="z1" data-filter="SAD">AIR DEFENCES</button>
                         <button class="map-selector-btn" id="superMezBtn" data-map="z2" data-filter="SAD">SUPER MEZ</button>
                         <button class="map-selector-btn" id="strategicBtn" data-map="z1" data-filter="strategic">DMPIS</button>
                     </div>
 
-                    <!-- Strategic Filter Options (initially hidden) -->
                     <div class="strategic-filters" id="strategicFilters" style="display: none;">
                         <div class="filter-title">SELECT TARGET TYPES:</div>
                         <div class="filter-grid">
@@ -772,19 +729,16 @@
                         </div>
                     </div>
 
-                    <!-- Deployment Presentation Section -->
                     <div class="content-title" style="margin-top: 40px">DEPLOYMENT PRESENTATION</div>
                     <div class="divider"></div>
 
                     <div class="presentation-container" id="presentationContainer">
-                        <!-- Initially show load button instead of iframe -->
                         <div class="presentation-load-wrapper" id="presentationLoadWrapper">
                             <button class="presentation-load-btn" id="loadPresentationBtn">
                                 <span class="load-text">LOAD PRESENTATION</span>
                             </button>
                         </div>
 
-                        <!-- Iframe will be inserted here when button is clicked -->
                     </div>
 
 
@@ -833,8 +787,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-
-            // BDA Images lazy loading (existing functionality)
             const bdaImages = document.querySelectorAll('.bda-img[data-src]');
 
             function loadImage(img) {
@@ -897,7 +849,6 @@
                 unloadObserver.observe(img);
             });
 
-            // Interactive Map Functionality
             const mapContainer = document.getElementById('mapContainer');
             const mapImage = document.getElementById('mapImage');
             const mapSymbols = document.getElementById('mapSymbols');
@@ -919,9 +870,9 @@
             let translateX = 0;
             let translateY = 0;
             let isFullscreen = false;
-            let currentMapType = 'z1'; // Track current map
-            let currentFilter = 'SAD'; // Track current filter
-            let selectedStrategicTypes = ['C', 'L', 'CCC', 'E', 'O', 'RR', 'A', 'N', 'MS', 'SC', 'RG']; // Default: all except SAD
+            let currentMapType = 'z1';
+            let currentFilter = 'SAD';
+            let selectedStrategicTypes = ['C', 'L', 'CCC', 'E', 'O', 'RR', 'A', 'N', 'MS', 'SC', 'RG'];
 
             const minZoom = 1;
             const maxZoom = 8;
@@ -938,49 +889,38 @@
                 translateY = 0;
 
                 if (isMapChange) {
-                    // Hide all symbols during map change to prevent flickering
                     const symbols = document.querySelectorAll('.map-symbol');
                     const rings = document.querySelectorAll('.map-ring');
                     symbols.forEach(symbol => symbol.style.display = 'none');
                     rings.forEach(ring => ring.style.display = 'none');
 
-                    // Update map image source
                     mapImage.src = `/static/maps/interactive_map_${mapType}.jpg`;
                 } else {
-                    // Same map, just filter - but still reset zoom for consistency
                     repositionSymbols()
                     filterAndShowSymbols();
                 }
             }
 
             function repositionSymbols() {
-                // Store current zoom and pan
                 const oldZoom = currentZoom;
                 const oldTranslateX = translateX;
                 const oldTranslateY = translateY;
 
-                // Temporarily reset transforms to get accurate measurements
                 currentZoom = 1;
                 translateX = 0;
                 translateY = 0;
-                updateTransform(false);
-                console.log("reposition")
+                updateTransform();
 
-                // Wait a frame for layout to settle
                 requestAnimationFrame(() => {
-                    // Reposition symbols with new container size
                     positionSymbols();
 
-                    // Restore zoom and pan
                     currentZoom = oldZoom;
                     translateX = oldTranslateX;
                     translateY = oldTranslateY;
 
-                    // Constrain to new bounds
                     constrainTranslation();
 
-                    // Apply final transform
-                    updateTransform(false);
+                    updateTransform();
                 });
             }
 
@@ -988,20 +928,16 @@
                 const symbols = document.querySelectorAll('.map-symbol');
                 const rings = document.querySelectorAll('.map-ring');
 
-                // Filter symbols
                 symbols.forEach(symbol => {
                     const symbolMap = symbol.getAttribute('data-map');
                     const symbolType = symbol.getAttribute('data-type');
 
-                    // Determine if this symbol should be visible
                     const mapMatches = isMapMatch(symbolMap, currentMapType);
                     let typeMatches = false;
 
                     if (currentFilter === 'strategic') {
-                        // Strategic mode: show selected types
                         typeMatches = selectedStrategicTypes.includes(symbolType);
                     } else {
-                        // Regular mode: exact match or no filter
                         typeMatches = currentFilter === '' || symbolType === currentFilter;
                     }
 
@@ -1012,20 +948,16 @@
                     }
                 });
 
-                // Filter rings
                 rings.forEach(ring => {
                     const ringMap = ring.getAttribute('data-map');
                     const ringType = ring.getAttribute('data-type');
 
-                    // Determine if this ring should be visible
                     const mapMatches = isMapMatch(ringMap, currentMapType);
                     let typeMatches = false;
 
                     if (currentFilter === 'strategic') {
-                        // Strategic mode: show selected types
                         typeMatches = selectedStrategicTypes.includes(ringType);
                     } else {
-                        // Regular mode: exact match or no filter
                         typeMatches = currentFilter === '' || ringType === currentFilter;
                     }
 
@@ -1035,20 +967,15 @@
                         ring.style.display = 'none';
                     }
                 });
-
-                // DO NOT call positionSymbols() here - symbols are already positioned correctly
             }
 
-            // Function to determine if a symbol's map matches the current map type
             function isMapMatch(symbolMap, targetMapType) {
                 if (!symbolMap) return false;
 
-                // Check for zoom1/z1 patterns
                 if (targetMapType === 'z1') {
                     return symbolMap.includes('zoom1') || symbolMap.includes('z1');
                 }
 
-                // Check for zoom2/z2 patterns
                 if (targetMapType === 'z2') {
                     return symbolMap.includes('zoom2') || symbolMap.includes('z2');
                 }
@@ -1057,54 +984,37 @@
             }
 
             airDefenceBtn.addEventListener('click', function() {
-                // Remove active class from all buttons
                 document.querySelectorAll('.map-selector-btn').forEach(btn => {
                     btn.classList.remove('active');
                 });
 
-                // Add active class to clicked button
                 this.classList.add('active');
 
-                // Hide strategic filters
                 strategicFilters.style.display = 'none';
-
-                // Switch to air defence map and filter for SAD type
                 switchMap('z1', 'SAD');
             });
 
             superMezBtn.addEventListener('click', function() {
-                // Remove active class from all buttons
                 document.querySelectorAll('.map-selector-btn').forEach(btn => {
                     btn.classList.remove('active');
                 });
 
-                // Add active class to clicked button
                 this.classList.add('active');
 
-                // Hide strategic filters
                 strategicFilters.style.display = 'none';
-
-                // Switch to super mez map and filter for SAD type (same as Air Defence)
                 switchMap('z2', 'SAD');
             });
 
             strategicBtn.addEventListener('click', function() {
-                // Remove active class from all buttons
                 document.querySelectorAll('.map-selector-btn').forEach(btn => {
                     btn.classList.remove('active');
                 });
 
-                // Add active class to clicked button
                 this.classList.add('active');
-
-                // Show strategic filters
                 strategicFilters.style.display = 'block';
 
-                // Switch to strategic map with strategic filtering
-                // Add longer delay to account for filter panel animation
                 switchMap('z1', 'strategic');
 
-                // Force reposition after layout settles
                 setTimeout(() => {
                     positionSymbols();
                 }, 150);
@@ -1115,82 +1025,69 @@
                 checkboxes.forEach(checkbox => {
                     checkbox.addEventListener('change', function() {
                         updateSelectedStrategicTypes();
-                        filterAndShowSymbols(); // Only filter, don't reposition
+                        filterAndShowSymbols();
                     });
                 });
             }
 
-            // Function to update selectedStrategicTypes array
             function updateSelectedStrategicTypes() {
                 const checkboxes = strategicFilters.querySelectorAll('input[type="checkbox"]:checked');
                 selectedStrategicTypes = Array.from(checkboxes).map(cb => cb.value);
             }
 
-            // Initialize auto-apply functionality
             setupFilterAutoApply();
 
             function positionSymbols() {
                 const symbols = document.querySelectorAll('.map-symbol');
                 const rings = document.querySelectorAll('.map-ring');
 
-                // Get the natural dimensions of the image
                 const naturalWidth = mapImage.naturalWidth;
                 const naturalHeight = mapImage.naturalHeight;
 
-                if (!naturalWidth || !naturalHeight) return; // Wait for image to load
+                if (!naturalWidth || !naturalHeight) return;
 
                 let displayWidth, displayHeight, offsetX = 0, offsetY = 0;
 
                 if (isFullscreen) {
-                    // In fullscreen mode, calculate the actual displayed size with object-fit: contain
                     const containerRect = mapContainer.getBoundingClientRect();
                     const containerWidth = containerRect.width;
                     const containerHeight = containerRect.height;
 
-                    // Calculate the aspect ratios
                     const imageAspect = naturalWidth / naturalHeight;
                     const containerAspect = containerWidth / containerHeight;
 
                     if (imageAspect > containerAspect) {
-                        // Image is wider - limited by container width
                         displayWidth = containerWidth;
                         displayHeight = containerWidth / imageAspect;
                         offsetX = 0;
                         offsetY = (containerHeight - displayHeight) / 2;
                     } else {
-                        // Image is taller - limited by container height
                         displayWidth = containerHeight * imageAspect;
                         displayHeight = containerHeight;
                         offsetX = (containerWidth - displayWidth) / 2;
                         offsetY = 0;
                     }
                 } else {
-                    // In normal mode, use the current displayed size
                     displayWidth = mapImage.offsetWidth;
                     displayHeight = mapImage.offsetHeight;
 
-                    // Calculate offset from container
                     const containerRect = mapContainer.getBoundingClientRect();
                     const imageRect = mapImage.getBoundingClientRect();
                     offsetX = imageRect.left - containerRect.left;
                     offsetY = imageRect.top - containerRect.top;
                 }
 
-                // Calculate scaling factors (image display size vs natural size)
                 const baseScaleX = displayWidth / naturalWidth;
                 const baseScaleY = displayHeight / naturalHeight;
 
-                // Position symbols - these positions are in the UNTRANSFORMED coordinate system
                 symbols.forEach(symbol => {
                     const dataX = parseFloat(symbol.getAttribute('data-x'));
                     const dataY = parseFloat(symbol.getAttribute('data-y'));
 
-                    // Convert to display coordinates at base scale (zoom 1)
                     const displayX = dataX * baseScaleX + offsetX;
                     const displayY = dataY * baseScaleY + offsetY;
 
-                    // Check if symbol is within image bounds (add small buffer for symbols on edges)
-                    const buffer = -10; // pixels
+                    const buffer = -10;
                     const withinBounds = (
                         displayX >= (offsetX - buffer) &&
                         displayX <= (offsetX + displayWidth + buffer) &&
@@ -1199,31 +1096,25 @@
                     );
 
                     if (withinBounds) {
-                        // Set position - this will be transformed by the symbols container
                         symbol.style.left = displayX + 'px';
                         symbol.style.top = displayY + 'px';
                         symbol.style.transform = `translate(-50%, -50%)`;
-                        // Make sure symbol is visible (in case it was hidden before)
                         if (symbol.style.visibility === 'hidden') {
                             symbol.style.visibility = 'visible';
                         }
                     } else {
-                        // Hide symbols that are outside image bounds
                         symbol.style.visibility = 'hidden';
                     }
                 });
 
-                // Position rings
                 rings.forEach(ring => {
                     const dataX = parseFloat(ring.getAttribute('data-x'));
                     const dataY = parseFloat(ring.getAttribute('data-y'));
                     const radius = parseFloat(ring.getAttribute('data-radius'));
 
-                    // Convert to display coordinates at base scale (zoom 1)
                     const displayX = dataX * baseScaleX + offsetX;
                     const displayY = dataY * baseScaleY + offsetY;
 
-                    // Check if ring center is within image bounds (rings can extend outside)
                     const withinBounds = (
                         displayX >= offsetX &&
                         displayX <= (offsetX + displayWidth) &&
@@ -1232,21 +1123,18 @@
                     );
 
                     if (withinBounds) {
-                        // Set position
                         ring.style.left = displayX + 'px';
                         ring.style.top = displayY + 'px';
 
-                        // Set ring size
                         const scaledRadius = radius * baseScaleX;
                         ring.style.width = (scaledRadius * 2) + 'px';
                         ring.style.height = (scaledRadius * 2) + 'px';
                         ring.style.transform = `translate(-50%, -50%)`;
-                        // Make sure ring is visible
+
                         if (ring.style.visibility === 'hidden') {
                             ring.style.visibility = 'visible';
                         }
                     } else {
-                        // Hide rings that are outside image bounds
                         ring.style.visibility = 'hidden';
                     }
                 });
@@ -1261,7 +1149,6 @@
                 });
             }
 
-            // first load
             if (mapImage.complete) {
                 filterAndShowSymbols();
                 repositionSymbols();
@@ -1277,37 +1164,12 @@
                 repositionSymbols();
             }
 
-            // Reposition symbols when window is resized
             window.addEventListener('resize', handleResize);
 
-            function updateTransform(useTransition = false) {
-                if (useTransition) {
-                    mapImage.classList.add('smooth-transition');
-                    mapSymbols.classList.add('smooth-transition');
-                    document.querySelectorAll('.map-symbol').forEach(symbol => {
-                        symbol.classList.add('smooth-transition');
-                    });
-                    document.querySelectorAll('.map-ring').forEach(ring => {
-                        ring.classList.add('smooth-transition');
-                    });
-                } else {
-                    mapImage.classList.remove('smooth-transition');
-                    mapSymbols.classList.remove('smooth-transition');
-                    document.querySelectorAll('.map-symbol').forEach(symbol => {
-                        symbol.classList.remove('smooth-transition');
-                    });
-                    document.querySelectorAll('.map-ring').forEach(ring => {
-                        ring.classList.remove('smooth-transition');
-                    });
-                }
-
-                // Apply transform to map image
+            function updateTransform() {
                 mapImage.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
-
-                // Apply the SAME transform to symbols container - this is key!
                 mapSymbols.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
 
-                // Update symbol transforms to maintain constant size
                 const symbols = document.querySelectorAll('.map-symbol');
                 symbols.forEach(symbol => {
                     symbol.style.transform = `translate(-50%, -50%) scale(${1/currentZoom})`;
@@ -1316,7 +1178,6 @@
                 rings.forEach(ring=> {
                     ring.style.borderWidth = `${2/currentZoom}px`;
                 });
-                // Update zoom level display
                 zoomLevelDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
             }
 
@@ -1342,7 +1203,6 @@
                 if (currentZoom < maxZoom) {
                     currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
                     constrainTranslation();
-                    // Don't call updateTransform here, let the caller handle it
                 }
             }
 
@@ -1350,7 +1210,6 @@
                 if (currentZoom > minZoom) {
                     currentZoom = Math.max(minZoom, currentZoom - zoomStep);
                     constrainTranslation();
-                    // Don't call updateTransform here, let the caller handle it
                 }
             }
 
@@ -1358,7 +1217,7 @@
                 currentZoom = 1;
                 translateX = 0;
                 translateY = 0;
-                updateTransform(false);
+                updateTransform();
             }
 
             function toggleFullscreen() {
@@ -1366,21 +1225,17 @@
 
                 if (isFullscreen) {
                     mapContainer.classList.add('fullscreen');
-                    fullscreenBtn.innerHTML = '⛶';
                     fullscreenBtn.title = 'Exit Fullscreen';
                 } else {
                     mapContainer.classList.remove('fullscreen');
-                    fullscreenBtn.innerHTML = '⛶';
                     fullscreenBtn.title = 'Toggle Fullscreen';
                 }
 
-                // Use repositionSymbols for fullscreen transitions to handle coordinate system changes
                 setTimeout(() => {
                     repositionSymbols();
                 }, 100);
             }
 
-            // Symbol tooltip functionality
             function showTooltip(symbol, e) {
                 const id = symbol.getAttribute('data-id');
                 const comment = symbol.getAttribute('data-comment');
@@ -1389,27 +1244,22 @@
                 const bda = symbol.getAttribute('data-bda');
                 const debriefId = symbol.getAttribute('data-debrief-id');
 
-                // Build tooltip content
                 let tooltipContent = '';
 
-                // Add comment/ID
                 const displayText = comment || id;
                 tooltipContent += `<div class="tooltip-comment">${displayText}</div>`;
                 if (displayText === comment) {
                     tooltipContent += `<div class="tooltip-comment">${id}-01</div>`;
                 }
 
-                // Add BDA if available and not "None"
                 if (bda && bda !== 'None' && bda !== '') {
                     tooltipContent += `<div style="color: #90cdf4; font-weight: bold; margin-bottom: 4px;">BDA: ${bda}</div>`;
                 }
 
-                // Add clickable indicator if debrief available
                 if (debriefId && debriefId !== 'None' && debriefId !== '') {
                     tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Report</div>`;
                 }
 
-                // Add coordinates if available
                 if (lat && lon) {
                     tooltipContent += `<div class="tooltip-coords">LAT: ${lat}<br>LON: ${lon}</div>`;
                 }
@@ -1417,7 +1267,6 @@
                 symbolTooltip.innerHTML = tooltipContent;
                 symbolTooltip.classList.add('show');
 
-                // Position tooltip near the cursor
                 const rect = mapContainer.getBoundingClientRect();
                 const x = e.clientX - rect.left + 15;
                 const y = e.clientY - rect.top - 10;
@@ -1430,7 +1279,6 @@
                 symbolTooltip.classList.remove('show');
             }
 
-            // Add event listeners to symbols
             document.querySelectorAll('.map-symbol').forEach(symbol => {
                 symbol.addEventListener('mouseenter', function(e) {
                     showTooltip(this, e);
@@ -1451,40 +1299,34 @@
                     e.stopPropagation();
                     const debriefId = this.getAttribute('data-debrief-id');
 
-                    // Only navigate if there's a valid debrief ID
                     if (debriefId && debriefId !== 'None' && debriefId !== '') {
                         window.location.href = `/debrief/${debriefId}`;
                     } else {
-                        // Optional: could show a message or do nothing for non-clickable symbols
                         const id = this.getAttribute('data-id');
                         const comment = this.getAttribute('data-comment');
-                        console.log('Symbol clicked:', comment || id, '(no debrief available)');
                     }
                 });
             });
 
-            // Button event listeners
             zoomInBtn.addEventListener('click', function() {
                 zoomIn();
-                updateTransform(false);
+                updateTransform();
             });
 
             zoomOutBtn.addEventListener('click', function() {
                 zoomOut();
-                updateTransform(false);
+                updateTransform();
             });
 
             resetZoomBtn.addEventListener('click', resetZoom);
             fullscreenBtn.addEventListener('click', toggleFullscreen);
 
-            // ESC key to exit fullscreen
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && isFullscreen) {
                     toggleFullscreen();
                 }
             });
 
-            // Mouse wheel zoom
             mapContainer.addEventListener('wheel', function(e) {
                 e.preventDefault();
 
@@ -1500,7 +1342,6 @@
                     zoomOut();
                 }
 
-                // Adjust translation to zoom towards mouse position and update with transition
                 if (currentZoom !== oldZoom) {
                     if (currentZoom > 1) {
                         const zoomRatio = currentZoom / oldZoom;
@@ -1515,12 +1356,11 @@
 
                         constrainTranslation();
                     }
-                    updateTransform(false); // Always use smooth transition for wheel zoom
+                    updateTransform();
                     updateCursor();
                 }
             });
 
-            // Mouse drag functionality
             mapContainer.addEventListener('mousedown', function(e) {
                 if (currentZoom > 1) {
                     isDragging = true;
@@ -1536,7 +1376,7 @@
                     translateX = e.clientX - startX;
                     translateY = e.clientY - startY;
                     constrainTranslation();
-                    updateTransform(false);
+                    updateTransform();
                 }
             });
 
@@ -1547,7 +1387,6 @@
                 }
             });
 
-            // Update cursor when zoom changes
             function updateCursor() {
                 if (currentZoom > 1) {
                     mapContainer.style.cursor = isDragging ? 'grabbing' : 'grab';
@@ -1556,7 +1395,6 @@
                 }
             }
 
-            // Touch support for mobile
             let lastTouchDistance = 0;
             let lastTouchX = 0;
             let lastTouchY = 0;
@@ -1596,7 +1434,6 @@
 
                     if (lastTouchDistance > 0) {
                         const deltaDistance = currentDistance - lastTouchDistance;
-                        const oldZoom = currentZoom;
 
                         if (deltaDistance > 0) {
                             currentZoom = Math.min(maxZoom, currentZoom + zoomStep * 0.5);
@@ -1624,31 +1461,24 @@
                 const symbols = document.querySelectorAll('.map-symbol:not([style*="display: none"])');
                 const rings = document.querySelectorAll('.map-ring:not([style*="display: none"])');
 
-                // Create canvas with proper dimensions
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
 
-                // Get actual container dimensions
                 const containerRect = mapContainer.getBoundingClientRect();
-                const scale = 2; // High DPI scaling
+                const scale = 2;
 
-                // Set canvas size to match visible container
                 canvas.width = containerRect.width * scale;
                 canvas.height = containerRect.height * scale;
 
-                // Scale context for high DPI
                 ctx.scale(scale, scale);
 
-                // Enable high-quality rendering
                 ctx.imageSmoothingEnabled = true;
                 ctx.imageSmoothingQuality = 'high';
 
-                // Fill background
                 ctx.fillStyle = '#121212';
                 ctx.fillRect(0, 0, containerRect.width, containerRect.height);
 
                 try {
-                    // Load map image
                     const img = new Image();
                     img.crossOrigin = 'anonymous';
                     await new Promise((resolve, reject) => {
@@ -1657,7 +1487,6 @@
                         img.src = mapImage.src;
                     });
 
-                    // Extract transform values from the map image
                     const transform = getComputedStyle(mapImage).transform;
                     let scaleX = 1, scaleY = 1, translateX = 0, translateY = 0;
 
@@ -1669,22 +1498,17 @@
                         translateY = matrix.f;
                     }
 
-                    // Save context state
                     ctx.save();
 
-                    // Apply the same transform that's applied to the map
                     ctx.translate(translateX, translateY);
                     ctx.scale(scaleX, scaleY);
 
-                    // Draw the map image at its natural position (0,0 after transform)
                     const naturalWidth = mapImage.offsetWidth / scaleX;
                     const naturalHeight = mapImage.offsetHeight / scaleY;
                     ctx.drawImage(img, 0, 0, naturalWidth, naturalHeight);
 
-                    // Restore context to draw overlays in container coordinates
                     ctx.restore();
 
-                    // Draw rings with size multiplier
                     for (const ring of rings) {
                         const ringRect = ring.getBoundingClientRect();
                         const centerX = ringRect.left - containerRect.left + ringRect.width / 2;
@@ -1692,7 +1516,7 @@
                         const radius = (ringRect.width / 2) * symbolSizeMultiplier;
 
                         ctx.strokeStyle = window.getComputedStyle(ring).borderColor || '#ff0000';
-                        ctx.lineWidth = Math.max(1, 2 * symbolSizeMultiplier); // Minimum line width of 1
+                        ctx.lineWidth = Math.max(1, 2 * symbolSizeMultiplier);
                         ctx.globalAlpha = 0.7;
                         ctx.beginPath();
                         ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
@@ -1700,7 +1524,6 @@
                         ctx.globalAlpha = 1;
                     }
 
-                    // Batch load symbol images with higher resolution handling
                     const symbolImages = new Map();
                     const uniqueSrcs = [...new Set(Array.from(symbols).map(s => s.src))];
 
@@ -1724,7 +1547,6 @@
                         });
                     }));
 
-                    // Draw symbols with improved scaling
                     for (const symbol of symbols) {
                         const img = symbolImages.get(symbol.src);
                         if (!img) continue;
@@ -1733,26 +1555,21 @@
                         const baseCenterX = symbolRect.left - containerRect.left + symbolRect.width / 2;
                         const baseCenterY = symbolRect.top - containerRect.top + symbolRect.height / 2;
 
-                        // Calculate scaled dimensions - use higher base resolution for small scales
                         let scaledWidth = symbolRect.width * symbolSizeMultiplier;
                         let scaledHeight = symbolRect.height * symbolSizeMultiplier;
 
-                        // For very small scales, maintain minimum quality
-                        const minRenderSize = 12; // Minimum pixels to render at
+                        const minRenderSize = 12;
                         if (scaledWidth < minRenderSize || scaledHeight < minRenderSize) {
                             const ratio = Math.max(minRenderSize / scaledWidth, minRenderSize / scaledHeight);
                             scaledWidth *= ratio;
                             scaledHeight *= ratio;
                         }
 
-                        // Center the scaled symbol
                         const x = baseCenterX - scaledWidth / 2;
                         const y = baseCenterY - scaledHeight / 2;
 
-                        // Apply filters and enhanced rendering
                         ctx.save();
 
-                        // Enable best quality scaling for this symbol
                         ctx.imageSmoothingEnabled = true;
                         ctx.imageSmoothingQuality = 'high';
 
@@ -1764,15 +1581,13 @@
                             ctx.filter = 'brightness(0.4) saturate(0.6)';
                         }
 
-                        // Use drawImage with high-quality scaling
                         ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
                         ctx.restore();
                     }
 
-                    // Create download
                     const link = document.createElement('a');
                     link.download = `interactive-map-${Date.now()}.jpg`;
-                    link.href = canvas.toDataURL('image/jpeg', 0.9); // Higher quality for better symbol rendering
+                    link.href = canvas.toDataURL('image/jpeg', 0.9);
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -1788,7 +1603,6 @@
             if (downloadBtn) {
                 downloadBtn.addEventListener('click', async function() {
                     try {
-                        // Method 1 is usually fastest for many elements
                         if (!isFullscreen)
                             await captureMapWithCanvas(0.6);
                         else
@@ -1800,8 +1614,7 @@
                 });
             }
 
-            // Initialize
-            updateTransform(false);
+            updateTransform();
             updateCursor();
         });
 
@@ -1809,7 +1622,6 @@
             const container = document.getElementById('presentationContainer');
             const loadWrapper = document.getElementById('presentationLoadWrapper');
 
-            // Show loading state
             loadWrapper.innerHTML = `
                     <div class="presentation-loading">
                         <div class="loading-spinner"></div>
@@ -1817,7 +1629,6 @@
                     </div>
                 `;
 
-            // Create and load the iframe
             const iframe = document.createElement('iframe');
             iframe.className = 'presentation-iframe';
             iframe.src = 'https://docs.google.com/presentation/d/e/2PACX-1vQj-u5rSo59uLiGQ7QZNyXvuv4T4xxB5Z9NgLyJNbAfE7vR7mjxe6avClPAfzW1r-ZVFfD4jU75OkLi/pubembed?start=false&loop=false&delayms=3000';
@@ -1826,17 +1637,14 @@
             iframe.mozAllowFullScreen = true;
             iframe.webkitAllowFullscreen = true;
 
-            // Optional: Add load event listener to hide loading state when iframe loads
             iframe.addEventListener('load', function() {
-                // Remove the loading wrapper after iframe loads
                 setTimeout(() => {
                     if (loadWrapper && loadWrapper.parentNode) {
                         loadWrapper.remove();
                     }
-                }, 500); // Small delay to ensure smooth transition
+                }, 500);
             });
 
-            // Add iframe to container
             container.appendChild(iframe);
         });
     </script>
