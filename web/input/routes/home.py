@@ -4,6 +4,8 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
+
+from _ctypes import POINTER
 from htmlmin import minify
 from functools import lru_cache
 from hashlib import md5
@@ -14,7 +16,7 @@ from werkzeug.utils import secure_filename
 from clients.databases.contracts import CVW17DatabaseRow
 from clients.databases.postgres.postgres_client import PostGresClient
 from clients.thread_pool_client import ThreadPoolClient
-from core.constants import MODEX_TO_SQUADRON, Squadrons
+from core.constants import MODEX_TO_SQUADRON, Squadrons, BASE_DIR
 from services import Logger
 from services.data_handler import DataHandler
 from web.input._constants import DEBRIEFS_PATH
@@ -23,6 +25,10 @@ from web.input.routes.dmpi_db import draw_dynamic_map_threaded, _reset_dmpi_cach
 from web.input.services.input_data_handler import InputDataHandler
 from web.input.services.mission import Mission
 
+import ctypes
+from ctypes import c_char_p
+
+
 config = WebConfigSingleton.get_instance()
 postgres_client = PostGresClient()
 ThreadPoolClient.create_task_loop(postgres_client.update_local, 30)
@@ -30,6 +36,13 @@ ThreadPoolClient.create_task_loop(postgres_client.update_local, 30)
 home_blueprint = Blueprint('home', __name__)
 app = home_blueprint
 
+_minify_lib = ctypes.CDLL((BASE_DIR / 'minifier.dll').as_posix())
+
+_minify_lib.minify.argtypes = [c_char_p]
+_minify_lib.minify.restype = POINTER(c_char_p)
+
+_minify_lib.free_string.argtypes = [POINTER(c_char_p)]
+_minify_lib.free_string.restype = None
 
 @app.route('/bda/<int:debrief_id>/<img_name>')
 def show_bda_img(debrief_id, img_name):
@@ -555,6 +568,20 @@ def get_data_hash():
     data_string = json.dumps(combined_data, sort_keys=True, default=str)
     return md5(data_string.encode()).hexdigest()
 
+def custom_minify(input_str):
+    input_bytes = input_str.encode('utf-8')
+
+    result_ptr = _minify_lib.minify(input_bytes)
+
+    # Convert result back to Python string
+    result_c_str = ctypes.cast(result_ptr, c_char_p)
+    result = result_c_str.value.decode('utf-8')
+
+    # Free the memory allocated by Rust
+    _minify_lib.free_string(result_ptr)
+
+    return result
+
 @lru_cache(maxsize=256)
 def render_and_minify_cached(data_hash, bdas_json, drawables_json):
     bdas = json.loads(bdas_json)
@@ -562,17 +589,8 @@ def render_and_minify_cached(data_hash, bdas_json, drawables_json):
 
     html = render_template('menu.html', bdas=bdas, drawables=drawables, msn=Mission.get_path().name)
     print('new hash')
-    return minify(html,
-                  remove_comments=True,
-                  remove_empty_space=True,
-                  remove_all_empty_space=True,
-                  reduce_empty_attributes=True,
-                  reduce_boolean_attributes=True,
-                  remove_optional_attribute_quotes=True,
-                  convert_charrefs=True,
-                  keep_pre=True,
-    )
 
+    return custom_minify(html)
 
 @app.route('/')
 def home():
