@@ -7,6 +7,7 @@
   "tacview_dir": "C:\\Users\\rocks\\Desktop\\tacview",
   "tracks_dir": "C:\\Users\\rocks\\Desktop\\tacview",
   "admin_uids": ["222470066854297600", "364838090855940096"],
+  "package_managers": ["222470066854297600", "364838090855940096"],
   "missions_path": "D:\\projects\\DCS\\Missions",
   "deployment_msn_prefix": "CVW-17_2025_Deployment"
 }

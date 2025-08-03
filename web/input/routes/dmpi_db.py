@@ -22,6 +22,7 @@ map_config = InteractiveMapConfigSingleton.get_instance()
 app = dmpi_db_blueprint
 
 _OVERRIDES_FILE = Path('overrides.txt')
+_TARGET_PACKAGE_FILE = Path('target_package.json')
 _dmpi_cache = {}
 _draw_dmpi_cache = {}
 
@@ -138,6 +139,10 @@ def _get_dmpis():
 
     # Apply overrides
     _apply_overrides(dmpis)
+
+    packages = _load_target_packages()
+    for dmpi_name, package_data in packages.items():
+        dmpis[dmpi_name]['package_url'] = package_data['url']
 
     _dmpi_cache = dmpis
     return dmpis
@@ -327,6 +332,71 @@ def save_overrides(overrides_text):
         print(f"Error saving overrides file: {e}")
         return False
 
+def _load_target_packages():
+    """Load target packages from JSON file, return empty dict if file doesn't exist"""
+    if os.path.exists(_TARGET_PACKAGE_FILE):
+        try:
+            with open(_TARGET_PACKAGE_FILE, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error loading target packages: {e}")
+            return {}
+    return {}
+
+def _save_target_packages(packages):
+    """Save target packages to JSON file"""
+    try:
+        with open(_TARGET_PACKAGE_FILE, 'w') as f:
+            json.dump(packages, f, indent=2)
+        return True
+    except IOError as e:
+        print(f"Error saving target packages: {e}")
+        return False
+
+@app.route('/target-package', methods=['POST'])
+def target_package():
+    if not (session.get('authed', False) or config.bypass_auth_debug):
+        return redirect('/login')
+
+    if not (session.get('discord_uid') in config.admin_uids) and (session.get('discord_uid') not in config.package_managers):
+        return "400 Unauthorized"
+
+    try:
+        data = request.json
+
+        if not data or 'dmpi_id' not in data or 'url' not in data:
+            return "Missing dmpi_id or url in request", 400
+
+        dmpi_id = data['dmpi_id']
+        url = data['url']
+
+        # Validate inputs
+        if not dmpi_id.strip():
+            return "DMPI ID cannot be empty", 400
+
+        # Load existing target packages
+        packages = _load_target_packages()
+
+        print(packages)
+
+        # Update or add the new entry
+        if url is None or not url.strip():
+            del packages[dmpi_id]
+        else:
+            packages[dmpi_id] = {"url": url}
+
+        res = _save_target_packages(packages)
+        if res:
+            draw_dynamic_map_threaded()
+            return "Target package URL saved successfully", 200
+        else:
+            return "Failed to save target package", 500
+
+    except Exception as e:
+        print(f"Error in target_package route: {e}")
+        return "Internal server error", 500
+
+
 @app.route('/dmpi_override', methods=['POST'])
 def dmpi_override():
     if not (session.get('authed', False) or config.bypass_auth_debug):
@@ -373,7 +443,8 @@ def dmpi_db():
     return render_template('dmpi_db.html',
                            overrides=load_overrides(),
                            dmpis=_get_dmpis(),
-                           admin=session.get('discord_uid') in config.admin_uids
+                           admin=session.get('discord_uid') in config.admin_uids,
+                           package=session.get('dmpi_id') in config.package_managers
                            )
 
 @app.route('/planmsn')

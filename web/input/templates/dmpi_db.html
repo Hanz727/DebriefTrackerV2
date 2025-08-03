@@ -71,7 +71,7 @@
         }
 
         .file-table th.dmpi-id-header {
-            width: 16%;
+            width: 18%;
         }
 
         .file-table th.comment-header {
@@ -83,15 +83,15 @@
         }
 
         .file-table th.in-msn-header {
-            width: 8%;
+            width: 10%;
         }
 
         .file-table th.date-header {
-            width: 14%;
+            width: 12%;
         }
 
         .file-table th.bda-header {
-            width: 14%;
+            width: 12%;
         }
 
         .file-table tbody tr.clickable {
@@ -122,6 +122,7 @@
             padding: var(--spacing-md);
             text-align: center;
             border-bottom: 1px solid var(--border-secondary);
+            position: relative;
         }
 
         .file-table td:last-child {
@@ -136,6 +137,16 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             display: block;
+            position: relative;
+        }
+
+        .file-table .file-name.has-url {
+            color: var(--color-primary);
+            cursor: pointer;
+        }
+
+        .file-table .file-name.has-url:hover {
+            text-decoration: underline;
         }
 
         .file-table .comment-text {
@@ -215,6 +226,38 @@
         .sub-row-indent {
             padding-right: var(--spacing-lg) !important;
             text-align: right !important;
+        }
+
+        /* Small URL Button styling - more subtle */
+        .url-btn-small {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            padding: 2px 4px;
+            font-size: 9px;
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s ease;
+            opacity: 0;
+        }
+
+        .file-table tr:hover .url-btn-small {
+            opacity: 1;
+        }
+
+        .url-btn-small:hover {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .url-btn-small:active {
+            transform: translateY(1px);
         }
 
         /* Content header with centered title and left search bar and right button */
@@ -316,6 +359,39 @@
         .popup-textarea::placeholder {
             color: var(--text-muted);
             opacity: 0.6;
+        }
+
+        /* URL Popup Input styling */
+        .popup-input {
+            width: 100%;
+            padding: var(--spacing-md);
+            background: var(--bg-input);
+            border: 1px solid var(--border-secondary);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: var(--font-size-md);
+            outline: none;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .popup-input:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 1px var(--color-primary);
+        }
+
+        .popup-input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        .popup-dmpi-info {
+            color: var(--text-secondary);
+            font-weight: bold;
+            margin-bottom: var(--spacing-md);
+            padding: var(--spacing-sm);
+            background: var(--bg-card);
+            border: 1px solid var(--border-secondary);
+            text-align: center;
         }
 
         .popup-buttons {
@@ -461,12 +537,24 @@
                                     data-expandable="{{ has_multiple_aims|lower }}"
                                     onclick="{% if has_multiple_aims %}toggleExpand(this){% endif %}">
                                     <td data-value="{{ dmpi_id }}">
-                                        <span class="file-name">
-                                            {{ dmpi_id }} - {{ first_aim_point }}
-                                            {% if has_multiple_aims %}
-                                                <span class="expand-indicator">▶</span>
-                                            {% endif %}
-                                        </span>
+                                        {% if dmpi_data.package_url %}
+                                            <a href="{{ dmpi_data.package_url }}" class="file-name has-url" onclick="event.stopPropagation();" target="_blank">
+                                                {{ dmpi_id }} - {{ first_aim_point }}
+                                                {% if has_multiple_aims %}
+                                                    <span class="expand-indicator">▶</span>
+                                                {% endif %}
+                                            </a>
+                                        {% else %}
+                                            <span class="file-name">
+                                                {{ dmpi_id }} - {{ first_aim_point }}
+                                                {% if has_multiple_aims %}
+                                                    <span class="expand-indicator">▶</span>
+                                                {% endif %}
+                                            </span>
+                                        {% endif %}
+                                        {% if admin or package %}
+                                            <button class="url-btn-small" onclick="event.stopPropagation(); showUrlPopup('{{ dmpi_id }}')">URL</button>
+                                        {% endif %}
                                     </td>
                                     <td data-value="{{ dmpi_data.comment }}">
                                         <span class="comment-text">{{ dmpi_data.comment }}</span>
@@ -501,7 +589,11 @@
                                             {% set sub_dms_coords = aim_data.lat + '\n' + aim_data.lon %}
                                             <tr class="sub-row" style="display: none;" data-parent="{{ dmpi_id }}">
                                                 <td class="sub-row-indent" data-value="{{ dmpi_id }}">
-                                                    <span class="file-name">{{ dmpi_id }} - {{ aim_point }}</span>
+                                                    {% if dmpi_data.package_url %}
+                                                        <a href="{{ dmpi_data.package_url }}" class="file-name has-url" target="_blank">{{ dmpi_id }} - {{ aim_point }}</a>
+                                                    {% else %}
+                                                        <span class="file-name">{{ dmpi_id }} - {{ aim_point }}</span>
+                                                    {% endif %}
                                                 </td>
                                                 <td data-value="{{ dmpi_data.comment }}">
                                                     <span class="comment-text">{{ dmpi_data.comment }}</span>
@@ -560,6 +652,19 @@
                 </div>
             </div>
 
+            <!-- URL Popup -->
+            <div class="popup-overlay" id="urlPopup">
+                <div class="popup-content">
+                    <div class="popup-header">Add Target Package URL</div>
+                    <div class="popup-dmpi-info" id="urlPopupDmpiInfo">DMPI: </div>
+                    <input type="text" class="popup-input" id="urlInput" placeholder="Enter URL (e.g., https://example.com)">
+                    <div class="popup-buttons">
+                        <button class="popup-button cancel" onclick="hideUrlPopup()">Cancel</button>
+                        <button class="popup-button apply" onclick="applyUrl()">Apply</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Footer -->
             <div class="footer">
                 <img src="/static/img/logo2.png" width="80" height="72" alt="CVW-17 Logo" class="footer-logo">
@@ -573,6 +678,7 @@
 
     <script>
         let expandedRows = new Set();
+        let currentDmpiId = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             const table = document.getElementById('dmpiTable');
@@ -885,6 +991,150 @@
                 console.error('Error:', error);
                 alert('An error occurred. Please try again.');
             });
+        }
+
+        // URL Popup Functions
+        function showUrlPopup(dmpiId) {
+            currentDmpiId = dmpiId;
+            const popup = document.getElementById('urlPopup');
+            const dmpiInfo = document.getElementById('urlPopupDmpiInfo');
+            const urlInput = document.getElementById('urlInput');
+
+            // Remove only the aim point suffix (e.g., -01, -02) from DMPI ID for display and sending
+            // This regex matches a dash followed by exactly 2 digits at the end
+            const baseDmpiId = dmpiId.replace(/-\d{2}$/, '');
+
+            dmpiInfo.textContent = `DMPI: ${baseDmpiId}-01`;
+
+            // Get current URL from the DOM
+            const currentUrl = getCurrentUrlFromDom(dmpiId);
+            urlInput.value = currentUrl; // Pre-fill with current URL if available
+
+            popup.style.display = 'flex';
+            urlInput.focus();
+            if (currentUrl) {
+                urlInput.select(); // Select all text for easy editing if there's a URL
+            }
+        }
+
+        function getCurrentUrlFromDom(dmpiId) {
+            // Find the main row for this DMPI ID
+            const mainRow = document.querySelector(`tr[data-dmpi-id="${dmpiId}"]`);
+            if (!mainRow) return '';
+
+            // Look for a link in the first cell
+            const fileNameLink = mainRow.querySelector('td:first-child .file-name');
+            if (fileNameLink && fileNameLink.tagName.toLowerCase() === 'a' && fileNameLink.href) {
+                return fileNameLink.href;
+            }
+
+            return '';
+        }
+
+        function hideUrlPopup() {
+            const popup = document.getElementById('urlPopup');
+            popup.style.display = 'none';
+            currentDmpiId = null;
+        }
+
+        function applyUrl() {
+            const urlInput = document.getElementById('urlInput');
+            let url = urlInput.value.trim();
+
+            if (!currentDmpiId) {
+                alert('No DMPI ID selected.');
+                return;
+            }
+
+            // Auto-prepend https:// if no protocol is specified and URL is not empty
+            if (url && !url.match(/^https?:\/\//i)) {
+                url = 'https://' + url;
+            }
+
+            // Send POST request to /target-package
+            fetch('/target-package', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    dmpi_id: currentDmpiId,
+                    url: url
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Update the UI locally without reloading
+                    updateLocalUrls(currentDmpiId, url);
+                    hideUrlPopup();
+                    if (url) {
+                        alert('URL successfully added to target package!');
+                    } else {
+                        alert('URL successfully removed from target package!');
+                    }
+                } else {
+                    return response.text().then(text => {
+                        throw new Error(text || 'Failed to update URL');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to update URL: ' + error.message);
+            });
+        }
+
+        function updateLocalUrls(dmpiId, newUrl) {
+            // Find all rows with this DMPI ID (main row and sub-rows)
+            const mainRow = document.querySelector(`tr[data-dmpi-id="${dmpiId}"]`);
+            const subRows = document.querySelectorAll(`tr.sub-row[data-parent="${dmpiId}"]`);
+
+            // Update main row
+            if (mainRow) {
+                updateRowUrl(mainRow, newUrl);
+            }
+
+            // Update sub-rows
+            subRows.forEach(subRow => {
+                updateRowUrl(subRow, newUrl);
+            });
+        }
+
+        function updateRowUrl(row, newUrl) {
+            const firstCell = row.querySelector('td:first-child');
+            if (!firstCell) return;
+
+            const fileNameElement = firstCell.querySelector('.file-name');
+            if (!fileNameElement) return;
+
+            const dmpiText = fileNameElement.textContent || fileNameElement.innerText;
+
+            if (newUrl && newUrl.trim() !== '') {
+                // Convert to link if it's not already one
+                if (fileNameElement.tagName.toLowerCase() !== 'a') {
+                    const newLink = document.createElement('a');
+                    newLink.href = newUrl;
+                    newLink.className = 'file-name has-url';
+                    newLink.innerHTML = fileNameElement.innerHTML;
+                    newLink.target = '_blank';
+                    newLink.onclick = function(e) { e.stopPropagation(); };
+                    fileNameElement.parentNode.replaceChild(newLink, fileNameElement);
+                } else {
+                    // Update existing link
+                    fileNameElement.href = newUrl;
+                    if (!fileNameElement.classList.contains('has-url')) {
+                        fileNameElement.classList.add('has-url');
+                    }
+                }
+            } else {
+                // Remove link and convert back to span (empty URL = remove link)
+                if (fileNameElement.tagName.toLowerCase() === 'a') {
+                    const newSpan = document.createElement('span');
+                    newSpan.className = 'file-name';
+                    newSpan.innerHTML = fileNameElement.innerHTML;
+                    fileNameElement.parentNode.replaceChild(newSpan, fileNameElement);
+                }
+            }
         }
 
         function toggleExpand(row) {
