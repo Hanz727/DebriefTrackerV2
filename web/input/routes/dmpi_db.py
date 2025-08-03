@@ -442,7 +442,7 @@ def dmpi_db():
                            overrides=load_overrides(),
                            dmpis=_get_dmpis(),
                            admin=session.get('discord_uid') in config.admin_uids,
-                           package=session.get('dmpi_id') in config.package_managers
+                           package=session.get('discord_uid') in config.package_managers
                            )
 
 @app.route('/planmsn')

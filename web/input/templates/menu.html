@@ -222,7 +222,7 @@
         .map-ring {
             aspect-ratio: 1;
             position: absolute;
-            border: 2px solid #ff0000;
+            border: 1px solid #ff0000;
             border-radius: 50%;
             transform: translate(-50%, -50%);
             transition: none;
@@ -1210,8 +1210,11 @@
                     const currentTransform = ring.style.transform;
                     const scaleYMatch = currentTransform.match(/scaleY\(([^)]+)\)/);
                     const scaleYValue = scaleYMatch ? scaleYMatch[1] : '1';
+                    if (isFullscreen)
+                        ring.style.borderWidth = `2px`;
+                    else
+                        ring.style.borderWidth = `1px`;
 
-                    ring.style.borderWidth = `${2/currentZoom}px`;
                     ring.style.transform = `translate(-50%, -50%) scaleY(${scaleYValue})`;
                 });
 
@@ -1527,260 +1530,270 @@
                 lastTouchDistance = 0;
             });
 
-            async function captureVisibleArea(symbolSizeMultiplier = 1.0) {
-                const mapContainer = document.getElementById('mapContainer');
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
 
-                const containerRect = mapContainer.getBoundingClientRect();
-                const scale = 4; // Higher resolution
+async function captureVisibleArea(symbolSizeMultiplier = 1.0) {
+    const mapContainer = document.getElementById('mapContainer');
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
 
-                canvas.width = containerRect.width * scale;
-                canvas.height = containerRect.height * scale;
+    const containerRect = mapContainer.getBoundingClientRect();
 
-                // Apply scaling but ensure we account for it in positioning
-                ctx.scale(scale, scale);
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'high';
+    // Fixed output dimensions - always 2550px wide
+    const outputWidth = 2550;
+    const containerAspect = containerRect.width / containerRect.height;
+    const outputHeight = outputWidth / containerAspect;
 
-                // Fill background
-                ctx.fillStyle = '#121212';
-                ctx.fillRect(0, 0, containerRect.width, containerRect.height);
+    // Calculate scale factor from container to output
+    const outputScale = outputWidth / containerRect.width;
 
-                try {
-                    // Get all visible elements within the container
-                    const mapImage = document.getElementById('mapImage');
-                    const visibleSymbols = Array.from(document.querySelectorAll('.map-symbol'))
-                        .filter(symbol => {
-                            const style = window.getComputedStyle(symbol);
-                            return style.display !== 'none' && style.visibility !== 'hidden';
-                        });
-                    const visibleRings = Array.from(document.querySelectorAll('.map-ring'))
-                        .filter(ring => {
-                            const style = window.getComputedStyle(ring);
-                            return style.display !== 'none' && style.visibility !== 'hidden';
-                        });
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
 
-                    // Draw the map image as it appears on screen
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    await new Promise((resolve, reject) => {
-                        img.onload = resolve;
-                        img.onerror = reject;
-                        img.src = mapImage.src;
-                    });
+    // Apply output scaling
+    ctx.scale(outputScale, outputScale);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
-                    const imageRect = mapImage.getBoundingClientRect();
+    // Fill background
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0, 0, containerRect.width, containerRect.height);
 
-                    // Calculate the actual content position within the image element
-                    let contentX, contentY, contentWidth, contentHeight;
+    try {
+        // Get all visible elements within the container
+        const mapImage = document.getElementById('mapImage');
+        const visibleSymbols = Array.from(document.querySelectorAll('.map-symbol'))
+            .filter(symbol => {
+                const style = window.getComputedStyle(symbol);
+                return style.display !== 'none' && style.visibility !== 'hidden';
+            });
+        const visibleRings = Array.from(document.querySelectorAll('.map-ring'))
+            .filter(ring => {
+                const style = window.getComputedStyle(ring);
+                return style.display !== 'none' && style.visibility !== 'hidden';
+            });
 
-                    if (isFullscreen) {
-                        // In fullscreen mode with object-fit: contain, we need to calculate where the actual image is
-                        const naturalWidth = img.naturalWidth;
-                        const naturalHeight = img.naturalHeight;
-                        const containerWidth = imageRect.width;
-                        const containerHeight = imageRect.height;
+        // Draw the map image as it appears on screen
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = mapImage.src;
+        });
 
-                        const imageAspect = naturalWidth / naturalHeight;
-                        const containerAspect = containerWidth / containerHeight;
+        const imageRect = mapImage.getBoundingClientRect();
 
-                        if (imageAspect > containerAspect) {
-                            // Image is wider - it will be scaled to fit width with bars on top/bottom
-                            contentWidth = containerWidth;
-                            contentHeight = containerWidth / imageAspect;
-                            contentX = 0;
-                            contentY = (containerHeight - contentHeight) / 2;
-                        } else {
-                            // Image is taller - it will be scaled to fit height with bars on left/right
-                            contentWidth = containerHeight * imageAspect;
-                            contentHeight = containerHeight;
-                            contentX = (containerWidth - contentWidth) / 2;
-                            contentY = 0;
-                        }
+        // Calculate the actual content position within the image element
+        let contentX, contentY, contentWidth, contentHeight;
 
-                        // Draw the image with the calculated content area
-                        const relativeX = (imageRect.left - containerRect.left) + contentX;
-                        const relativeY = (imageRect.top - containerRect.top) + contentY;
-                        ctx.drawImage(img, relativeX, relativeY, contentWidth, contentHeight);
-                    } else {
-                        // Non-fullscreen mode - image fills its container
-                        const relativeX = imageRect.left - containerRect.left;
-                        const relativeY = imageRect.top - containerRect.top;
-                        ctx.drawImage(img, relativeX, relativeY, imageRect.width, imageRect.height);
-                    }
+        if (isFullscreen) {
+            // In fullscreen mode with object-fit: contain, we need to calculate where the actual image is
+            const naturalWidth = img.naturalWidth;
+            const naturalHeight = img.naturalHeight;
+            const containerWidth = imageRect.width;
+            const containerHeight = imageRect.height;
 
-                    // Load symbol images
-                    const symbolImages = new Map();
-                    const uniqueSrcs = [...new Set(visibleSymbols.map(s => s.src))];
+            const imageAspect = naturalWidth / naturalHeight;
+            const containerAspect = containerWidth / containerHeight;
 
-                    await Promise.all(uniqueSrcs.map(src => {
-                        return new Promise((resolve) => {
-                            if (symbolImages.has(src)) {
-                                resolve();
-                                return;
-                            }
-                            const img = new Image();
-                            img.crossOrigin = 'anonymous';
-                            img.onload = () => {
-                                symbolImages.set(src, img);
-                                resolve();
-                            };
-                            img.onerror = () => {
-                                console.warn('Failed to load symbol:', src);
-                                resolve();
-                            };
-                            img.src = src;
-                        });
-                    }));
-
-                    // Draw rings as they appear on screen
-                    for (const ring of visibleRings) {
-                        const ringRect = ring.getBoundingClientRect();
-
-                        // Calculate position relative to container
-                        const relativeX = ringRect.left - containerRect.left;
-                        const relativeY = ringRect.top - containerRect.top;
-                        const centerX = relativeX + ringRect.width / 2;
-                        const centerY = relativeY + ringRect.height / 2;
-
-                        const actualRadius = ringRect.width / 2;
-
-                        ctx.strokeStyle = window.getComputedStyle(ring).borderColor || '#ff0000';
-                        const currentBorderWidth = parseFloat(window.getComputedStyle(ring).borderWidth) || 2;
-                        ctx.lineWidth = currentBorderWidth * currentZoom;
-
-                        ctx.globalAlpha = 0.7;
-                        ctx.beginPath();
-                        ctx.arc(centerX, centerY, actualRadius, 0, 2 * Math.PI);
-                        ctx.stroke();
-                        ctx.globalAlpha = 1;
-                    }
-
-                    // Draw symbols
-                    for (const symbol of visibleSymbols) {
-                        const img = symbolImages.get(symbol.src);
-                        if (!img) continue;
-
-                        const symbolRect = symbol.getBoundingClientRect();
-
-                        const relativeX = symbolRect.left - containerRect.left;
-                        const relativeY = symbolRect.top - containerRect.top;
-
-                        const originalWidth = symbolRect.width;
-                        const originalHeight = symbolRect.height;
-                        const scaledWidth = originalWidth * symbolSizeMultiplier;
-                        const scaledHeight = originalHeight * symbolSizeMultiplier;
-
-                        const centerX = relativeX + originalWidth / 2;
-                        const centerY = relativeY + originalHeight / 2;
-                        const scaledX = centerX - scaledWidth / 2;
-                        const scaledY = centerY - scaledHeight / 2;
-
-                        ctx.save();
-
-                        if (symbol.classList.contains('collision-no-report')) {
-                            ctx.filter = 'grayscale(100%) brightness(0.3)';
-                        } else if (symbol.classList.contains('collision')) {
-                            ctx.filter = 'grayscale(100%) brightness(1.0)';
-                        } else if (symbol.classList.contains('destroyed-no-report')) {
-                            ctx.filter = 'brightness(0.4) saturate(0.6)';
-                        }
-
-                        ctx.drawImage(img, scaledX, scaledY, scaledWidth, scaledHeight);
-                        ctx.restore();
-                    }
-
-                    // Add watermark in bottom right corner
-                    const now = new Date();
-                    const currentDate = now.toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit'
-                    });
-
-                    const currentTime = now.toLocaleTimeString('en-US', {
-                        hour12: false,
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        timeZone: 'Europe/Berlin' // CET/CEST timezone
-                    });
-
-                    // Determine if it's currently CEST (daylight saving time) or CET
-                    const isDST = (date) => {
-                        const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
-                        const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
-                        return Math.max(jan, jul) !== date.getTimezoneOffset();
-                    };
-
-                    const timezoneName = isDST(now) ? 'CEST' : 'CET';
-
-                    // Get mission name from template variable
-                    const missionName = '{{msn}}';
-
-                    // Watermark text lines
-                    const headerText = 'CVW-17 TARGET INTELLIGENCE CELL';
-                    const missionText = missionName;
-                    const dateTimeText = `${currentDate} ${currentTime} ${timezoneName}`;
-
-                    // Set font properties (2x smaller)
-                    const fontSize = Math.max(6, containerRect.width * 0.01); // Half the original size
-                    ctx.font = `${fontSize}px Arial, sans-serif`;
-                    ctx.textAlign = 'left'; // Changed to left alignment
-                    ctx.textBaseline = 'top';
-
-                    // Measure text for background sizing
-                    const headerMetrics = ctx.measureText(headerText);
-                    const missionMetrics = ctx.measureText(missionText);
-                    const dateTimeMetrics = ctx.measureText(dateTimeText);
-
-                    const maxWidth = Math.max(headerMetrics.width, missionMetrics.width, dateTimeMetrics.width);
-                    const lineHeight = fontSize * 1.2; // Line spacing
-                    const totalHeight = lineHeight * 3; // Three lines
-
-                    // Add padding around the text
-                    const padding = 6; // Smaller padding
-                    const backgroundWidth = maxWidth + (padding * 2);
-                    const backgroundHeight = totalHeight + (padding * 2);
-
-                    // Position in bottom right
-                    const watermarkX = containerRect.width - 10; // 10px from right edge
-                    const watermarkY = containerRect.height - 10; // 10px from bottom edge
-
-                    // Draw semi-transparent black background
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                    ctx.fillRect(
-                        watermarkX - backgroundWidth,
-                        watermarkY - backgroundHeight,
-                        backgroundWidth,
-                        backgroundHeight
-                    );
-
-                    // Draw white text lines
-                    ctx.fillStyle = '#ffffff';
-                    const textStartX = watermarkX - backgroundWidth + padding; // Left-aligned within background
-                    const textStartY = watermarkY - backgroundHeight + padding;
-
-                    // Draw each line
-                    ctx.fillText(headerText, textStartX, textStartY);
-                    ctx.fillText(missionText, textStartX, textStartY + lineHeight);
-                    ctx.fillText(dateTimeText, textStartX, textStartY + (lineHeight * 2));
-
-                    // Create download
-                    const link = document.createElement('a');
-                    link.download = `interactive-map-${Date.now()}.jpg`;
-                    link.href = canvas.toDataURL('image/jpeg', 0.9);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                } catch (error) {
-                    console.error('Manual capture failed:', error);
-                    alert('Failed to capture image. Please try again.');
-                }
+            if (imageAspect > containerAspect) {
+                // Image is wider - it will be scaled to fit width with bars on top/bottom
+                contentWidth = containerWidth;
+                contentHeight = containerWidth / imageAspect;
+                contentX = 0;
+                contentY = (containerHeight - contentHeight) / 2;
+            } else {
+                // Image is taller - it will be scaled to fit height with bars on left/right
+                contentWidth = containerHeight * imageAspect;
+                contentHeight = containerHeight;
+                contentX = (containerWidth - contentWidth) / 2;
+                contentY = 0;
             }
 
+            // Draw the image with the calculated content area
+            const relativeX = (imageRect.left - containerRect.left) + contentX;
+            const relativeY = (imageRect.top - containerRect.top) + contentY;
+            ctx.drawImage(img, relativeX, relativeY, contentWidth, contentHeight);
+        } else {
+            // Non-fullscreen mode - image fills its container
+            const relativeX = imageRect.left - containerRect.left;
+            const relativeY = imageRect.top - containerRect.top;
+            ctx.drawImage(img, relativeX, relativeY, imageRect.width, imageRect.height);
+        }
 
+        // Load symbol images
+        const symbolImages = new Map();
+        const uniqueSrcs = [...new Set(visibleSymbols.map(s => s.src))];
+
+        await Promise.all(uniqueSrcs.map(src => {
+            return new Promise((resolve) => {
+                if (symbolImages.has(src)) {
+                    resolve();
+                    return;
+                }
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    symbolImages.set(src, img);
+                    resolve();
+                };
+                img.onerror = () => {
+                    console.warn('Failed to load symbol:', src);
+                    resolve();
+                };
+                img.src = src;
+            });
+        }));
+
+        // Draw rings as they appear on screen
+        for (const ring of visibleRings) {
+            const ringRect = ring.getBoundingClientRect();
+
+            // Calculate position relative to container
+            const relativeX = ringRect.left - containerRect.left;
+            const relativeY = ringRect.top - containerRect.top;
+            const centerX = relativeX + ringRect.width / 2;
+            const centerY = relativeY + ringRect.height / 2;
+
+            const actualRadius = ringRect.width / 2;
+
+            ctx.strokeStyle = window.getComputedStyle(ring).borderColor || '#ff0000';
+            const currentBorderWidth = parseFloat(window.getComputedStyle(ring).borderWidth) || 2;
+            ctx.lineWidth = currentBorderWidth * currentZoom;
+
+            ctx.globalAlpha = 0.7;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, actualRadius, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+
+        // Draw symbols
+        for (const symbol of visibleSymbols) {
+            const img = symbolImages.get(symbol.src);
+            if (!img) continue;
+
+            const symbolRect = symbol.getBoundingClientRect();
+
+            const relativeX = symbolRect.left - containerRect.left;
+            const relativeY = symbolRect.top - containerRect.top;
+
+            const originalWidth = symbolRect.width;
+            const originalHeight = symbolRect.height;
+            const scaledWidth = originalWidth * symbolSizeMultiplier;
+            const scaledHeight = originalHeight * symbolSizeMultiplier;
+
+            const centerX = relativeX + originalWidth / 2;
+            const centerY = relativeY + originalHeight / 2;
+            const scaledX = centerX - scaledWidth / 2;
+            const scaledY = centerY - scaledHeight / 2;
+
+            ctx.save();
+
+            if (symbol.classList.contains('collision-no-report')) {
+                ctx.filter = 'grayscale(100%) brightness(0.3)';
+            } else if (symbol.classList.contains('collision')) {
+                ctx.filter = 'grayscale(100%) brightness(1.0)';
+            } else if (symbol.classList.contains('destroyed-no-report')) {
+                ctx.filter = 'brightness(0.4) saturate(0.6)';
+            }
+
+            ctx.drawImage(img, scaledX, scaledY, scaledWidth, scaledHeight);
+            ctx.restore();
+        }
+
+        // Add watermark in bottom right corner
+        const now = new Date();
+        const currentDate = now.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+
+        const currentTime = now.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Europe/Berlin' // CET/CEST timezone
+        });
+
+        // Determine if it's currently CEST (daylight saving time) or CET
+        const isDST = (date) => {
+            const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
+            const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
+            return Math.max(jan, jul) !== date.getTimezoneOffset();
+        };
+
+        const timezoneName = isDST(now) ? 'CEST' : 'CET';
+
+        // Get mission name from template variable
+        const missionName = '{{msn}}';
+
+        // Watermark text lines
+        const headerText = 'CVW-17 TARGET INTELLIGENCE CELL';
+        const missionText = missionName;
+        const dateTimeText = `${currentDate} ${currentTime} ${timezoneName}`;
+
+        // Set font properties - scale the font size to maintain consistent output size
+        const baseFontSize = 20; // Desired font size in output pixels
+        const scaledFontSize = baseFontSize / outputScale; // Adjust for canvas scaling
+        ctx.font = `${scaledFontSize}px Arial, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+
+        // Measure text for background sizing
+        const headerMetrics = ctx.measureText(headerText);
+        const missionMetrics = ctx.measureText(missionText);
+        const dateTimeMetrics = ctx.measureText(dateTimeText);
+
+        const maxWidth = Math.max(headerMetrics.width, missionMetrics.width, dateTimeMetrics.width);
+        const lineHeight = scaledFontSize * 1.2; // Line spacing
+        const totalHeight = lineHeight * 3; // Three lines
+
+        // Add padding around the text - also scaled
+        const basePadding = 8;
+        const scaledPadding = basePadding / outputScale;
+        const backgroundWidth = maxWidth + (scaledPadding * 2);
+        const backgroundHeight = totalHeight + (scaledPadding * 2);
+
+        // Position in bottom right - fixed distance from edges in output pixels
+        const baseMargin = 15;
+        const scaledMargin = baseMargin / outputScale;
+        const watermarkX = containerRect.width - scaledMargin; // Right edge minus margin
+        const watermarkY = containerRect.height - scaledMargin; // Bottom edge minus margin
+
+        // Draw semi-transparent black background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(
+            watermarkX - backgroundWidth, // Start from right edge minus background width
+            watermarkY - backgroundHeight, // Start from bottom edge minus background height
+            backgroundWidth,
+            backgroundHeight
+        );
+
+        // Draw white text lines
+        ctx.fillStyle = '#ffffff';
+        const textStartX = watermarkX - backgroundWidth + scaledPadding; // Left edge of background plus padding
+        const textStartY = watermarkY - backgroundHeight + scaledPadding; // Top edge of background plus padding
+
+        // Draw each line
+        ctx.fillText(headerText, textStartX, textStartY);
+        ctx.fillText(missionText, textStartX, textStartY + lineHeight);
+        ctx.fillText(dateTimeText, textStartX, textStartY + (lineHeight * 2));
+
+        // Create download - direct PNG export
+        const link = document.createElement('a');
+        link.download = `interactive-map-${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    } catch (error) {
+        console.error('Manual capture failed:', error);
+        alert('Failed to capture image. Please try again.');
+    }
+}
 
             const downloadBtn = document.getElementById('downloadBtn');
             if (downloadBtn) {
