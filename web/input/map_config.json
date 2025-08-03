@@ -1,53 +1,131 @@
 {
-    "maps": ["sinai-zoom1.png", "sinai-zoom2.png"],
+    "maps": ["sinai-zoom1.png", "sinai-zoom2.png", "sinai-bluefor.png"],
     "current_map": "sinai",
-    "map_origin_x": [715, 537],
-    "map_origin_y": [575, 726],
-    "map_scale_mpp": [306.116, 176.381],
+    "map_origin_x": [625, 537, 622],
+    "map_origin_y": [1111, 726, 1112],
+    "map_scale_mpp": [451.7073, 176.381, 451.7073],
     "map_reference": ["N 30°02'49\" E 31°14'41\"",
+        "N 30°02'49\" E 31°14'41\"",
         "N 30°02'49\" E 31°14'41\""],
     "comments": {
         "SA-6": {
             "render_icon": true,
             "render_ring": true,
             "radius_meters": 25000,
-            "symbol": "/static/img/nato-sam.png"
+            "symbol": "/static/img/nato-sam.png",
+            "type": "SAD"
         },
         "SA-3": {
             "render_icon": true,
             "render_ring": true,
             "radius_meters": 17000,
-            "symbol": "/static/img/nato-sam.png"
+            "symbol": "/static/img/nato-sam.png",
+            "type": "SAD"
         },
         "SA-2": {
             "render_icon": true,
             "render_ring": true,
             "radius_meters": 44000,
-            "symbol": "/static/img/nato-sam.png"
+            "symbol": "/static/img/nato-sam.png",
+            "type": "SAD"
         },
         "SA-9": {
             "render_icon": true,
             "render_ring": true,
             "radius_meters": 4640,
-            "symbol": "/static/img/nato-sam.png"
+            "symbol": "/static/img/nato-sam.png",
+            "type": "SAD"
+        },
+        "Patriot str": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 96304,
+            "symbol": "/static/img/nato-patriot.png",
+            "type": "BLUE"
         },
         "HAAA": {
             "render_icon": true,
             "render_ring": true,
             "radius_meters": 3000,
-            "symbol": "/static/img/nato-haaa.png"
+            "symbol": "/static/img/nato-haaa.png",
+            "type": "SAD"
         },
         "EWR": {
             "render_icon": true,
             "render_ring": false,
             "radius_meters": 463000,
-            "symbol": "/static/img/nato-ewr.png"
+            "symbol": "/static/img/nato-ewr.png",
+            "type": "SAD"
         },
         "HAWK": {
             "render_icon": true,
             "render_ring": true,
             "radius_meters": 45000,
-            "symbol": "/static/img/nato-sam.png"
+            "symbol": "/static/img/nato-sam.png",
+            "type": "SAD"
+        },
+        "CVN_73": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 24076,
+            "symbol": "/static/img/nato-cv.png",
+            "type": "BLUE"
+        },
+        "CVN_75": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 24076,
+            "symbol": "/static/img/nato-cv.png",
+            "type": "BLUE"
+        },
+        "hms_invincible": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-cv.png",
+            "type": "BLUE"
+        },
+        "LHA_Tarawa": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-cv2.png",
+            "type": "BLUE"
+        },
+        "PERRY": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 25928,
+            "symbol": "/static/img/nato-ff.png",
+            "type": "BLUE"
+        },
+        "leander-gun-achilles": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 9260,
+            "symbol": "/static/img/nato-ff.png",
+            "type": "BLUE"
+        },
+        "USS_Arleigh_Burke_IIa": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 96304,
+            "symbol": "/static/img/nato-dd.png",
+            "type": "BLUE"
+        },
+        "TICONDEROG": {
+            "render_icon": true,
+            "render_ring": true,
+            "radius_meters": 98156,
+            "symbol": "/static/img/nato-cc.png",
+            "type": "BLUE"
+        },
+        "KC135MPRS": {
+            "render_icon": true,
+            "render_ring": false,
+            "radius_meters": 0,
+            "symbol": "/static/img/nato-tanker.png",
+            "type": "BLUE"
         }
     },
 

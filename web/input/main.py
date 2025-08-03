@@ -41,6 +41,18 @@ def create_app():
 
     draw_dynamic_map()
 
+    def map_coordinates_only(draw_data):
+        coordinates = {}
+        for map_key, map_data in draw_data.items():
+            coordinates[map_key] = {
+                'x': map_data.get('x'),
+                'y': map_data.get('y'),
+                'radius_px': map_data.get('radius_px', 0)
+            }
+        return coordinates
+
+    app.jinja_env.filters['map_coordinates_only'] = map_coordinates_only
+
     return app
 
 if __name__ == '__main__':

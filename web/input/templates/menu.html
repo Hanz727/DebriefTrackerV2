@@ -116,24 +116,26 @@
         .map-container {
             position: relative;
             width: 100%;
+            height: 600px;  /* Fixed height */
             border: 1px solid #4f545c;
             background: #121212;
             overflow: hidden;
-            max-height: 600px;
             margin-bottom: 10px;
         }
 
         .map-img {
+            transform-origin: 0 0;
             width: 100%;
             height: auto;
             display: block;
-            transition: none;
             user-select: none;
             -webkit-user-drag: none;
             will-change: transform;
         }
 
+
         .map-symbols {
+            transform-origin: 0 0;
             position: absolute;
             top: 0;
             left: 0;
@@ -224,6 +226,10 @@
             z-index: 4;
         }
 
+        .map-ring.blue {
+            border: 2px solid rgb(51, 98, 255) !important;
+        }
+
         .map-controls {
             position: absolute;
             top: 10px;
@@ -271,8 +277,8 @@
 
         .map-container.fullscreen .map-img {
             width: 100%;
-            height: 100vh;
-            object-fit: contain;
+            height: auto;
+            object-fit: fill;
         }
 
         .zoom-btn {
@@ -623,37 +629,36 @@
                             {% if drawables %}
                                 {% for drawable_id, drawable_data in drawables.items() %}
                                     {% if drawable_data and drawable_data.draw %}
-                                        {% for map_key, map_data in drawable_data.draw.items() %}
-                                            {% if map_data and map_data.render_icon %}
-                                                {% if map_data.render_ring and map_data.radius_px and map_data.radius_px > 0 and not drawable_data.collision %}
-                                                    <div class="map-ring hidden"
-                                                         id="ring-{{ drawable_id }}-{{ loop.index0 }}"
-                                                         data-x="{{ map_data.x }}"
-                                                         data-y="{{ map_data.y }}"
-                                                         data-radius="{{ map_data.radius_px }}"
-                                                         data-type="{{ map_data.type or '' }}"
-                                                         data-map="{{ map_key }}"
-                                                         style="width: {{ map_data.radius_px * 2 }}px; height: {{ map_data.radius_px * 2 }}px;">
-                                                    </div>
-                                                {% endif %}
+                                        {% set first_map_data = drawable_data.draw.values() | first %}
 
-                                                <img class="map-symbol hidden {% if drawable_data.collision %}collision{% endif %} {% if drawable_data.aim_points and drawable_data.aim_points["01"].debrief_id %}clickable{% endif %} {% if drawable_data.collision and drawable_data.aim_points and not drawable_data.aim_points["01"].debrief_id %}collision-no-report{% endif %}"
-                                                     id="symbol-{{ drawable_id }}-{{ loop.index0 }}"
-                                                     src="{{ map_data.symbol }}"
-                                                     alt="{{ drawable_data.comment or drawable_id }}"
-                                                     data-x="{{ map_data.x }}"
-                                                     data-y="{{ map_data.y }}"
-                                                     data-id="{{ drawable_id }}"
-                                                     data-comment="{{ drawable_data.comment or '' }}"
-                                                     data-type="{{ map_data.type or '' }}"
-                                                     data-map="{{ map_key }}"
-                                                     data-collision="{{ drawable_data.collision or '' }}"
-                                                     data-bda="{{ drawable_data.aim_points["01"].bda}}"
-                                                     data-debrief-id="{{ drawable_data.aim_points["01"].debrief_id}}"
-                                                     data-lat="{{ drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lat or '' }}"
-                                                     data-lon="{{ drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lon or '' }}">
-                                            {% endif %}
-                                        {% endfor %}
+                                        <!-- Generate one ring element per drawable with coordinate data only -->
+                                        {% if first_map_data.render_ring and first_map_data.radius_px > 0 and not drawable_data.collision %}
+                                            <div class="map-ring hidden {% if first_map_data.type == "BLUE" %}blue{% endif %}"
+                                                 id="ring-{{ drawable_id }}"
+                                                 data-drawable-id="{{ drawable_id }}"
+                                                 data-type="{{ first_map_data.type or '' }}"
+                                                 data-radius-meters="{{ first_map_data.radius_meters }}"
+                                                 data-coordinates='{{ drawable_data.draw | map_coordinates_only | tojson }}'>
+                                            </div>
+                                        {% endif %}
+
+                                        <!-- Generate one symbol element per drawable with coordinate data only -->
+                                        {% if first_map_data.render_icon %}
+                                            <img class="map-symbol hidden {% if drawable_data.collision %}collision{% endif %} {% if drawable_data.aim_points and drawable_data.aim_points["01"].debrief_id %}clickable{% endif %} {% if drawable_data.collision and drawable_data.aim_points and not drawable_data.aim_points["01"].debrief_id %}collision-no-report{% endif %}"
+                                                 id="symbol-{{ drawable_id }}"
+                                                 data-id="{{ drawable_id }}"
+                                                 src="{{ first_map_data.symbol }}"
+                                                 alt="{{ drawable_data.comment or drawable_id }}"
+                                                 data-drawable-id="{{ drawable_id }}"
+                                                 data-comment="{{ drawable_data.comment or '' }}"
+                                                 data-type="{{ first_map_data.type or '' }}"
+                                                 data-collision="{{ drawable_data.collision or '' }}"
+                                                 data-bda="{{ drawable_data.aim_points["01"].bda}}"
+                                                 data-debrief-id="{{ drawable_data.aim_points["01"].debrief_id}}"
+                                                 data-lat="{{ drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lat or '' }}"
+                                                 data-lon="{{ drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lon or '' }}"
+                                                 data-coordinates='{{ drawable_data.draw | map_coordinates_only | tojson }}'>
+                                        {% endif %}
                                     {% endif %}
                                 {% endfor %}
                             {% endif %}
@@ -675,6 +680,7 @@
                         <button class="map-selector-btn active" id="airDefenceBtn" data-map="z1" data-filter="SAD">AIR DEFENCES</button>
                         <button class="map-selector-btn" id="superMezBtn" data-map="z2" data-filter="SAD">SUPER MEZ</button>
                         <button class="map-selector-btn" id="strategicBtn" data-map="z1" data-filter="strategic">DMPIS</button>
+                        <button class="map-selector-btn" id="blueforBtn" data-map="bluefor" data-filter="SAD">BLUEFOR</button>
                     </div>
 
                     <div class="strategic-filters" id="strategicFilters" style="display: none;">
@@ -863,6 +869,7 @@
             const airDefenceBtn = document.getElementById('airDefenceBtn');
             const superMezBtn = document.getElementById('superMezBtn');
             const strategicBtn = document.getElementById('strategicBtn');
+            const blueforBtn = document.getElementById('blueforBtn');
             const strategicFilters = document.getElementById('strategicFilters');
 
             let currentZoom = 1;
@@ -872,35 +879,64 @@
             let translateX = 0;
             let translateY = 0;
             let isFullscreen = false;
-            let currentMapType = 'z1';
             let currentFilter = 'SAD';
+            let currentPreset = 'airDefence'
             let selectedStrategicTypes = ['C', 'L', 'CCC', 'E', 'O', 'RR', 'A', 'N', 'MS', 'SC', 'RG'];
+
+            const MAP_PRESETS = {
+                airDefence: {
+                    zoom: 1.5,
+                    translateX: -100,
+                    translateY: -500,
+                    filter: 'SAD'
+                },
+                superMez: {
+                    zoom: 3.0,
+                    translateX: -660,
+                    translateY: -1230,
+                    filter: 'SAD'
+                },
+                strategic: {
+                    zoom: 1.4,
+                    translateX: -50,
+                    translateY: -410,
+                    filter: 'strategic'
+                },
+                bluefor: {
+                    zoom: 1,
+                    translateX: 0,
+                    translateY: 0,  // Bottom section
+                    filter: 'BLUE'
+                },
+                fullscreen: {
+                    zoom: 1,
+                    translateX: 0,
+                    translateY: -300,  // Bottom section
+                }
+            };
 
             const minZoom = 1;
             const maxZoom = 8;
             const zoomStep = 0.2;
 
-            function switchMap(mapType, filterType) {
-                const isMapChange = currentMapType !== mapType;
+            function getCoordinatesForElement(element) {
+                const coordinatesStr = element.getAttribute('data-coordinates');
+                if (!coordinatesStr) return null;
 
-                currentMapType = mapType;
-                currentFilter = filterType;
+                try {
+                    const coordinates = JSON.parse(coordinatesStr);
 
-                currentZoom = 1;
-                translateX = 0;
-                translateY = 0;
-
-                if (isMapChange) {
-                    const symbols = document.querySelectorAll('.map-symbol');
-                    const rings = document.querySelectorAll('.map-ring');
-                    symbols.forEach(symbol => symbol.style.display = 'none');
-                    rings.forEach(ring => ring.style.display = 'none');
-
-                    mapImage.src = `/static/maps/interactive_map_${mapType}.jpg`;
-                } else {
-                    repositionSymbols()
-                    filterAndShowSymbols();
+                    // Always use zoom1 coordinates
+                    for (const [mapKey, coords] of Object.entries(coordinates)) {
+                        if (mapKey.toLowerCase().includes('zoom1') || mapKey.toLowerCase().includes('z1')) {
+                            return coords;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing coordinates:', e);
                 }
+
+                return null;
             }
 
             function repositionSymbols() {
@@ -921,7 +957,6 @@
                     translateY = oldTranslateY;
 
                     constrainTranslation();
-
                     updateTransform();
                 });
             }
@@ -931,96 +966,83 @@
                 const rings = document.querySelectorAll('.map-ring');
 
                 symbols.forEach(symbol => {
-                    const symbolMap = symbol.getAttribute('data-map');
-                    const symbolType = symbol.getAttribute('data-type');
+                    const coordinates = getCoordinatesForElement(symbol);
 
-                    const mapMatches = isMapMatch(symbolMap, currentMapType);
+                    if (!coordinates) {
+                        symbol.style.display = 'none';
+                        return;
+                    }
+
+                    const symbolType = symbol.getAttribute('data-type');
                     let typeMatches = false;
 
                     if (currentFilter === 'strategic') {
                         typeMatches = selectedStrategicTypes.includes(symbolType);
+                    } else if (currentFilter === 'BLUE') {
+                        typeMatches = symbolType === 'BLUE' || symbolType === 'SAD';
                     } else {
                         typeMatches = currentFilter === '' || symbolType === currentFilter;
                     }
 
-                    if (mapMatches && typeMatches) {
-                        symbol.style.display = 'block';
-                    } else {
-                        symbol.style.display = 'none';
-                    }
+                    symbol.style.display = typeMatches ? 'block' : 'none';
                 });
 
+                // Similar logic for rings...
                 rings.forEach(ring => {
-                    const ringMap = ring.getAttribute('data-map');
-                    const ringType = ring.getAttribute('data-type');
+                    const coordinates = getCoordinatesForElement(ring);
 
-                    const mapMatches = isMapMatch(ringMap, currentMapType);
+                    if (!coordinates || !coordinates.radius_px || coordinates.radius_px <= 0) {
+                        ring.style.display = 'none';
+                        return;
+                    }
+
+                    const ringType = ring.getAttribute('data-type');
                     let typeMatches = false;
 
                     if (currentFilter === 'strategic') {
                         typeMatches = selectedStrategicTypes.includes(ringType);
+                    } else if (currentFilter === 'BLUE') {
+                        typeMatches = ringType === 'BLUE' || ringType === 'SAD';
                     } else {
                         typeMatches = currentFilter === '' || ringType === currentFilter;
                     }
 
-                    if (mapMatches && typeMatches) {
-                        ring.style.display = 'block';
-                    } else {
-                        ring.style.display = 'none';
-                    }
+                    ring.style.display = typeMatches ? 'block' : 'none';
                 });
             }
 
-            function isMapMatch(symbolMap, targetMapType) {
-                if (!symbolMap) return false;
+            function goToPreset(presetName, initial=false) {
+                const preset = MAP_PRESETS[presetName];
 
-                if (targetMapType === 'z1') {
-                    return symbolMap.includes('zoom1') || symbolMap.includes('z1');
+                // Animate to the preset position
+                currentZoom = preset.zoom;
+                translateX = preset.translateX;
+                translateY = preset.translateY;
+                currentFilter = preset.filter;
+                currentPreset = presetName
+
+                // Update transform with animation
+                updateTransform();
+
+                // Filter symbols based on new filter
+                filterAndShowSymbols();
+
+                // Update button states
+                if (!initial) {
+                    document.querySelectorAll('.map-selector-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    event.currentTarget.classList.add('active');
                 }
 
-                if (targetMapType === 'z2') {
-                    return symbolMap.includes('zoom2') || symbolMap.includes('z2');
-                }
-
-                return false;
+                // Show/hide strategic filters
+                strategicFilters.style.display = presetName === 'strategic' ? 'block' : 'none';
             }
 
-            airDefenceBtn.addEventListener('click', function() {
-                document.querySelectorAll('.map-selector-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-
-                this.classList.add('active');
-
-                strategicFilters.style.display = 'none';
-                switchMap('z1', 'SAD');
-            });
-
-            superMezBtn.addEventListener('click', function() {
-                document.querySelectorAll('.map-selector-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-
-                this.classList.add('active');
-
-                strategicFilters.style.display = 'none';
-                switchMap('z2', 'SAD');
-            });
-
-            strategicBtn.addEventListener('click', function() {
-                document.querySelectorAll('.map-selector-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-
-                this.classList.add('active');
-                strategicFilters.style.display = 'block';
-
-                switchMap('z1', 'strategic');
-
-                setTimeout(() => {
-                    positionSymbols();
-                }, 150);
-            });
+            airDefenceBtn.addEventListener('click', () => goToPreset('airDefence'));
+            superMezBtn.addEventListener('click', () => goToPreset('superMez'));
+            strategicBtn.addEventListener('click', () => goToPreset('strategic'));
+            blueforBtn.addEventListener('click', () => goToPreset('bluefor'));
 
             function setupFilterAutoApply() {
                 const checkboxes = strategicFilters.querySelectorAll('input[type="checkbox"]');
@@ -1052,32 +1074,24 @@
 
                 const containerRect = mapContainer.getBoundingClientRect();
                 const imageRect = mapImage.getBoundingClientRect();
-                console.log('container: ', containerRect);
-                console.log('image: ', imageRect);
 
                 if (isFullscreen) {
+                    // In fullscreen mode, image fills the width
                     const containerWidth = containerRect.width;
-                    const containerHeight = containerRect.height;
 
-                    const imageAspect = naturalWidth / naturalHeight;
-                    const containerAspect = containerWidth / containerHeight;
+                    // Image fills width, height is proportional
+                    displayWidth = containerWidth;
+                    displayHeight = (containerWidth / naturalWidth) * naturalHeight;
 
-                    if (imageAspect > containerAspect) {
-                        displayWidth = containerWidth;
-                        displayHeight = containerWidth / imageAspect;
-                        offsetX = 0;
-                        offsetY = (containerHeight - displayHeight) / 2;
-                    } else {
-                        displayWidth = containerHeight * imageAspect;
-                        displayHeight = containerHeight;
-                        offsetX = (containerWidth - displayWidth) / 2;
-                        offsetY = 0;
-                    }
+                    // No horizontal offset since image fills width
+                    offsetX = 0;
+                    // No vertical offset - image starts at top
+                    offsetY = 0;
                 } else {
+                    // Normal mode - image fits within its container
                     displayWidth = mapImage.offsetWidth;
                     displayHeight = mapImage.offsetHeight;
 
-                    const containerRect = mapContainer.getBoundingClientRect();
                     offsetX = imageRect.left - containerRect.left;
                     offsetY = imageRect.top - containerRect.top;
                 }
@@ -1086,48 +1100,52 @@
                 const baseScaleY = displayHeight / naturalHeight;
 
                 symbols.forEach(symbol => {
-                    const dataX = parseFloat(symbol.getAttribute('data-x'));
-                    const dataY = parseFloat(symbol.getAttribute('data-y'));
-
-                    const displayX = dataX * baseScaleX + offsetX;
-                    const displayY = dataY * baseScaleY + offsetY;
-
-                    const buffer = -10;
-                    const withinBounds = (
-                        displayX >= (offsetX - buffer) &&
-                        displayX <= (offsetX + displayWidth + buffer) &&
-                        displayY >= (offsetY - buffer) &&
-                        displayY <= (offsetY + displayHeight + buffer)
-                    );
-
-                    if (withinBounds) {
-                        symbol.style.left = displayX + 'px';
-                        symbol.style.top = displayY + 'px';
-                        symbol.style.transform = `translate(-50%, -50%)`;
-                        if (symbol.style.visibility === 'hidden') {
-                            symbol.style.visibility = 'visible';
-                        }
-                    } else {
+                    const coordinates = getCoordinatesForElement(symbol);
+                    if (!coordinates) {
                         symbol.style.visibility = 'hidden';
+                        return;
+                    }
+
+                    const dataX = parseFloat(coordinates.x);
+                    const dataY = parseFloat(coordinates.y);
+
+                    // Apply zoom to the base position
+                    const displayX = (dataX * baseScaleX + offsetX) * currentZoom + translateX;
+                    const displayY = (dataY * baseScaleY + offsetY) * currentZoom + translateY;
+
+                    symbol.style.left = displayX + 'px';
+                    symbol.style.top = displayY + 'px';
+                    symbol.style.transform = `translate(-50%, -50%)`;
+                    if (symbol.style.visibility === 'hidden') {
+                        symbol.style.visibility = 'visible';
                     }
                 });
 
                 rings.forEach(ring => {
-                    const dataX = parseFloat(ring.getAttribute('data-x'));
-                    const dataY = parseFloat(ring.getAttribute('data-y'));
-                    const radius = parseFloat(ring.getAttribute('data-radius'));
+                    const coordinates = getCoordinatesForElement(ring);
+                    if (!coordinates) {
+                        ring.style.visibility = 'hidden';
+                        return;
+                    }
 
-                    const displayX = dataX * baseScaleX + offsetX;
-                    const displayY = dataY * baseScaleY + offsetY;
+                    const dataX = parseFloat(coordinates.x);
+                    const dataY = parseFloat(coordinates.y);
+                    const radius = parseFloat(coordinates.radius_px);
 
+                    // Apply zoom to the base position for bounds checking
+                    const displayX = (dataX * baseScaleX + offsetX) * currentZoom + translateX;
+                    const displayY = (dataY * baseScaleY + offsetY) * currentZoom + translateY;
+
+                    const containerRect = mapContainer.getBoundingClientRect();
                     const withinBounds = (
-                        displayX >= offsetX &&
-                        displayX <= (offsetX + displayWidth) &&
-                        displayY >= offsetY &&
-                        displayY <= (offsetY + displayHeight)
+                        displayX >= 0 &&
+                        displayX <= containerRect.width &&
+                        displayY >= 0 &&
+                        displayY <= containerRect.height
                     );
 
                     if (withinBounds) {
+                        // Position relative to the container, not the transformed map
                         ring.style.left = displayX + 'px';
                         ring.style.top = displayY + 'px';
 
@@ -1141,7 +1159,6 @@
                         if (ring.style.visibility === 'hidden') {
                             ring.style.visibility = 'visible';
                         }
-
                     } else {
                         ring.style.visibility = 'hidden';
                     }
@@ -1160,12 +1177,18 @@
             if (mapImage.complete) {
                 filterAndShowSymbols();
                 repositionSymbols();
-                removeHidden()
+                removeHidden();
+                requestAnimationFrame(() => {
+                    goToPreset('airDefence', true);
+                });
             }
             mapImage.addEventListener('load', function() {
                 filterAndShowSymbols();
                 repositionSymbols();
-                removeHidden()
+                removeHidden();
+                requestAnimationFrame(() => {
+                    goToPreset('airDefence', true);
+                });
             });
 
             function handleResize() {
@@ -1178,9 +1201,10 @@
                 mapImage.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
                 mapSymbols.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
 
+                const symbolScale = 0.8;
                 const symbols = document.querySelectorAll('.map-symbol');
                 symbols.forEach(symbol => {
-                    symbol.style.transform = `translate(-50%, -50%) scale(${1/currentZoom})`;
+                    symbol.style.transform = `translate(-50%, -50%) scale(${1/currentZoom*symbolScale})`;
                 });
 
                 const rings = document.querySelectorAll('.map-ring');
@@ -1197,21 +1221,43 @@
             }
 
             function constrainTranslation() {
-                if (currentZoom <= 1) {
-                    translateX = 0;
-                    translateY = 0;
-                    return;
+                const containerRect = mapContainer.getBoundingClientRect();
+                let imageWidth, imageHeight;
+
+                if (isFullscreen) {
+                    // In fullscreen mode, maximize width (fill screen horizontally)
+                    const naturalWidth = mapImage.naturalWidth;
+                    const naturalHeight = mapImage.naturalHeight;
+                    const containerWidth = containerRect.width;
+
+                    // Scale image to fill container width
+                    imageWidth = containerWidth;
+                    imageHeight = (containerWidth / naturalWidth) * naturalHeight;
+
+                    // Apply zoom to the actual displayed dimensions
+                    imageWidth *= currentZoom;
+                    imageHeight *= currentZoom;
+                } else {
+                    // Normal mode - use the actual displayed size
+                    imageWidth = mapImage.offsetWidth * currentZoom;
+                    imageHeight = mapImage.offsetHeight * currentZoom;
                 }
 
-                const containerRect = mapContainer.getBoundingClientRect();
-                const imageWidth = mapImage.offsetWidth * currentZoom;
-                const imageHeight = mapImage.offsetHeight * currentZoom;
+                // Apply constraints
+                if (translateX > 0)
+                    translateX = 0;
+                if (translateY > 0)
+                    translateY = 0;
+                if (translateY < -(imageHeight - containerRect.height))
+                    translateY = -(imageHeight - containerRect.height);
+                if (translateX < -(imageWidth - containerRect.width))
+                    translateX = -(imageWidth - containerRect.width);
 
-                const maxTranslateX = Math.max(0, (imageWidth - containerRect.width) / 2);
-                const maxTranslateY = Math.max(0, (imageHeight - containerRect.height) / 2);
-
-                translateX = Math.max(-maxTranslateX, Math.min(maxTranslateX, translateX));
-                translateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, translateY));
+                // Additional check to prevent negative translation when image fits within container
+                if (imageHeight <= containerRect.height)
+                    translateY = 0;
+                if (imageWidth <= containerRect.width)
+                    translateX = 0;
             }
 
             function zoomIn() {
@@ -1238,6 +1284,10 @@
             function toggleFullscreen() {
                 isFullscreen = !isFullscreen;
 
+                currentZoom = MAP_PRESETS[currentPreset].zoom;
+                translateX = MAP_PRESETS[currentPreset].translateX;
+                translateY = MAP_PRESETS[currentPreset].translateY;
+
                 if (isFullscreen) {
                     mapContainer.classList.add('fullscreen');
                     fullscreenBtn.title = 'Exit Fullscreen';
@@ -1257,6 +1307,7 @@
                 const lat = symbol.getAttribute('data-lat');
                 const lon = symbol.getAttribute('data-lon');
                 const bda = symbol.getAttribute('data-bda');
+                const type = symbol.getAttribute('data-type');
                 const debriefId = symbol.getAttribute('data-debrief-id');
 
                 let tooltipContent = '';
@@ -1264,7 +1315,10 @@
                 const displayText = comment || id;
                 tooltipContent += `<div class="tooltip-comment">${displayText}</div>`;
                 if (displayText === comment) {
-                    tooltipContent += `<div class="tooltip-comment">${id}-01</div>`;
+                    if (type !== 'BLUE')
+                        tooltipContent += `<div class="tooltip-comment">${id}-01</div>`;
+                    else
+                        tooltipContent += `<div class="tooltip-comment">${id}</div>`;
                 }
 
                 if (bda && bda !== 'None' && bda !== '') {
@@ -1358,36 +1412,35 @@
                 }
 
                 if (currentZoom !== oldZoom) {
-                    if (currentZoom > 1) {
-                        const zoomRatio = currentZoom / oldZoom;
-                        const containerCenterX = rect.width / 2;
-                        const containerCenterY = rect.height / 2;
+                    // Calculate zoom focal point
+                    const zoomPointX = mouseX - translateX;
+                    const zoomPointY = mouseY - translateY;
 
-                        const offsetX = mouseX - containerCenterX;
-                        const offsetY = mouseY - containerCenterY;
+                    // Calculate how much the zoom point moves when scaled
+                    const scaleDiff = currentZoom - oldZoom;
+                    const moveX = zoomPointX * scaleDiff / oldZoom;
+                    const moveY = zoomPointY * scaleDiff / oldZoom;
 
-                        translateX = translateX * zoomRatio - offsetX * (zoomRatio - 1) * 0.1;
-                        translateY = translateY * zoomRatio - offsetY * (zoomRatio - 1) * 0.1;
+                    // Adjust translation to keep the zoom point stationary
+                    translateX -= moveX;
+                    translateY -= moveY;
 
-                        constrainTranslation();
-                    }
+                    constrainTranslation();
                     updateTransform();
                     updateCursor();
                 }
             });
 
             mapContainer.addEventListener('mousedown', function(e) {
-                if (currentZoom > 1) {
-                    isDragging = true;
-                    startX = e.clientX - translateX;
-                    startY = e.clientY - translateY;
-                    mapContainer.style.cursor = 'grabbing';
-                    e.preventDefault();
-                }
+                isDragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                mapContainer.style.cursor = 'grabbing';
+                e.preventDefault();
             });
 
             document.addEventListener('mousemove', function(e) {
-                if (isDragging && currentZoom > 1) {
+                if (isDragging) {
                     translateX = e.clientX - startX;
                     translateY = e.clientY - startY;
                     constrainTranslation();
@@ -1403,11 +1456,7 @@
             });
 
             function updateCursor() {
-                if (currentZoom > 1) {
-                    mapContainer.style.cursor = isDragging ? 'grabbing' : 'grab';
-                } else {
-                    mapContainer.style.cursor = 'default';
-                }
+                mapContainer.style.cursor = isDragging ? 'grabbing' : 'grab';
             }
 
             let lastTouchDistance = 0;
@@ -1415,7 +1464,7 @@
             let lastTouchY = 0;
 
             mapContainer.addEventListener('touchstart', function(e) {
-                if (e.touches.length === 1 && currentZoom > 1) {
+                if (e.touches.length === 1) {
                     isDragging = true;
                     startX = e.touches[0].clientX - translateX;
                     startY = e.touches[0].clientY - translateY;
@@ -1434,7 +1483,7 @@
             });
 
             mapContainer.addEventListener('touchmove', function(e) {
-                if (e.touches.length === 1 && isDragging && currentZoom > 1) {
+                if (e.touches.length === 1 && isDragging) {
                     translateX = e.touches[0].clientX - startX;
                     translateY = e.touches[0].clientY - startY;
                     constrainTranslation();
