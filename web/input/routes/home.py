@@ -554,14 +554,14 @@ def file_report():
 
 
 def get_data_hash():
-    """Generate a hash based on the current state of your data sources"""
     bdas = get_bda_list()
     drawables = get_draw_dmpis()
+    msn = Mission.get_path().name
 
-    # Create a combined hash of both data sources
     combined_data = {
         'bdas': bdas,
-        'drawables': drawables
+        'drawables': drawables,
+        'msn': msn
     }
 
     # Convert to JSON string for consistent hashing
