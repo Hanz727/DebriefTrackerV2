@@ -19,9 +19,9 @@ from services import Logger
 from services.data_handler import DataHandler
 from web.input._constants import DEBRIEFS_PATH
 from web.input.config.config import WebConfigSingleton
-from web.input.routes.dmpi_db import draw_dynamic_map, _reset_dmpi_cache, get_draw_dmpis
-from web.input.tracker_ui.input_data_handler import InputDataHandler
-
+from web.input.routes.dmpi_db import draw_dynamic_map_threaded, _reset_dmpi_cache, get_draw_dmpis
+from web.input.services.input_data_handler import InputDataHandler
+from web.input.services.mission import Mission
 
 config = WebConfigSingleton.get_instance()
 postgres_client = PostGresClient()
@@ -242,7 +242,7 @@ def aircrew_to_empty_row(data, aircrew, debrief_id) -> CVW17DatabaseRow:
     )
 
 def insert_tracker_data(data, debrief_id):
-    draw_dynamic_map()
+    draw_dynamic_map_threaded()
     aircrew_presence = deepcopy(data.get('aircrew', []))
 
     for ag_weapon in data.get('ag_weapons', []):
@@ -560,7 +560,7 @@ def render_and_minify_cached(data_hash, bdas_json, drawables_json):
     bdas = json.loads(bdas_json)
     drawables = json.loads(drawables_json)
 
-    html = render_template('menu.html', bdas=bdas, drawables=drawables)
+    html = render_template('menu.html', bdas=bdas, drawables=drawables, msn=Mission.get_path().name)
     print('new hash')
     return minify(html,
                   remove_comments=True,

@@ -2,25 +2,18 @@ import json
 import math
 import os
 import re
-import threading
-import zipfile
 from copy import deepcopy
-from datetime import datetime
 from pathlib import Path
 
-import numpy as np
-import pyproj
-from PIL import Image, ImageDraw, ImageFont
-from PIL.Image import Resampling
 from flask import Blueprint, session, redirect, render_template, request, jsonify, send_from_directory
-from pyproj import Transformer
 
-from core.constants import BASE_DIR
-from services.file_handler import FileHandler
 from web.input._constants import DEBRIEFS_PATH
 from web.input.config.config import WebConfigSingleton, InteractiveMapConfigSingleton
+from web.input.services.MapCanvas import MapCanvas
 
-from slpp import slpp as lua
+from web.input.services.coords import Coords
+from web.input.services.maps import Maps
+from web.input.services.mission import Mission
 
 dmpi_db_blueprint = Blueprint('dmpi_db_blueprint', __name__)
 config = WebConfigSingleton.get_instance()
@@ -28,258 +21,9 @@ map_config = InteractiveMapConfigSingleton.get_instance()
 
 app = dmpi_db_blueprint
 
-# Define the overrides file path
 _OVERRIDES_FILE = Path('overrides.txt')
 _dmpi_cache = {}
 _draw_dmpi_cache = {}
-
-
-def _get_map_id():
-    current_map = map_config.current_map
-    id_ = 0
-    for i, map in enumerate(map_config.maps):
-        if current_map in map:
-            id_ = i
-            break
-    return id_
-
-def _dms_match_to_decimal(match):
-    direction, degrees, minutes, seconds = match
-    decimal = float(degrees) + float(minutes) / 60.0 + float(seconds) / 3600.0
-    if direction in ['S', 'W']:
-        decimal = -decimal
-    return decimal
-
-def _create_transformers(reference_dms):
-    pattern = r'([NSEW])\s*(\d+)[°](\d+)\'([0-9.]+)"?'
-    matches = re.findall(pattern, reference_dms)
-    if len(matches) != 2:
-        raise ValueError(f"Could not find 2 coordinates in: {reference_dms}")
-
-    lat_match = None
-    lon_match = None
-
-    for match in matches:
-        direction, degrees, minutes, seconds = match
-        if direction in ['N', 'S']:
-            lat_match = match
-        else:  # E, W
-            lon_match = match
-
-    if not lat_match or not lon_match:
-        raise ValueError(f"Could not find both lat and lon in: {reference_dms}")
-
-    ref_lat = _dms_match_to_decimal(lat_match)
-    ref_lon = _dms_match_to_decimal(lon_match)
-
-    utm_zone = int((ref_lon + 180) / 6) + 1
-    utm_crs = pyproj.CRS.from_proj4(
-        f"+proj=utm +zone={utm_zone} "
-        f"+{'south' if ref_lat < 0 else 'north'} +datum=WGS84"
-    )
-
-    to_utm = Transformer.from_crs('EPSG:4326', utm_crs, always_xy=True)
-    from_utm = Transformer.from_crs(utm_crs, 'EPSG:4326', always_xy=True)
-
-    return ref_lat, ref_lon, to_utm, from_utm
-
-_reference_dms = map_config.map_reference[_get_map_id()].replace('Â°', '°')
-ref_lat, ref_lon, to_utm, from_utm = _create_transformers(_reference_dms)
-
-def get_deployment_msn_path() -> Path | None:
-    deployment_miz_path = None
-    for msn in FileHandler.sort_files_by_date_modified(config.missions_path):
-        msn_sanitized = str(msn.name).strip().lower()
-        if not msn_sanitized.endswith('.miz'):
-            continue
-
-        if not msn_sanitized.startswith(config.deployment_msn_prefix.strip().lower()):
-            continue
-
-        deployment_miz_path = msn
-        break
-
-    return deployment_miz_path
-
-
-def _get_unit_data(path: Path, unit_type) -> list:
-    try:
-        with zipfile.ZipFile(path, 'r') as miz_archive:
-            mission_content = miz_archive.read('mission').decode('utf-8')
-
-            # Use regex to find all occurrences of the unit_type
-            unit_pattern = re.compile(re.escape(unit_type))
-            units = []
-
-            for match in unit_pattern.finditer(mission_content):
-                unit_start = match.start()
-
-                # Find the opening brace before the unit_type
-                unit0_start = mission_content.rfind('{', 0, unit_start)
-                if unit0_start == -1:
-                    continue
-
-                pos = unit0_start + 1
-                brace_open = 1
-                brace_close = 0
-
-                # Find the matching closing brace
-                while pos < len(mission_content) and brace_open != brace_close:
-                    if mission_content[pos] == '{':
-                        brace_open += 1
-                    elif mission_content[pos] == '}':
-                        brace_close += 1
-                    pos += 1
-
-                # Extract the unit data
-                unit = mission_content[unit0_start:pos]
-                unit_table = lua.decode(unit)
-
-                # Add the unit values to our list
-                units.append(unit_table)
-
-            return units
-
-    except Exception as e:
-        print(f"Error parsing mission file: {e}")
-        return []
-
-def _get_miz_ship_data(path: Path, cv_type='CVN_73') -> dict:
-    try:
-        with zipfile.ZipFile(path, 'r') as miz_archive:
-            mission_content = miz_archive.read('mission').decode('utf-8')
-
-            cv_start = mission_content.find(cv_type)
-            if cv_start == -1:
-                return {}
-
-            unit0_start = mission_content.rfind('{', 0, cv_start)
-            if unit0_start == -1:
-                return {}
-
-            units_start = mission_content.rfind('{', 0, unit0_start-1)
-            if units_start == -1:
-                return {}
-
-            pos = units_start + 1
-
-            brace_open = 1
-            brace_close = 0
-
-            while brace_open != brace_close:
-                if mission_content[pos] == '{':
-                    brace_open += 1
-                elif mission_content[pos] == '}':
-                    brace_close += 1
-                pos += 1
-
-            units = mission_content[units_start:pos]
-            units_table = lua.decode(units)
-
-            return units_table.values()
-
-    except Exception as e:
-        print(f"Error parsing mission file: {e}")
-        return {}
-
-def _get_miz_tanker_data(path: Path) -> dict:
-    try:
-        with zipfile.ZipFile(path, 'r') as miz_archive:
-            mission_content = miz_archive.read('mission').decode('utf-8')
-
-            name_pattern = r'\["name"\]\s*=\s*"(TANKER-TRACK-(?![\d\s]*")[^"]+)"'
-            tanker_mentions = set(re.findall(name_pattern, mission_content))
-
-            res = {}
-
-            for tanker in tanker_mentions:
-                tanker_c = mission_content.find(tanker)
-
-                bracket_close = mission_content.find('}', tanker_c)
-                eol = mission_content.find('\n', bracket_close)
-                if '[1]' not in mission_content[bracket_close:eol]:
-                    continue
-
-                x1_pos = mission_content.find('["x"] = ', eol)+len('["x"] = ')
-                y1_pos = mission_content.find('["y"] = ', eol)+len('["y"] = ')
-                x1_comma = mission_content.find(',', x1_pos)
-                y1_comma = mission_content.find(',', y1_pos)
-
-                bracket_close = mission_content.find('}', x1_comma)
-                eol = mission_content.find('\n', bracket_close)
-                if '[2]' not in mission_content[bracket_close:eol]:
-                    continue
-
-                x2_pos = mission_content.find('["x"] = ', eol)+len('["x"] = ')
-                y2_pos = mission_content.find('["y"] = ', eol)+len('["y"] = ')
-                x2_comma = mission_content.find(',', x2_pos)
-                y2_comma = mission_content.find(',', y2_pos)
-
-
-                x1 = float(mission_content[x1_pos:x1_comma])
-                y1 = float(mission_content[y1_pos:y1_comma])
-
-                x2 = float(mission_content[x2_pos:x2_comma])
-                y2 = float(mission_content[y2_pos:y2_comma])
-
-                res[tanker] = {"x1": x1, "y1": y1, "x2": x2, "y2": y2}
-
-            return res
-
-    except Exception as e:
-        print(f"Error parsing mission file: {e}")
-        return {}
-
-def _get_miz_nav_points(path: Path) -> list[dict]:
-    try:
-        with zipfile.ZipFile(path, 'r') as miz_archive:
-            mission_content = miz_archive.read('mission').decode('utf-8')
-
-            coalition_start = mission_content.find('["coalition"]')
-            if coalition_start == -1:
-                return []
-
-            red_start = mission_content.find('["red"]', coalition_start)
-            if red_start == -1:
-                return []
-
-            nav_start = mission_content.find('["nav_points"]', red_start)
-            if nav_start == -1:
-                return []
-
-            equals_pos = mission_content.find('=', nav_start)
-            if equals_pos == -1:
-                return []
-
-            brace_start = mission_content.find('{', equals_pos)
-            if brace_start == -1:
-                return []
-
-            # Count braces to find the matching closing brace
-            pos = brace_start + 1
-
-            brace_open = 1
-            brace_close = 0
-
-            while brace_open != brace_close:
-                if mission_content[pos] == '{':
-                    brace_open += 1
-                elif mission_content[pos] == '}':
-                    brace_close += 1
-                pos += 1
-
-            # Extract the red coalition content
-            nav_content = mission_content[brace_start:pos]
-            nav_points = lua.decode(nav_content)
-
-            dmpi_pattern = re.compile(r'^[^-]+-[^-]+-\d{5}-\d{2}$')
-            result = [x for x in nav_points.values()
-                      if dmpi_pattern.match(x.get('callsignStr', ''))]
-            return result
-
-    except Exception as e:
-        print(f"Error parsing mission file: {e}")
-        return []
 
 def _reset_dmpi_cache():
     global _dmpi_cache
@@ -294,14 +38,7 @@ def get_draw_dmpis():
 
     draw_dmpis = deepcopy(_get_dmpis())
 
-    units = []
-    for cv in ['CVN_73', 'CVN_75', 'hms_invincible', 'LHA_Tarawa']:
-        ship_data = _get_miz_ship_data(get_deployment_msn_path(), cv)
-        for ship in ship_data:
-            units.append(ship)
-
-    units.extend(_get_unit_data(get_deployment_msn_path(), 'Patriot str'))
-    units.extend(_get_unit_data(get_deployment_msn_path(), 'KC135MPRS'))
+    units = Mission.get_msn_units()
 
     for unit in units:
         dmpi = _create_dmpi_entry(True)
@@ -310,9 +47,12 @@ def get_draw_dmpis():
         dmpi['coords']['x'] = unit['x']
         dmpi['coords']['y'] = unit['y']
 
-        lat, lon = _convert_xy_to_ddm(unit['y'], unit['x'])
+        lat, lon = Coords.convert_xy_to_ddm(unit['y'], unit['x'])
         dmpi['aim_points']['01']['lat'] = lat
         dmpi['aim_points']['01']['lon'] = lat
+
+        if unit['type'] == 'CVN_73':
+            dmpi['heading'] = unit.get('heading',0)*180/(2*math.pi)
 
         name = unit['name']
         if unit['type'] in ['KC135MPRS']:
@@ -330,53 +70,53 @@ def get_draw_dmpis():
         if not dmpi['coords']['x'] or not dmpi['coords']['y']:
             continue
 
-        dmpi['draw'] = {}
-        for i, map in enumerate(map_config.maps):
-            mpp = map_config.map_scale_mpp[i]
-            x = map_config.map_origin_x[i] + (dmpi['coords']['y'] / mpp)
-            y = map_config.map_origin_y[i] - (dmpi['coords']['x'] / mpp)
+        i = Maps.get_current_id()
+        mpp = map_config.map_scale_mpp[i]
+        x = map_config.map_origin_x[i] + (dmpi['coords']['y'] / mpp)
+        y = map_config.map_origin_y[i] - (dmpi['coords']['x'] / mpp)
 
-            render_icon = False
-            render_ring = False
-            radius_meters = 0
-            type_ = ''
-            symbol = ''
+        render_icon = False
+        render_ring = False
+        radius_meters = 0
+        type_ = ''
+        symbol = ''
+        heading = dmpi.get('heading',0)
 
-            for comment in map_config.comments:
-                if comment not in dmpi['comment']:
+        for comment in map_config.comments:
+            if comment not in dmpi['comment']:
+                continue
+
+            comment_info = map_config.comments[comment]
+
+            render_icon = comment_info.get('render_icon', False)
+            render_ring = comment_info.get('render_ring', False)
+            radius_meters = comment_info.get('radius_meters', 0)
+            symbol = comment_info.get('symbol', '')
+            type_ = comment_info.get('type', 'SAD')
+            break
+
+        if radius_meters == 0 and symbol == '':
+            for name in map_config.names:
+                if not name in dmpi_name:
                     continue
 
-                comment_info = map_config.comments[comment]
+                name_info = map_config.names[name]
+                render_icon = name_info.get('render_icon', False)
+                render_ring = name_info.get('render_ring', False)
+                radius_meters = name_info.get('radius_meters', 0)
+                symbol = name_info.get('symbol', '')
+                type_ = name.replace('-','').strip()
 
-                render_icon = comment_info.get('render_icon', False)
-                render_ring = comment_info.get('render_ring', False)
-                radius_meters = comment_info.get('radius_meters', 0)
-                symbol = comment_info.get('symbol', '')
-                type_ = comment_info.get('type', 'SAD')
-                break
-
-            if radius_meters == 0 and symbol == '':
-                for name in map_config.names:
-                    if not name in dmpi_name:
-                        continue
-
-                    name_info = map_config.names[name]
-                    render_icon = name_info.get('render_icon', False)
-                    render_ring = name_info.get('render_ring', False)
-                    radius_meters = name_info.get('radius_meters', 0)
-                    symbol = name_info.get('symbol', '')
-                    type_ = name.replace('-','').strip()
-
-            dmpi['draw'][map] = {
-                "x": x,
-                "y": y,
-                "symbol": symbol,
-                "render_icon": render_icon,
-                "render_ring": render_ring,
-                "radius_meters": radius_meters,
-                "radius_px": radius_meters / mpp,
-                "type": type_
-            }
+        dmpi['draw'] = {
+            "x": x,
+            "y": y,
+            "symbol": symbol,
+            "render_icon": render_icon,
+            "render_ring": render_ring,
+            "radius_px": round(radius_meters / mpp, 3),
+            "type": type_,
+            "heading": heading
+        }
 
     _draw_dmpi_cache = draw_dmpis
     return draw_dmpis
@@ -402,507 +142,16 @@ def _get_dmpis():
     _dmpi_cache = dmpis
     return dmpis
 
-
-resampling = Resampling.BICUBIC
-def _draw_sam_symbol_from_file(draw, x, y, scale_factor, image_path, symbol_size=12, active=True):
-    try:
-        # Load the symbol image
-        symbol_img = Image.open(image_path)
-
-        # Resize to desired size
-        target_size = int(symbol_size * scale_factor * 2)  # *2 for good visibility
-        symbol_img = symbol_img.resize((target_size, target_size), resampling)
-
-        # Make very dark gray if not active
-        if not active:
-            # Preserve original alpha channel
-            if symbol_img.mode != 'RGBA':
-                symbol_img = symbol_img.convert('RGBA')
-            original_alpha = symbol_img.split()[-1]
-
-            # Convert to grayscale first to remove any color tints (like red)
-            grayscale = symbol_img.convert('L')
-
-            # Strengthen the black by darkening the grayscale values
-            darkened = grayscale.point(lambda p: int(p * 1.2))  # Make very dark (20% of original)
-
-            # Convert back to RGBA and restore alpha channel
-            symbol_img = Image.merge('RGBA', (darkened, darkened, darkened, original_alpha))
-
-        # Calculate position to center the symbol
-        paste_x = int(x - target_size/2)
-        paste_y = int(y - target_size/2)
-
-        # Get the main image from the draw object (this is a bit hacky but works)
-        main_img = draw._image
-
-        # If symbol has transparency, use it
-        if symbol_img.mode in ('RGBA', 'LA') or 'transparency' in symbol_img.info:
-            main_img.paste(symbol_img, (paste_x, paste_y), symbol_img)
-        else:
-            main_img.paste(symbol_img, (paste_x, paste_y))
-
-    except Exception as e:
-        print(f"Could not load symbol from {image_path}: {e}")
-
-def draw_dynamic_map():
+def draw_dynamic_map_threaded():
     _reset_dmpi_cache()
-
-    dmpis = get_draw_dmpis()
-    map_id = _get_map_id()
-
-    threading.Thread(target=_draw_dynamic_map_from_dmpis, args=(dmpis, map_id, 'BLUE', 'interactive_map_z1.jpg'), daemon=True).start()
-
-def _draw_dynamic_map_from_dmpis(dmpis, map_id, display_type,  output_name, bw_intensity=0.9, contrast=1.1, darken_shadows=1.5, symbol_size=12):
-    try:
-        deployment_msn_name = get_deployment_msn_path().name
-        current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
-
-        if os.path.exists(BASE_DIR / 'web' / 'static'):
-            ref_dir = BASE_DIR / 'web' / 'static'
-        else:
-            ref_dir = BASE_DIR / 'web' / 'input' / 'static'
-
-        os.makedirs(ref_dir / 'maps', exist_ok=True)
-        img = Image.open(ref_dir / 'maps' / map_config.maps[map_id])
-        img = img.convert('RGB')
-
-        if bw_intensity > 0:
-            img_gray = img.convert('L').convert('RGB')
-            img_array = np.array(img, dtype=np.float32)
-            gray_array = np.array(img_gray, dtype=np.float32)
-            blended_array = img_array * (1 - bw_intensity) + gray_array * bw_intensity
-            img = Image.fromarray(blended_array.astype(np.uint8))
-
-        if contrast != 1.0:
-            img_array = np.array(img, dtype=np.float32)
-            contrasted_array = (img_array - 128) * contrast + 128
-            contrasted_array = np.clip(contrasted_array, 0, 255)
-            img = Image.fromarray(contrasted_array.astype(np.uint8))
-
-        if darken_shadows > 0:
-            img_array = np.array(img, dtype=np.float32)
-            normalized = img_array / 255.0
-            shadow_factor = 1.0 - normalized
-            shadow_factor = np.power(shadow_factor, 0.8)
-            darken_amount = darken_shadows * 80
-            darkened_array = img_array - darken_amount * shadow_factor
-            darkened_array = np.clip(darkened_array, 0, 255)
-            img = Image.fromarray(darkened_array.astype(np.uint8))
-
-    except Exception as e:
-        print(f"Error loading image: {e}")
-        return
-
-
-    img_width, img_height = img.size
-    if display_type == 'EMPTY':
-        draw = ImageDraw.Draw(img)
-        _draw_watermark(draw, img_width, img_height, deployment_msn_name, current_date, 1)
-        img.save(ref_dir / 'maps' / output_name, format='JPEG')
-        return
-
-    scale_factor = 4
-
-    img_width_hires = img_width * scale_factor
-    img_height_hires = img_height * scale_factor
-
-    # Create high-res version
-    img_hires = img.resize((img_width * scale_factor, img_height * scale_factor), resampling)
-    draw = ImageDraw.Draw(img_hires)
-
-    img_width, img_height = img.size
-    if display_type == 'BLUE':
-        _draw_tanker_tracks(draw, scale_factor, map_id)
-        _draw_watermark(draw, img_width_hires, img_height_hires, deployment_msn_name, current_date, scale_factor)
-        img_hires = img_hires.resize((img_width, img_height), resampling)
-        img_hires.save(ref_dir / 'maps' / output_name, format='JPEG')
-        return
-
-    for dmpi_name in dmpis:
-        if display_type == "EMPTY":
-            break
-
-        if display_type == "SAD":
-            if not("SAD" in dmpi_name or ("CCC" in dmpi_name and "EWR" in dmpis[dmpi_name]['comment'])):
-                continue
-
-        if display_type == "SST":
-            if "SAD" in dmpi_name or ("CCC" in dmpi_name and "EWR" in dmpis[dmpi_name]['comment']):
-                continue
-
-        if display_type.startswith("SACT"):
-            target_cat = "-" + display_type.split("-")[1].strip() + "-"
-            if not target_cat in dmpi_name:
-                continue
-
-        dmpi = dmpis[dmpi_name]
-
-        x = dmpi['coords']['y']
-        y = -dmpi['coords']['x']
-
-        if x == 0 or y == 0:
-            continue
-
-        mpp = map_config.map_scale_mpp[map_id]
-
-        pixel_x = (map_config.map_origin_x[map_id] + x / mpp) * scale_factor
-        pixel_y = (map_config.map_origin_y[map_id] + y / mpp) * scale_factor
-
-        # Add some margin for the symbol size
-        symbol_margin = symbol_size * scale_factor * 2  # 2x symbol size as margin
-        if (pixel_x < -symbol_margin or pixel_x > img_width_hires + symbol_margin or
-                pixel_y < -symbol_margin or pixel_y > img_height_hires + symbol_margin):
-            continue
-
-        radius_meters = 0
-        ring_color = 'red'
-
-        symbol_path = ''
-        render_icon = False
-        render_ring = False
-        symbol_size_multiplier = 1.8
-
-        if "SA-6" in dmpi['comment']:
-            radius_meters = 35_560
-            symbol_path = ref_dir / 'img' / 'nato-sam.png'
-            render_ring = True
-            render_icon = True
-        if "SA-3" in dmpi['comment']:
-            radius_meters = 25_000
-            symbol_path = ref_dir / 'img' / 'nato-sam.png'
-            render_ring = True
-            render_icon = True
-        if "SA-2" in dmpi['comment']:
-            radius_meters = 51_860
-            symbol_path = ref_dir / 'img' / 'nato-sam.png'
-            render_ring = True
-            render_icon = True
-        if "SA-9" in dmpi['comment']:
-            radius_meters = 4_640
-            symbol_path = ref_dir / 'img' / 'nato-sam.png'
-            render_ring = True
-            render_icon = True
-        if "HAAA" in dmpi['comment']:
-            radius_meters = 3_000
-            symbol_path = ref_dir / 'img' / 'nato-haaa.png'
-            render_ring = True
-            render_icon = True
-        if "EWR" in dmpi['comment']:
-            radius_meters = 463_000
-            symbol_path = ref_dir / 'img' / 'nato-ewr.png'
-            ring_color = 'yellow'
-            render_ring = False
-            render_icon = True
-        if "HAWK" in dmpi['comment']:
-            radius_meters = 47_410
-            symbol_path = ref_dir / 'img' / 'nato-sam.png'
-            render_ring = False
-            render_icon = True
-
-        if "-A-" in dmpi_name:
-            symbol_path = ref_dir / 'img' / 'nato-airfield.png'
-            render_ring = False
-            render_icon = True
-        if "-RG-" in dmpi_name:
-            symbol_path = ref_dir / 'img' / 'nato-rg.png'
-            render_ring = False
-            render_icon = True
-        if "-SC-" in dmpi_name:
-            symbol_path = ref_dir / 'img' / 'nato-sc.png'
-            render_ring = False
-            render_icon = True
-        if "-MS-" in dmpi_name:
-            symbol_path = ref_dir / 'img' / 'nato-ms.png'
-            render_ring = False
-            render_icon = True
-        if "-N-" in dmpi_name:
-            symbol_path = ref_dir / 'img' / 'nato-n.png'
-            render_ring = False
-            render_icon = True
-        if "-RR-" in dmpi_name:
-            symbol_path = ref_dir / 'img' / 'nato-rr.png'
-            render_ring = False
-            render_icon = True
-        if "-O-" in dmpi_name:
-            symbol_path = ref_dir / 'img' / 'nato-o.png'
-            render_ring = False
-            render_icon = True
-        if "-E-" in dmpi_name:
-            symbol_path = ref_dir / 'img' / 'nato-e.png'
-            render_ring = False
-            render_icon = True
-        if "-CCC-" in dmpi_name and radius_meters == 0:
-            symbol_path = ref_dir / 'img' / 'nato-ccc.png'
-            render_ring = False
-            render_icon = True
-        if "-L-" in dmpi_name:
-            symbol_path = ref_dir / 'img' / 'nato-l.png'
-            render_ring = False
-            render_icon = True
-        if "-C-" in dmpi_name:
-            symbol_path = ref_dir / 'img' / 'nato-c.png'
-            render_ring = False
-            render_icon = True
-
-        if ring_color == 'red':
-            x = radius_meters
-            redness = min(255, 1.647e-8*(x**2) - 0.00424*x + 305.808)
-            redness = max(redness, 50)
-            ring_color = (int(redness),0,0)
-
-        radius_pixels = (radius_meters / mpp) * scale_factor
-
-        circle_left = pixel_x - radius_pixels
-        circle_top = pixel_y - radius_pixels
-        circle_right = pixel_x + radius_pixels
-        circle_bottom = pixel_y + radius_pixels
-
-        if not dmpi['collision'] and render_ring:
-            draw.ellipse([circle_left, circle_top, circle_right, circle_bottom],
-                         fill=None, outline=ring_color, width=int(1.5 * scale_factor))
-
-        if render_icon:
-            _draw_sam_symbol_from_file(draw, pixel_x, pixel_y, scale_factor, symbol_path, symbol_size*symbol_size_multiplier, not dmpi['collision'])
-
-    # Add watermark with deployment name and current date
-    _draw_watermark(draw, img_width_hires, img_height_hires, deployment_msn_name, current_date, scale_factor)
-
-    # Downsample back to original size for antialiasing effect
-    img_with_symbols = img_hires.resize((img_width, img_height), resampling)
-
-    img_with_symbols.save(ref_dir / 'maps' / output_name)
-
-
-def _draw_tanker_tracks(draw, scale_factor, map_id):
-    mpp = map_config.map_scale_mpp[map_id]
-
-    color = (128, 224, 255)
-
-    for tanker_name, coords in _get_miz_tanker_data(get_deployment_msn_path()).items():
-        name = tanker_name.split('-')[-1]
-        x1 = (map_config.map_origin_x[map_id] + (coords["y1"] / mpp)) * scale_factor
-        y1 = (map_config.map_origin_y[map_id] - (coords["x1"] / mpp)) * scale_factor
-
-        x2 = (map_config.map_origin_x[map_id] + (coords["y2"] / mpp)) * scale_factor
-        y2 = (map_config.map_origin_y[map_id] - (coords["x2"] / mpp)) * scale_factor
-
-        line_length = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-        if line_length > 0:
-            ux = (x2 - x1) / line_length  # Unit vector along line
-            uy = (y2 - y1) / line_length
-            px = -uy  # Perpendicular unit vector (90° rotated)
-            py = ux
-
-            rect_width = line_length / 2
-
-            corner1 = (x1, y1)
-            corner2 = (x2, y2)  # Use the actual end point
-            corner3 = (x2 + rect_width * px, y2 + rect_width * py)
-            corner4 = (x1 + rect_width * px, y1 + rect_width * py)
-
-            # Draw the rotated rectangle
-            rect_points = [corner1, corner2, corner3, corner4, corner1]
-            draw.polygon(rect_points, outline=color, fill=None, width=3*scale_factor)
-
-            # Add blue text next to the rectangle with larger, more readable font
-            text_x = x2 + rect_width * px + 15*scale_factor
-            text_y = y2 + rect_width * py - 15*scale_factor
-
-            try:
-                font = ImageFont.truetype("arial.ttf", 24*scale_factor)
-            except:
-                try:
-                    font = ImageFont.load_default(size=24*scale_factor)
-                except:
-                    font = ImageFont.load_default()
-
-            draw.text((text_x, text_y), name, fill=color, font=font)
-
-def _draw_watermark(draw, img_width, img_height, deployment_name, date_str, scale_factor):
-    """Draw a transparent watermark in the bottom right corner with deployment name and date."""
-    try:
-        # Try to use a system font, fallback to default if not available
-        try:
-            font_size = int(23 * scale_factor)
-            font = ImageFont.truetype("arial.ttf", font_size)
-        except (ImportError, OSError):
-            try:
-                font = ImageFont.load_default()
-            except:
-                font = None
-
-        # Prepare watermark text with title
-        watermark_text = f"CVW-17 TARGET INTELLIGENCE CELL - AIR DEFENCE MAP\n{deployment_name}\n{date_str}"
-        lines = watermark_text.split('\n')
-
-        # Calculate text dimensions
-        if font:
-            line_widths = []
-            line_heights = []
-            for line in lines:
-                bbox = draw.textbbox((0, 0), line, font=font)
-                line_widths.append(bbox[2] - bbox[0])
-                line_heights.append(bbox[3] - bbox[1])
-
-            text_width = max(line_widths)
-            line_spacing = int(4 * scale_factor)
-            text_height = sum(line_heights) + (len(lines) - 1) * line_spacing
-        else:
-            # Rough estimation if no font available
-            text_width = len(max(lines, key=len)) * int(10 * scale_factor)
-            text_height = len(lines) * int(14 * scale_factor)
-
-        # Position in bottom right corner with padding
-        padding = int(20 * scale_factor)
-        bg_padding = int(8 * scale_factor)
-        x_pos = img_width - text_width - padding
-        y_pos = img_height - text_height - padding
-
-        # Get the base image from the draw object
-        base_img = draw._image
-
-        # Create a separate RGBA image for the watermark with transparency
-        watermark_overlay = Image.new('RGBA', (img_width, img_height), (0, 0, 0, 0))
-        watermark_draw = ImageDraw.Draw(watermark_overlay)
-
-        # Draw semi-transparent background rectangle
-        bg_left = x_pos - bg_padding
-        bg_top = y_pos - bg_padding
-        bg_right = x_pos + text_width + bg_padding
-        bg_bottom = y_pos + text_height + bg_padding
-
-        # Semi-transparent dark background (RGBA: black with 60% opacity)
-        bg_color = (0, 0, 0, 153)  # 153 = 60% of 255
-        watermark_draw.rectangle([bg_left, bg_top, bg_right, bg_bottom], fill=bg_color)
-
-        # Draw text with white color (fully opaque on the overlay)
-        text_color = (255, 255, 255, 255)  # White, fully opaque
-
-        if font:
-            current_y = y_pos
-            line_spacing = int(4 * scale_factor)
-            for line in lines:
-                watermark_draw.text((x_pos, current_y), line, fill=text_color, font=font)
-                bbox = watermark_draw.textbbox((x_pos, current_y), line, font=font)
-                current_y += (bbox[3] - bbox[1]) + line_spacing
-        else:
-            # Fallback without font
-            current_y = y_pos
-            for line in lines:
-                watermark_draw.text((x_pos, current_y), line, fill=text_color)
-                current_y += int(14 * scale_factor)
-
-        # Convert base image to RGBA if it isn't already
-        if base_img.mode != 'RGBA':
-            base_img = base_img.convert('RGBA')
-
-        # Composite the watermark overlay onto the base image
-        base_img = Image.alpha_composite(base_img, watermark_overlay)
-
-        # Convert back to RGB if needed (since you're saving as PNG, RGBA should be fine)
-        # If you need RGB: base_img = base_img.convert('RGB')
-
-        # Replace the original image data
-        draw._image.paste(base_img, (0, 0))
-
-    except Exception as e:
-        print(f"Error drawing watermark: {e}")
-        # Continue without watermark if there's an error
-
-def load_overrides():
-    """Load overrides from the overrides.txt file."""
-    try:
-        if _OVERRIDES_FILE.exists():
-            with open(_OVERRIDES_FILE, 'r', encoding='utf-8') as f:
-                content = f.read().strip()
-                return content if content else ""
-        else:
-            # Return default overrides if file doesn't exist
-            return ""
-    except Exception as e:
-        print(f"Error reading overrides file: {e}")
-        return ""
-
-def save_overrides(overrides_text):
-    """Save overrides to the overrides.txt file."""
-    try:
-        lines = [line.strip().replace(' ', '') for line in overrides_text.split('\n')]
-        cleaned_text = '\n'.join(lines)
-
-        with open(_OVERRIDES_FILE, 'w', encoding='utf-8') as f:
-            f.write(cleaned_text)
-        return True
-    except Exception as e:
-        print(f"Error saving overrides file: {e}")
-        return False
-
-def _parse_dms(dms_string):
-    """Parse DMS string to decimal degrees"""
-    dms = dms_string.strip().upper()
-
-    # Extract direction
-    direction = None
-    for char in ['N', 'S', 'E', 'W']:
-        if char in dms:
-            direction = char
-            dms = dms.replace(char, '').strip()
-            break
-
-    if not direction:
-        raise ValueError(f"Could not find direction in: {dms_string}")
-
-    # Extract degrees, minutes, seconds
-    pattern = r"(\d+)[°](\d+)[']([0-9.]+)[\"]*"
-    match = re.search(pattern, dms)
-
-    if not match:
-        raise ValueError(f"Could not parse DMS format: {dms_string}")
-
-    degrees = float(match.group(1))
-    minutes = float(match.group(2))
-    seconds = float(match.group(3))
-
-    decimal = degrees + minutes/60.0 + seconds/3600.0
-
-    if direction in ['S', 'W']:
-        decimal = -decimal
-
-    return decimal
-
-def _decimal_to_ddm(decimal_degrees, coord_type='lat'):
-    """Convert decimal degrees to DDM (Degrees Decimal Minutes) format"""
-    if coord_type.lower() == 'lat':
-        direction = 'N' if decimal_degrees >= 0 else 'S'
-    else:
-        direction = 'E' if decimal_degrees >= 0 else 'W'
-
-    abs_degrees = abs(decimal_degrees)
-    degrees = int(abs_degrees)
-    minutes = (abs_degrees - degrees) * 60
-
-    return f"{direction} {degrees}°{minutes:06.3f}'"
-
-def _convert_xy_to_ddm(x, y):
-    ref_x, ref_y = to_utm.transform(ref_lon, ref_lat)
-
-    actual_x = ref_x + x
-    actual_y = ref_y + y
-    lon, lat = from_utm.transform(actual_x, actual_y)
-
-    lat_dms = _decimal_to_ddm(lat, 'lat')
-    lon_dms = _decimal_to_ddm(lon, 'lon')
-
-    return lat_dms, lon_dms
-
-
+    MapCanvas.draw()
 
 def _load_dmpis_from_mission(dmpis):
-    deployment_msn_path = get_deployment_msn_path()
+    deployment_msn_path = Mission.get_path()
     if not deployment_msn_path:
         return
 
-    nav_points = _get_miz_nav_points(deployment_msn_path)
+    nav_points = Mission.get_miz_nav_points()
 
     for nav_point in nav_points:
         dmpi = nav_point['callsignStr'].upper().strip()
@@ -915,7 +164,7 @@ def _load_dmpis_from_mission(dmpis):
             dmpis[dmpi_name]['comment'] = nav_point['comment']
 
         # Calculate lat/lon for this specific aim point
-        lat, lon = _convert_xy_to_ddm(nav_point['y'], nav_point['x'])
+        lat, lon = Coords.convert_xy_to_ddm(nav_point['y'], nav_point['x'])
 
         dmpis[dmpi_name]["aim_points"][aim_point] = {
             "bda": None,
@@ -925,7 +174,6 @@ def _load_dmpis_from_mission(dmpis):
         }
 
 def _load_dmpis_from_debriefs(dmpis):
-    """Load DMPIs from debrief files."""
     for debrief_dir in os.listdir(DEBRIEFS_PATH):
         submit_data_path = DEBRIEFS_PATH / debrief_dir / 'submit-data.json'
 
@@ -936,7 +184,6 @@ def _load_dmpis_from_debriefs(dmpis):
         _process_debrief_weapons(debrief_data, dmpis, debrief_dir)
 
 def _load_debrief_data(file_path):
-    """Load and return debrief data from JSON file."""
     with open(file_path, 'r') as f:
         return json.load(f)
 
@@ -1021,24 +268,21 @@ def _should_update_bda(dmpi_entry, aim_point, new_bda_result):
     # Keep existing value if it has lower first digit
     return new_bda_result[0] < current_bda[0]
 
+
 def _apply_overrides(dmpis):
-    """Apply overrides to DMPIs, setting BDA to '1 - Direct Hit Visual'."""
     try:
         overrides_content = load_overrides()
         if not overrides_content:
             return
 
-        # Parse override DMPI IDs
         override_ids = [line.strip().upper() for line in overrides_content.split('\n') if line.strip()]
 
         for override_id in override_ids:
             dmpi_name, aim_point = _parse_dmpi_name(override_id)
 
-            # Create DMPI entry if it doesn't exist
             if dmpi_name not in dmpis:
                 dmpis[dmpi_name] = _create_dmpi_entry()
 
-            # Ensure the aim_points dictionary has the specific aim point
             if aim_point not in dmpis[dmpi_name]['aim_points']:
                 dmpis[dmpi_name]['aim_points'][aim_point] = {
                     "bda": None,
@@ -1059,6 +303,30 @@ def _apply_overrides(dmpis):
     except Exception as e:
         print(f"Error applying overrides: {e}")
 
+def load_overrides():
+    try:
+        if _OVERRIDES_FILE.exists():
+            with open(_OVERRIDES_FILE, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                return content if content else ""
+        else:
+            return ""
+    except Exception as e:
+        print(f"Error reading overrides file: {e}")
+        return ""
+
+def save_overrides(overrides_text):
+    try:
+        lines = [line.strip().replace(' ', '') for line in overrides_text.split('\n')]
+        cleaned_text = '\n'.join(lines)
+
+        with open(_OVERRIDES_FILE, 'w', encoding='utf-8') as f:
+            f.write(cleaned_text)
+        return True
+    except Exception as e:
+        print(f"Error saving overrides file: {e}")
+        return False
+
 @app.route('/dmpi_override', methods=['POST'])
 def dmpi_override():
     if not (session.get('authed', False) or config.bypass_auth_debug):
@@ -1078,7 +346,7 @@ def dmpi_override():
         if save_overrides(overrides_text):
             # Split by newlines to get individual DMPI IDs for counting
             dmpi_ids = [line.strip() for line in overrides_text.split('\n') if line.strip()]
-            draw_dynamic_map()
+            draw_dynamic_map_threaded()
 
             return jsonify({
                 'success': True,
@@ -1111,6 +379,7 @@ def dmpi_db():
 @app.route('/planmsn')
 def download_msn():
     if session.get('authed', False) or config.bypass_auth_debug:
-        return send_from_directory(get_deployment_msn_path().parent, get_deployment_msn_path().name, as_attachment=True)
+        msn_path = Mission.get_path()
+        return send_from_directory(msn_path.parent, msn_path.name, as_attachment=True)
 
     return redirect('/login')

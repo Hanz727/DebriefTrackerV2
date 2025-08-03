@@ -1,12 +1,10 @@
 {
-    "maps": ["sinai-zoom1.png", "sinai-zoom2.png", "sinai-bluefor.png"],
+    "maps": ["sinai-zoom1.png"],
     "current_map": "sinai",
-    "map_origin_x": [625, 537, 622],
-    "map_origin_y": [1111, 726, 1112],
-    "map_scale_mpp": [451.7073, 176.381, 451.7073],
-    "map_reference": ["N 30°02'49\" E 31°14'41\"",
-        "N 30°02'49\" E 31°14'41\"",
-        "N 30°02'49\" E 31°14'41\""],
+    "map_origin_x": [622],
+    "map_origin_y": [1111],
+    "map_scale_mpp": [451.7073],
+    "map_reference": ["N 30°02'49\" E 31°14'41\""],
     "comments": {
         "SA-6": {
             "render_icon": true,

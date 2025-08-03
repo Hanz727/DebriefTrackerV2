@@ -165,6 +165,11 @@
             opacity: 1;
         }
 
+        .map-symbol.package {
+            filter: brightness(0.7) saturate(2) contrast(1.1);
+            opacity: 1;
+        }
+
         .map-symbol.hidden {
             display: None !important;
         }
@@ -335,6 +340,10 @@
 
         .tooltip-comment {
             font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .tooltip-comment-small {
             margin-bottom: 4px;
         }
 
@@ -629,35 +638,32 @@
                             {% if drawables %}
                                 {% for drawable_id, drawable_data in drawables.items() %}
                                     {% if drawable_data and drawable_data.draw %}
-                                        {% set first_map_data = drawable_data.draw.values() | first %}
-
                                         <!-- Generate one ring element per drawable with coordinate data only -->
-                                        {% if first_map_data.render_ring and first_map_data.radius_px > 0 and not drawable_data.collision %}
-                                            <div class="map-ring hidden {% if first_map_data.type == "BLUE" %}blue{% endif %}"
-                                                 id="ring-{{ drawable_id }}"
-                                                 data-drawable-id="{{ drawable_id }}"
-                                                 data-type="{{ first_map_data.type or '' }}"
-                                                 data-radius-meters="{{ first_map_data.radius_meters }}"
-                                                 data-coordinates='{{ drawable_data.draw | map_coordinates_only | tojson }}'>
+                                        {% if drawable_data.draw.render_ring and drawable_data.draw.radius_px > 0 and not drawable_data.collision %}
+                                            <div class="map-ring hidden {% if drawable_data.draw.type == "BLUE" %}blue{% endif %}"
+                                                 data-type="{{ drawable_data.draw.type or '' }}"
+                                                 data-x="{{ drawable_data.draw.x }}"
+                                                 data-y="{{ drawable_data.draw.y }}"
+                                                 data-radius-px="{{ drawable_data.draw.radius_px }}">
                                             </div>
                                         {% endif %}
 
                                         <!-- Generate one symbol element per drawable with coordinate data only -->
-                                        {% if first_map_data.render_icon %}
-                                            <img class="map-symbol hidden {% if drawable_data.collision %}collision{% endif %} {% if drawable_data.aim_points and drawable_data.aim_points["01"].debrief_id %}clickable{% endif %} {% if drawable_data.collision and drawable_data.aim_points and not drawable_data.aim_points["01"].debrief_id %}collision-no-report{% endif %}"
-                                                 id="symbol-{{ drawable_id }}"
+                                        {% if drawable_data.draw.render_icon %}
+                                            <img class="map-symbol hidden {% if not drawable_data.collision and drawable_data.package_url %}package{% endif %} {% if drawable_data.collision %}collision{% endif %} {% if drawable_data.aim_points and drawable_data.aim_points["01"].debrief_id %}clickable{% endif %} {% if drawable_data.collision and drawable_data.aim_points and not drawable_data.aim_points["01"].debrief_id %}collision-no-report{% endif %}"
                                                  data-id="{{ drawable_id }}"
-                                                 src="{{ first_map_data.symbol }}"
-                                                 alt="{{ drawable_data.comment or drawable_id }}"
-                                                 data-drawable-id="{{ drawable_id }}"
+                                                 src="{{ drawable_data.draw.symbol }}"
                                                  data-comment="{{ drawable_data.comment or '' }}"
-                                                 data-type="{{ first_map_data.type or '' }}"
-                                                 data-collision="{{ drawable_data.collision or '' }}"
+                                                 data-type="{{ drawable_data.draw.type or '' }}"
                                                  data-bda="{{ drawable_data.aim_points["01"].bda}}"
                                                  data-debrief-id="{{ drawable_data.aim_points["01"].debrief_id}}"
                                                  data-lat="{{ drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lat or '' }}"
                                                  data-lon="{{ drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lon or '' }}"
-                                                 data-coordinates='{{ drawable_data.draw | map_coordinates_only | tojson }}'>
+                                                 {% if drawable_data.heading %}data-brc="{{ drawable_data.draw.heading }}"{% endif %}
+                                                 {% if drawable_data.package_url %}data-package-url="{{ drawable_data.package_url }}"{% endif %}
+                                                 data-x="{{ drawable_data.draw.x }}"
+                                                 data-y="{{ drawable_data.draw.y }}"
+                                                 data-radius-px="{{ drawable_data.draw.radius_px }}">
                                         {% endif %}
                                     {% endif %}
                                 {% endfor %}
@@ -746,12 +752,9 @@
                                 <span class="load-text">LOAD PRESENTATION</span>
                             </button>
                         </div>
-
                     </div>
 
-
                     <div class="content-title" style="margin-top: 40px;">LATEST BDA</div>
-
                     <div class="divider"></div>
 
                     <div class="bda-grid">
@@ -886,58 +889,35 @@
             const MAP_PRESETS = {
                 airDefence: {
                     zoom: 1.5,
-                    translateX: -100,
-                    translateY: -500,
+                    centerX: 0.08,
+                    centerY: 0.45,
                     filter: 'SAD'
                 },
                 superMez: {
-                    zoom: 3.0,
-                    translateX: -660,
-                    translateY: -1230,
+                    zoom: 2.9,
+                    centerX: 0.22,
+                    centerY: 0.47,
                     filter: 'SAD'
                 },
                 strategic: {
-                    zoom: 1.4,
-                    translateX: -50,
-                    translateY: -410,
+                    zoom: 1.5,
+                    centerX: 0.08,
+                    centerY: 0.45,
                     filter: 'strategic'
                 },
                 bluefor: {
                     zoom: 1,
-                    translateX: 0,
-                    translateY: 0,  // Bottom section
+                    centerX: 0,
+                    centerY: 0,
                     filter: 'BLUE'
-                },
-                fullscreen: {
-                    zoom: 1,
-                    translateX: 0,
-                    translateY: -300,  // Bottom section
                 }
             };
+
 
             const minZoom = 1;
             const maxZoom = 8;
             const zoomStep = 0.2;
-
-            function getCoordinatesForElement(element) {
-                const coordinatesStr = element.getAttribute('data-coordinates');
-                if (!coordinatesStr) return null;
-
-                try {
-                    const coordinates = JSON.parse(coordinatesStr);
-
-                    // Always use zoom1 coordinates
-                    for (const [mapKey, coords] of Object.entries(coordinates)) {
-                        if (mapKey.toLowerCase().includes('zoom1') || mapKey.toLowerCase().includes('z1')) {
-                            return coords;
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error parsing coordinates:', e);
-                }
-
-                return null;
-            }
+            const map = 'sinai'
 
             function repositionSymbols() {
                 const oldZoom = currentZoom;
@@ -966,13 +946,6 @@
                 const rings = document.querySelectorAll('.map-ring');
 
                 symbols.forEach(symbol => {
-                    const coordinates = getCoordinatesForElement(symbol);
-
-                    if (!coordinates) {
-                        symbol.style.display = 'none';
-                        return;
-                    }
-
                     const symbolType = symbol.getAttribute('data-type');
                     let typeMatches = false;
 
@@ -989,13 +962,6 @@
 
                 // Similar logic for rings...
                 rings.forEach(ring => {
-                    const coordinates = getCoordinatesForElement(ring);
-
-                    if (!coordinates || !coordinates.radius_px || coordinates.radius_px <= 0) {
-                        ring.style.display = 'none';
-                        return;
-                    }
-
                     const ringType = ring.getAttribute('data-type');
                     let typeMatches = false;
 
@@ -1011,15 +977,53 @@
                 });
             }
 
-            function goToPreset(presetName, initial=false) {
+            function calculateTranslationFromCenter(centerX, centerY, zoom) {
+                const containerRect = mapContainer.getBoundingClientRect();
+                let imageWidth, imageHeight;
+
+                if (isFullscreen) {
+                    // In fullscreen mode, we need to calculate the actual display dimensions
+                    // The image fills the container width, height is proportional
+                    const naturalWidth = mapImage.naturalWidth;
+                    const naturalHeight = mapImage.naturalHeight;
+                    const containerWidth = containerRect.width;
+
+                    // Image fills container width, height scales proportionally
+                    imageWidth = containerWidth;
+                    imageHeight = (containerWidth / naturalWidth) * naturalHeight;
+                } else {
+                    // Normal mode - image maintains aspect ratio and fits within container
+                    imageWidth = mapImage.offsetWidth;
+                    imageHeight = mapImage.offsetHeight;
+                }
+
+                // Apply zoom to dimensions
+                const scaledWidth = imageWidth * zoom;
+                const scaledHeight = imageHeight * zoom;
+
+                // Calculate the pixel position of the center point on the scaled image
+                const centerPixelX = scaledWidth * centerX;
+                const centerPixelY = scaledHeight * centerY;
+
+                const translateX = -centerPixelX
+                const translateY = (containerRect.height / 2) - centerPixelY;
+
+                return { translateX, translateY };
+            }
+
+
+            function goToPreset(presetName, skipBtn = false) {
                 const preset = MAP_PRESETS[presetName];
 
-                // Animate to the preset position
                 currentZoom = preset.zoom;
-                translateX = preset.translateX;
-                translateY = preset.translateY;
+                const translation = calculateTranslationFromCenter(preset.centerX, preset.centerY, preset.zoom);
+                translateX = translation.translateX;
+                translateY = translation.translateY;
+
+                constrainTranslation();
+
                 currentFilter = preset.filter;
-                currentPreset = presetName
+                currentPreset = presetName;
 
                 // Update transform with animation
                 updateTransform();
@@ -1028,7 +1032,7 @@
                 filterAndShowSymbols();
 
                 // Update button states
-                if (!initial) {
+                if (!skipBtn) {
                     document.querySelectorAll('.map-selector-btn').forEach(btn => {
                         btn.classList.remove('active');
                     });
@@ -1038,6 +1042,7 @@
                 // Show/hide strategic filters
                 strategicFilters.style.display = presetName === 'strategic' ? 'block' : 'none';
             }
+
 
             airDefenceBtn.addEventListener('click', () => goToPreset('airDefence'));
             superMezBtn.addEventListener('click', () => goToPreset('superMez'));
@@ -1100,14 +1105,11 @@
                 const baseScaleY = displayHeight / naturalHeight;
 
                 symbols.forEach(symbol => {
-                    const coordinates = getCoordinatesForElement(symbol);
-                    if (!coordinates) {
-                        symbol.style.visibility = 'hidden';
-                        return;
-                    }
+                    const x = symbol.getAttribute('data-x');
+                    const y = symbol.getAttribute('data-y');
 
-                    const dataX = parseFloat(coordinates.x);
-                    const dataY = parseFloat(coordinates.y);
+                    const dataX = parseFloat(x);
+                    const dataY = parseFloat(y);
 
                     // Apply zoom to the base position
                     const displayX = (dataX * baseScaleX + offsetX) * currentZoom + translateX;
@@ -1122,46 +1124,33 @@
                 });
 
                 rings.forEach(ring => {
-                    const coordinates = getCoordinatesForElement(ring);
-                    if (!coordinates) {
-                        ring.style.visibility = 'hidden';
-                        return;
-                    }
+                    const x = ring.getAttribute('data-x');
+                    const y = ring.getAttribute('data-y');
+                    const radius_px = ring.getAttribute('data-radius-px');
 
-                    const dataX = parseFloat(coordinates.x);
-                    const dataY = parseFloat(coordinates.y);
-                    const radius = parseFloat(coordinates.radius_px);
+                    const dataX = parseFloat(x);
+                    const dataY = parseFloat(y);
+                    const radius = parseFloat(radius_px);
 
                     // Apply zoom to the base position for bounds checking
                     const displayX = (dataX * baseScaleX + offsetX) * currentZoom + translateX;
                     const displayY = (dataY * baseScaleY + offsetY) * currentZoom + translateY;
 
-                    const containerRect = mapContainer.getBoundingClientRect();
-                    const withinBounds = (
-                        displayX >= 0 &&
-                        displayX <= containerRect.width &&
-                        displayY >= 0 &&
-                        displayY <= containerRect.height
-                    );
+                    // Position relative to the container, not the transformed map
+                    ring.style.left = displayX + 'px';
+                    ring.style.top = displayY + 'px';
 
-                    if (withinBounds) {
-                        // Position relative to the container, not the transformed map
-                        ring.style.left = displayX + 'px';
-                        ring.style.top = displayY + 'px';
+                    const scaledRadius = radius * baseScaleX;
+                    ring.style.width = (scaledRadius * 2) + 'px';
+                    ring.style.height = (scaledRadius * 2) + 'px';
 
-                        const scaledRadius = radius * baseScaleX;
-                        ring.style.width = (scaledRadius * 2) + 'px';
-                        ring.style.height = (scaledRadius * 2) + 'px';
+                    const scaleRatio = baseScaleX / baseScaleY;
+                    ring.style.transform = `translate(-50%, -50%) scaleY(${1/scaleRatio})`;
 
-                        const scaleRatio = baseScaleX / baseScaleY;
-                        ring.style.transform = `translate(-50%, -50%) scaleY(${1/scaleRatio})`;
-
-                        if (ring.style.visibility === 'hidden') {
-                            ring.style.visibility = 'visible';
-                        }
-                    } else {
-                        ring.style.visibility = 'hidden';
+                    if (ring.style.visibility === 'hidden') {
+                        ring.style.visibility = 'visible';
                     }
+
                 });
             }
 
@@ -1192,6 +1181,15 @@
             });
 
             function handleResize() {
+                // Recalculate translation to maintain the same center point
+                const preset = MAP_PRESETS[currentPreset];
+                if (preset) {
+                    const translation = calculateTranslationFromCenter(preset.centerX, preset.centerY, currentZoom);
+                    translateX = translation.translateX;
+                    translateY = translation.translateY;
+                    constrainTranslation();
+                    updateTransform();
+                }
                 repositionSymbols();
             }
 
@@ -1284,10 +1282,6 @@
             function toggleFullscreen() {
                 isFullscreen = !isFullscreen;
 
-                currentZoom = MAP_PRESETS[currentPreset].zoom;
-                translateX = MAP_PRESETS[currentPreset].translateX;
-                translateY = MAP_PRESETS[currentPreset].translateY;
-
                 if (isFullscreen) {
                     mapContainer.classList.add('fullscreen');
                     fullscreenBtn.title = 'Exit Fullscreen';
@@ -1296,9 +1290,10 @@
                     fullscreenBtn.title = 'Toggle Fullscreen';
                 }
 
-                setTimeout(() => {
+                requestAnimationFrame(() => {
+                    goToPreset(currentPreset, true)
                     repositionSymbols();
-                }, 100);
+                });
             }
 
             function showTooltip(symbol, e) {
@@ -1306,9 +1301,11 @@
                 const comment = symbol.getAttribute('data-comment');
                 const lat = symbol.getAttribute('data-lat');
                 const lon = symbol.getAttribute('data-lon');
+                const brc = symbol.getAttribute('data-brc');
                 const bda = symbol.getAttribute('data-bda');
                 const type = symbol.getAttribute('data-type');
                 const debriefId = symbol.getAttribute('data-debrief-id');
+                const packageUrl = symbol.getAttribute('data-package-url');
 
                 let tooltipContent = '';
 
@@ -1327,6 +1324,14 @@
 
                 if (debriefId && debriefId !== 'None' && debriefId !== '') {
                     tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Report</div>`;
+                }
+
+                if (packageUrl) {
+                    tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Target Package</div>`;
+                }
+
+                if (brc) {
+                    tooltipContent += `<div class="tooltip-coords">BRC: ${Math.floor(brc)}°T</div>`;
                 }
 
                 if (lat && lon) {
@@ -1367,9 +1372,12 @@
                 symbol.addEventListener('click', function(e) {
                     e.stopPropagation();
                     const debriefId = this.getAttribute('data-debrief-id');
+                    const packageUrl = this.getAttribute('data-package-url');
 
                     if (debriefId && debriefId !== 'None' && debriefId !== '') {
                         window.location.href = `/debrief/${debriefId}`;
+                    } else if (packageUrl) {
+                        window.location.href = packageUrl;
                     } else {
                         const id = this.getAttribute('data-id');
                         const comment = this.getAttribute('data-comment');
@@ -1683,6 +1691,81 @@
                         ctx.restore();
                     }
 
+                    // Add watermark in bottom right corner
+                    const now = new Date();
+                    const currentDate = now.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+
+                    const currentTime = now.toLocaleTimeString('en-US', {
+                        hour12: false,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        timeZone: 'Europe/Berlin' // CET/CEST timezone
+                    });
+
+                    // Determine if it's currently CEST (daylight saving time) or CET
+                    const isDST = (date) => {
+                        const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
+                        const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
+                        return Math.max(jan, jul) !== date.getTimezoneOffset();
+                    };
+
+                    const timezoneName = isDST(now) ? 'CEST' : 'CET';
+
+                    // Get mission name from template variable
+                    const missionName = '{{msn}}';
+
+                    // Watermark text lines
+                    const headerText = 'CVW-17 TARGET INTELLIGENCE CELL';
+                    const missionText = missionName;
+                    const dateTimeText = `${currentDate} ${currentTime} ${timezoneName}`;
+
+                    // Set font properties (2x smaller)
+                    const fontSize = Math.max(6, containerRect.width * 0.01); // Half the original size
+                    ctx.font = `${fontSize}px Arial, sans-serif`;
+                    ctx.textAlign = 'left'; // Changed to left alignment
+                    ctx.textBaseline = 'top';
+
+                    // Measure text for background sizing
+                    const headerMetrics = ctx.measureText(headerText);
+                    const missionMetrics = ctx.measureText(missionText);
+                    const dateTimeMetrics = ctx.measureText(dateTimeText);
+
+                    const maxWidth = Math.max(headerMetrics.width, missionMetrics.width, dateTimeMetrics.width);
+                    const lineHeight = fontSize * 1.2; // Line spacing
+                    const totalHeight = lineHeight * 3; // Three lines
+
+                    // Add padding around the text
+                    const padding = 6; // Smaller padding
+                    const backgroundWidth = maxWidth + (padding * 2);
+                    const backgroundHeight = totalHeight + (padding * 2);
+
+                    // Position in bottom right
+                    const watermarkX = containerRect.width - 10; // 10px from right edge
+                    const watermarkY = containerRect.height - 10; // 10px from bottom edge
+
+                    // Draw semi-transparent black background
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(
+                        watermarkX - backgroundWidth,
+                        watermarkY - backgroundHeight,
+                        backgroundWidth,
+                        backgroundHeight
+                    );
+
+                    // Draw white text lines
+                    ctx.fillStyle = '#ffffff';
+                    const textStartX = watermarkX - backgroundWidth + padding; // Left-aligned within background
+                    const textStartY = watermarkY - backgroundHeight + padding;
+
+                    // Draw each line
+                    ctx.fillText(headerText, textStartX, textStartY);
+                    ctx.fillText(missionText, textStartX, textStartY + lineHeight);
+                    ctx.fillText(dateTimeText, textStartX, textStartY + (lineHeight * 2));
+
                     // Create download
                     const link = document.createElement('a');
                     link.download = `interactive-map-${Date.now()}.jpg`;
@@ -1696,6 +1779,8 @@
                     alert('Failed to capture image. Please try again.');
                 }
             }
+
+
 
             const downloadBtn = document.getElementById('downloadBtn');
             if (downloadBtn) {
