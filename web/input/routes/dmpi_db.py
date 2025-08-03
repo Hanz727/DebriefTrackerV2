@@ -377,8 +377,6 @@ def target_package():
         # Load existing target packages
         packages = _load_target_packages()
 
-        print(packages)
-
         # Update or add the new entry
         if url is None or not url.strip():
             del packages[dmpi_id]
