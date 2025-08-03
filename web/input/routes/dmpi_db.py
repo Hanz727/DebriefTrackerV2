@@ -142,7 +142,8 @@ def _get_dmpis():
 
     packages = _load_target_packages()
     for dmpi_name, package_data in packages.items():
-        dmpis[dmpi_name]['package_url'] = package_data['url']
+        if dmpi_name in dmpis:
+            dmpis[dmpi_name]['package_url'] = package_data['url']
 
     _dmpi_cache = dmpis
     return dmpis
