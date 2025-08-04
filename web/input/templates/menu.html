@@ -215,6 +215,47 @@
             transform: translate(-50%, -50%) scale(1.2);
         }
 
+        .symbol-label {
+            position: absolute;
+            background: rgba(31, 31, 31, 0.9);
+            border: 1px solid #4f545c;
+            color: white;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 7;
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            transform: translate(0%, -50%);
+            transition: none;
+        }
+
+        .symbol-label.hidden {
+            display: none !important;
+        }
+
+        /* Optional: Different styling for different label types */
+        .symbol-label.tanker {
+            background: rgba(0, 100, 200, 0.9);
+            border-color: #4a90e2;
+        }
+
+        .symbol-label.awacs {
+            background: rgba(200, 100, 0, 0.9);
+            border-color: #e2904a;
+        }
+
+        /* Ensure labels scale with zoom but remain readable */
+        @media (max-width: 768px) {
+            .symbol-label {
+                font-size: 10px;
+                padding: 1px 4px;
+            }
+        }
+
         .map-ring.collision {
             border-color: #ff6b6b;
         }
@@ -913,6 +954,9 @@
                 }
             };
 
+            const LABEL_CONFIG = {
+                'KC135MPRS': { className: 'tanker', offset: { x: 0, y: 0 } },
+            };
 
             const minZoom = 1;
             const maxZoom = 8;
@@ -931,6 +975,7 @@
 
                 requestAnimationFrame(() => {
                     positionSymbols();
+                    positionSymbolLabels();
 
                     currentZoom = oldZoom;
                     translateX = oldTranslateX;
@@ -978,6 +1023,8 @@
 
                     ring.style.display = typeMatches ? 'block' : 'none';
                 });
+
+                filterSymbolLabels()
             }
 
             function calculateTranslationFromCenter(centerX, centerY, zoom) {
@@ -1014,7 +1061,6 @@
                 return { translateX, translateY };
             }
 
-
             function goToPreset(presetName, skipBtn = false) {
                 const preset = MAP_PRESETS[presetName];
 
@@ -1046,7 +1092,6 @@
                 strategicFilters.style.display = presetName === 'strategic' ? 'block' : 'none';
             }
 
-
             airDefenceBtn.addEventListener('click', () => goToPreset('airDefence'));
             superMezBtn.addEventListener('click', () => goToPreset('superMez'));
             strategicBtn.addEventListener('click', () => goToPreset('strategic'));
@@ -1068,6 +1113,118 @@
             }
 
             setupFilterAutoApply();
+
+            function createSymbolLabels() {
+                document.querySelectorAll('.symbol-label').forEach(label => label.remove());
+
+                const symbols = document.querySelectorAll('.map-symbol');
+
+                symbols.forEach(symbol => {
+                    const comment = symbol.getAttribute('data-comment') || '';
+                    const id = symbol.getAttribute('data-id') || '';
+
+                    // Check if this symbol should have a persistent label
+                    let labelConfig = null;
+                    for (const [keyword, config] of Object.entries(LABEL_CONFIG)) {
+                        if (comment.includes(keyword)) {
+                            labelConfig = config;
+                            break;
+                        }
+                    }
+
+                    if (labelConfig && id) {
+                        // Create the label element
+                        const label = document.createElement('div');
+                        label.className = `symbol-label ${labelConfig.className}`;
+                        label.textContent = id;
+                        label.setAttribute('data-symbol-id', id);
+
+                        // Store offset configuration
+                        label.setAttribute('data-offset-x', labelConfig.offset.x);
+                        label.setAttribute('data-offset-y', labelConfig.offset.y);
+
+                        // Add to the map symbols container
+                        document.getElementById('mapSymbols').appendChild(label);
+                    }
+                });
+            }
+
+            function positionSymbolLabels() {
+                const labels = document.querySelectorAll('.symbol-label');
+                const naturalWidth = mapImage.naturalWidth;
+                const naturalHeight = mapImage.naturalHeight;
+
+                if (!naturalWidth || !naturalHeight) return;
+
+                let displayWidth, displayHeight, offsetX = 0, offsetY = 0;
+
+                const containerRect = mapContainer.getBoundingClientRect();
+                const imageRect = mapImage.getBoundingClientRect();
+
+                if (isFullscreen) {
+                    const containerWidth = containerRect.width;
+                    displayWidth = containerWidth;
+                    displayHeight = (containerWidth / naturalWidth) * naturalHeight;
+                    offsetX = 0;
+                    offsetY = 0;
+                } else {
+                    displayWidth = mapImage.offsetWidth;
+                    displayHeight = mapImage.offsetHeight;
+                    offsetX = imageRect.left - containerRect.left;
+                    offsetY = imageRect.top - containerRect.top;
+                }
+
+                const baseScaleX = displayWidth / naturalWidth;
+                const baseScaleY = displayHeight / naturalHeight;
+
+                labels.forEach(label => {
+                    const symbolId = label.getAttribute('data-symbol-id');
+                    const symbol = document.querySelector(`.map-symbol[data-id="${symbolId}"]`);
+
+                    if (!symbol) return;
+
+                    const x = symbol.getAttribute('data-x');
+                    const y = symbol.getAttribute('data-y');
+
+                    const dataX = parseFloat(x);
+                    const dataY = parseFloat(y);
+
+                    // Set position once - same as symbols, NO offset here
+                    const displayX = dataX * baseScaleX + offsetX;
+                    const displayY = dataY * baseScaleY + offsetY;
+
+                    label.style.left = displayX + 'px';
+                    label.style.top = displayY + 'px';
+
+                    // Ensure label is visible
+                    label.style.visibility = 'visible';
+                });
+            }
+
+            function filterSymbolLabels() {
+                const labels = document.querySelectorAll('.symbol-label');
+
+                labels.forEach(label => {
+                    const symbolId = label.getAttribute('data-symbol-id');
+                    const symbol = document.querySelector(`.map-symbol[data-id="${symbolId}"]`);
+
+                    if (!symbol) {
+                        label.style.display = 'none';
+                        return;
+                    }
+
+                    const symbolStyle = window.getComputedStyle(symbol);
+                    const isSymbolVisible = symbolStyle.display !== 'none' && symbolStyle.visibility !== 'hidden';
+
+                    label.style.display = isSymbolVisible ? 'block' : 'none';
+                });
+            }
+
+            function removeHiddenLabels() {
+                document.querySelectorAll('.symbol-label').forEach(label => {
+                    label.classList.remove('hidden');
+                });
+            }
 
             function positionSymbols() {
                 const symbols = document.querySelectorAll('.map-symbol');
@@ -1170,6 +1327,8 @@
                 filterAndShowSymbols();
                 repositionSymbols();
                 removeHidden();
+                removeHiddenLabels()
+                createSymbolLabels()
                 requestAnimationFrame(() => {
                     goToPreset('airDefence', true);
                 });
@@ -1178,6 +1337,8 @@
                 filterAndShowSymbols();
                 repositionSymbols();
                 removeHidden();
+                removeHiddenLabels()
+                createSymbolLabels()
                 requestAnimationFrame(() => {
                     goToPreset('airDefence', true);
                 });
@@ -1197,6 +1358,23 @@
             }
 
             window.addEventListener('resize', handleResize);
+
+            function updateLabelsTransform() {
+                // Apply inverse scaling to labels to keep them readable, like symbols
+                const labelScale = Math.max(0.7, Math.min(1.2, 1 / currentZoom));
+                const labels = document.querySelectorAll('.symbol-label');
+                labels.forEach(label => {
+                    const offsetXPx = parseFloat(label.getAttribute('data-offset-x')) || 0;
+                    const offsetYPx = parseFloat(label.getAttribute('data-offset-y')) || 0;
+
+                    // Apply offset that doesn't scale with zoom
+                    const scaledOffsetX = offsetXPx / currentZoom;
+                    const scaledOffsetY = offsetYPx / currentZoom;
+
+                    label.style.transform = `translate(${scaledOffsetX}px, ${scaledOffsetY}px) translate(0%, -50%) scale(${labelScale})`;
+                });
+            }
+
 
             function updateTransform() {
                 mapImage.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
@@ -1221,6 +1399,7 @@
                     ring.style.transform = `translate(-50%, -50%) scaleY(${scaleYValue})`;
                 });
 
+                updateLabelsTransform()
                 zoomLevelDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
             }
 

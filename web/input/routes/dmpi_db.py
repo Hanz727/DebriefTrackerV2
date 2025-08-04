@@ -131,13 +131,8 @@ def _get_dmpis():
 
     print('calculating dmpis')
 
-    # Load DMPIs from mission file
     _load_dmpis_from_mission(dmpis)
-
-    # Load DMPIs from debrief files
     _load_dmpis_from_debriefs(dmpis)
-
-    # Apply overrides
     _apply_overrides(dmpis)
 
     packages = _load_target_packages()
