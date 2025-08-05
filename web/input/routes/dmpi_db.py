@@ -53,7 +53,7 @@ def get_draw_dmpis():
         dmpi['aim_points']['01']['lon'] = lat
 
         if unit['type'] == 'CVN_73':
-            dmpi['heading'] = unit.get('heading',0)*180/(2*math.pi)
+            dmpi['heading'] = unit.get('heading',0)*180/math.pi
 
         name = unit['name']
         if unit['type'] in ['KC135MPRS']:
