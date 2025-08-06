@@ -116,7 +116,7 @@
         .map-container {
             position: relative;
             width: 100%;
-            height: 600px;  /* Fixed height */
+            height: 600px;
             border: 1px solid #4f545c;
             background: #121212;
             overflow: hidden;
@@ -234,7 +234,6 @@
             border: 2px solid rgb(51, 98, 255) !important;
         }
 
-        /* NEW: Map Symbol Labels */
         .map-symbol-label {
             position: absolute;
             background: rgba(31, 31, 31, 0.95);
@@ -808,7 +807,6 @@
                         {% endfor %}
                     </div>
                 </div>
-
             </div>
         </div>
 
@@ -824,8 +822,794 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // CONFIGURATION: Add keywords that should trigger labels
-            const LABEL_KEYWORDS = ['KC135MPRS', 'TANKER', 'AWACS', 'E3A']; // Add more keywords as needed
+            // ===========================
+            // MAP RENDERING ENGINE
+            // ===========================
+
+            class MapRenderer {
+                constructor() {
+                    this.mapContainer = document.getElementById('mapContainer');
+                    this.mapImage = document.getElementById('mapImage');
+                    this.mapSymbols = document.getElementById('mapSymbols');
+                    this.symbolTooltip = document.getElementById('symbolTooltip');
+                    this.zoomLevelDisplay = document.getElementById('zoomLevel');
+
+                    // State
+                    this.currentZoom = 1;
+                    this.translateX = 0;
+                    this.translateY = 0;
+                    this.isFullscreen = false;
+                    this.currentFilter = 'SAD';
+                    this.currentPreset = 'airDefence';
+                    this.selectedStrategicTypes = ['C', 'L', 'CCC', 'E', 'O', 'RR', 'A', 'N', 'MS', 'SC', 'RG'];
+                    this.resizeTimeout = null; // For debouncing resize events
+
+                    // Constants
+                    this.LABEL_KEYWORDS = ['KC135MPRS', 'TANKER', 'AWACS', 'E3A'];
+                    this.minZoom = 1;
+                    this.maxZoom = 8;
+                    this.zoomStep = 0.2;
+                    this.symbolScale = 0.8;
+
+                    // Presets
+                    this.MAP_PRESETS = {
+                        airDefence: { zoom: 1.5, centerX: 0.08, centerY: 0.45, filter: 'SAD' },
+                        superMez: { zoom: 2.9, centerX: 0.22, centerY: 0.47, filter: 'SAD' },
+                        strategic: { zoom: 1.5, centerX: 0.08, centerY: 0.45, filter: 'strategic' },
+                        bluefor: { zoom: 1, centerX: 0, centerY: 0, filter: 'BLUE' }
+                    };
+
+                    this.init();
+                }
+
+                init() {
+                    this.createSymbolLabels();
+                    this.setupEventListeners();
+
+                    if (this.mapImage.complete) {
+                        this.onImageLoaded();
+                    } else {
+                        this.mapImage.addEventListener('load', () => this.onImageLoaded());
+                    }
+                }
+
+                onImageLoaded() {
+                    this.filterAndShowElements();
+                    this.repositionElements(); // Position elements first on initial load
+                    this.removeHiddenClasses();
+                    requestAnimationFrame(() => {
+                        this.goToPreset('airDefence', true);
+                    });
+                }
+
+                // ===========================
+                // CORE RENDERING METHODS
+                // ===========================
+
+                render() {
+                    this.updateImageTransform();
+                    this.updateSymbolScaling(); // Only update symbol scaling, not positions
+                    this.updateZoomDisplay();
+                }
+
+                // Call this only when container size changes, fullscreen, etc.
+                repositionElements() {
+                    this.positionElements();
+                }
+
+                updateSymbolScaling() {
+                    // Update symbol scaling without changing positions
+                    const symbols = document.querySelectorAll('.map-symbol');
+                    symbols.forEach(symbol => {
+                        const currentTransform = symbol.style.transform;
+                        const translateMatch = currentTransform.match(/translate\([^)]+\)/);
+                        const translatePart = translateMatch ? translateMatch[0] : 'translate(-50%, -50%)';
+                        symbol.style.transform = `${translatePart} scale(${this.symbolScale / this.currentZoom})`;
+                    });
+
+                    // Update label scaling
+                    const labels = document.querySelectorAll('.map-symbol-label');
+                    labels.forEach(label => {
+                        const symbolId = label.getAttribute('data-symbol-id');
+                        const correspondingSymbol = document.querySelector(`[data-id="${symbolId}"]`);
+
+                        if (correspondingSymbol) {
+                            const baseSymbolSize = 36;
+                            const scaledSymbolSize = (baseSymbolSize * this.symbolScale) / this.currentZoom;
+                            const symbolHalfWidth = scaledSymbolSize / 2;
+                            const labelScale = 1.3 / this.currentZoom;
+
+                            label.style.transform = `translate(${symbolHalfWidth}px, ${-symbolHalfWidth}px) scale(${labelScale})`;
+                        }
+                    });
+
+                    // Update ring border width
+                    const rings = document.querySelectorAll('.map-ring');
+                    rings.forEach(ring => {
+                        ring.style.borderWidth = this.isFullscreen ? '2px' : '1px';
+                    });
+                }
+
+                updateImageTransform() {
+                    const transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.currentZoom})`;
+                    this.mapImage.style.transform = transform;
+                    this.mapSymbols.style.transform = transform;
+                }
+
+                positionElements() {
+                    const { baseScaleX, baseScaleY, offsetX, offsetY } = this.getDisplayMetrics();
+
+                    // Check if we have valid metrics before positioning
+                    if (!baseScaleX || !baseScaleY) {
+                        console.warn('Invalid metrics, skipping positioning');
+                        return;
+                    }
+
+                    this.positionSymbols(baseScaleX, baseScaleY, offsetX, offsetY);
+                    this.positionRings(baseScaleX, baseScaleY, offsetX, offsetY);
+                    this.positionLabels(baseScaleX, baseScaleY, offsetX, offsetY);
+                }
+
+                getDisplayMetrics() {
+                    const naturalWidth = this.mapImage.naturalWidth;
+                    const naturalHeight = this.mapImage.naturalHeight;
+
+                    if (!naturalWidth || !naturalHeight) {
+                        console.warn('Image not loaded yet');
+                        return {};
+                    }
+
+                    const containerRect = this.mapContainer.getBoundingClientRect();
+                    let displayWidth, displayHeight, offsetX = 0, offsetY = 0;
+
+                    if (this.isFullscreen) {
+                        displayWidth = containerRect.width;
+                        displayHeight = (containerRect.width / naturalWidth) * naturalHeight;
+                    } else {
+                        // Use the natural display size of the image (before transforms)
+                        displayWidth = this.mapImage.offsetWidth;
+                        displayHeight = this.mapImage.offsetHeight;
+
+                        // Don't use image rect offset since we're using container transforms
+                        // The container handles all positioning via transforms
+                        offsetX = 0;
+                        offsetY = 0;
+                    }
+
+                    // Ensure we have valid dimensions
+                    if (!displayWidth || !displayHeight) {
+                        console.warn('Invalid display dimensions');
+                        return {};
+                    }
+
+                    return {
+                        baseScaleX: displayWidth / naturalWidth,
+                        baseScaleY: displayHeight / naturalHeight,
+                        offsetX,
+                        offsetY,
+                        displayWidth,
+                        displayHeight
+                    };
+                }
+
+                positionSymbols(baseScaleX, baseScaleY, offsetX, offsetY) {
+                    const symbols = document.querySelectorAll('.map-symbol');
+
+                    symbols.forEach(symbol => {
+                        const dataX = parseFloat(symbol.getAttribute('data-x'));
+                        const dataY = parseFloat(symbol.getAttribute('data-y'));
+
+                        // Position relative to container (without zoom/translation - container handles that)
+                        const displayX = dataX * baseScaleX + offsetX;
+                        const displayY = dataY * baseScaleY + offsetY;
+
+                        symbol.style.left = displayX + 'px';
+                        symbol.style.top = displayY + 'px';
+                        symbol.style.transform = `translate(-50%, -50%) scale(${this.symbolScale / this.currentZoom})`;
+                        symbol.style.visibility = 'visible';
+                    });
+                }
+
+                positionRings(baseScaleX, baseScaleY, offsetX, offsetY) {
+                    const rings = document.querySelectorAll('.map-ring');
+
+                    rings.forEach(ring => {
+                        const dataX = parseFloat(ring.getAttribute('data-x'));
+                        const dataY = parseFloat(ring.getAttribute('data-y'));
+                        const radius = parseFloat(ring.getAttribute('data-radius-px'));
+
+                        // Position relative to container (without zoom/translation - container handles that)
+                        const displayX = dataX * baseScaleX + offsetX;
+                        const displayY = dataY * baseScaleY + offsetY;
+                        const scaledRadius = radius * baseScaleX;
+
+                        ring.style.left = displayX + 'px';
+                        ring.style.top = displayY + 'px';
+                        ring.style.width = (scaledRadius * 2) + 'px';
+                        ring.style.height = (scaledRadius * 2) + 'px';
+                        ring.style.borderWidth = this.isFullscreen ? '2px' : '1px';
+
+                        const scaleRatio = baseScaleX / baseScaleY;
+                        ring.style.transform = `translate(-50%, -50%) scaleY(${1/scaleRatio})`;
+                        ring.style.visibility = 'visible';
+                    });
+                }
+
+                positionLabels(baseScaleX, baseScaleY, offsetX, offsetY) {
+                    const labels = document.querySelectorAll('.map-symbol-label');
+
+                    labels.forEach(label => {
+                        const symbolId = label.getAttribute('data-symbol-id');
+                        const correspondingSymbol = document.querySelector(`[data-id="${symbolId}"]`);
+
+                        if (!correspondingSymbol) return;
+
+                        const dataX = parseFloat(correspondingSymbol.getAttribute('data-x'));
+                        const dataY = parseFloat(correspondingSymbol.getAttribute('data-y'));
+
+                        // Position relative to container (without zoom/translation - container handles that)
+                        const displayX = dataX * baseScaleX + offsetX;
+                        const displayY = dataY * baseScaleY + offsetY;
+
+                        // Calculate label positioning relative to symbol
+                        const baseSymbolSize = 36;
+                        const scaledSymbolSize = (baseSymbolSize * this.symbolScale) / this.currentZoom;
+                        const symbolHalfWidth = scaledSymbolSize / 2;
+                        const labelScale = 1.3 / this.currentZoom;
+
+                        label.style.left = displayX + 'px';
+                        label.style.top = displayY + 'px';
+                        label.style.transform = `translate(${symbolHalfWidth}px, ${-symbolHalfWidth}px) scale(${labelScale})`;
+                        label.style.visibility = 'visible';
+                    });
+                }
+
+                updateZoomDisplay() {
+                    this.zoomLevelDisplay.textContent = `${Math.round(this.currentZoom * 100)}%`;
+                }
+
+                // ===========================
+                // FILTERING AND VISIBILITY
+                // ===========================
+
+                createSymbolLabels() {
+                    // Remove existing labels
+                    document.querySelectorAll('.map-symbol-label').forEach(label => label.remove());
+
+                    const symbols = document.querySelectorAll('.map-symbol');
+                    symbols.forEach(symbol => {
+                        const comment = symbol.getAttribute('data-comment') || '';
+                        const dataId = symbol.getAttribute('data-id') || '';
+
+                        const shouldShowLabel = this.LABEL_KEYWORDS.some(keyword =>
+                            comment.toUpperCase().includes(keyword.toUpperCase())
+                        );
+
+                        if (shouldShowLabel && dataId) {
+                            const label = document.createElement('div');
+                            label.className = 'map-symbol-label hidden';
+                            label.textContent = dataId;
+                            label.setAttribute('data-symbol-id', dataId);
+                            this.mapSymbols.appendChild(label);
+                        }
+                    });
+                }
+
+                filterAndShowElements() {
+                    this.filterSymbols();
+                    this.filterRings();
+                    this.filterLabels();
+                }
+
+                filterSymbols() {
+                    const symbols = document.querySelectorAll('.map-symbol');
+
+                    symbols.forEach(symbol => {
+                        const symbolComment = symbol.getAttribute('data-comment');
+                        let symbolType = symbol.getAttribute('data-type');
+
+                        // Special handling for strategic filter
+                        if (this.currentFilter === 'strategic' && symbolComment.includes('EWR')) {
+                            symbolType = 'CCC';
+                        }
+
+                        const isVisible = this.shouldElementBeVisible(symbolType);
+                        symbol.style.display = isVisible ? 'block' : 'none';
+                    });
+                }
+
+                filterRings() {
+                    const rings = document.querySelectorAll('.map-ring');
+
+                    rings.forEach(ring => {
+                        const ringType = ring.getAttribute('data-type');
+                        const isVisible = this.shouldElementBeVisible(ringType);
+                        ring.style.display = isVisible ? 'block' : 'none';
+                    });
+                }
+
+                filterLabels() {
+                    const labels = document.querySelectorAll('.map-symbol-label');
+
+                    labels.forEach(label => {
+                        const symbolId = label.getAttribute('data-symbol-id');
+                        const correspondingSymbol = document.querySelector(`[data-id="${symbolId}"]`);
+
+                        if (correspondingSymbol) {
+                            const symbolStyle = window.getComputedStyle(correspondingSymbol);
+                            const symbolVisible = symbolStyle.display !== 'none' && symbolStyle.visibility !== 'hidden';
+
+                            if (symbolVisible) {
+                                label.classList.remove('hidden');
+                            } else {
+                                label.classList.add('hidden');
+                            }
+                        } else {
+                            label.classList.add('hidden');
+                        }
+                    });
+                }
+
+                shouldElementBeVisible(elementType) {
+                    if (this.currentFilter === 'strategic') {
+                        return this.selectedStrategicTypes.includes(elementType);
+                    } else if (this.currentFilter === 'BLUE') {
+                        return elementType === 'BLUE' || elementType === 'SAD';
+                    } else {
+                        return this.currentFilter === '' || elementType === this.currentFilter;
+                    }
+                }
+
+                removeHiddenClasses() {
+                    document.querySelectorAll('.map-symbol, .map-ring, .map-symbol-label').forEach(element => {
+                        element.classList.remove('hidden');
+                    });
+                }
+
+                // ===========================
+                // ZOOM AND NAVIGATION
+                // ===========================
+
+                zoomIn() {
+                    if (this.currentZoom < this.maxZoom) {
+                        this.currentZoom = Math.min(this.maxZoom, this.currentZoom + this.zoomStep);
+                        this.constrainTranslation();
+                    }
+                }
+
+                zoomOut() {
+                    if (this.currentZoom > this.minZoom) {
+                        this.currentZoom = Math.max(this.minZoom, this.currentZoom - this.zoomStep);
+                        this.constrainTranslation();
+                    }
+                }
+
+                resetZoom() {
+                    this.currentZoom = 1;
+                    this.translateX = 0;
+                    this.translateY = 0;
+                    this.repositionElements(); // Reposition elements on zoom reset
+                    this.render();
+                }
+
+                constrainTranslation() {
+                    const containerRect = this.mapContainer.getBoundingClientRect();
+                    const { displayWidth, displayHeight } = this.getDisplayMetrics();
+
+                    if (!displayWidth || !displayHeight) return;
+
+                    const scaledWidth = displayWidth * this.currentZoom;
+                    const scaledHeight = displayHeight * this.currentZoom;
+
+                    // Constrain to bounds
+                    this.translateX = Math.max(Math.min(0, this.translateX), -(scaledWidth - containerRect.width));
+                    this.translateY = Math.max(Math.min(0, this.translateY), -(scaledHeight - containerRect.height));
+
+                    // Center if smaller than container
+                    if (scaledHeight <= containerRect.height) this.translateY = 0;
+                    if (scaledWidth <= containerRect.width) this.translateX = 0;
+                }
+
+                calculateTranslationFromCenter(centerX, centerY, zoom) {
+                    const containerRect = this.mapContainer.getBoundingClientRect();
+                    const { displayWidth, displayHeight } = this.getDisplayMetrics();
+
+                    if (!displayWidth || !displayHeight) return { translateX: 0, translateY: 0 };
+
+                    const scaledWidth = displayWidth * zoom;
+                    const scaledHeight = displayHeight * zoom;
+
+                    const centerPixelX = scaledWidth * centerX;
+                    const centerPixelY = scaledHeight * centerY;
+
+                    return {
+                        translateX: -centerPixelX,
+                        translateY: (containerRect.height / 2) - centerPixelY
+                    };
+                }
+
+                goToPreset(presetName, skipBtn = false) {
+                    const preset = this.MAP_PRESETS[presetName];
+                    if (!preset) return;
+
+                    this.currentZoom = preset.zoom;
+                    const translation = this.calculateTranslationFromCenter(preset.centerX, preset.centerY, preset.zoom);
+                    this.translateX = translation.translateX;
+                    this.translateY = translation.translateY;
+
+                    this.constrainTranslation();
+                    this.currentFilter = preset.filter;
+                    this.currentPreset = presetName;
+
+                    // Update UI first
+                    if (!skipBtn) {
+                        document.querySelectorAll('.map-selector-btn').forEach(btn => btn.classList.remove('active'));
+                        if (event && event.currentTarget) {
+                            event.currentTarget.classList.add('active');
+                        }
+                    }
+
+                    const strategicFilters = document.getElementById('strategicFilters');
+                    strategicFilters.style.display = presetName === 'strategic' ? 'block' : 'none';
+
+                    // Check if this is initial load (elements not positioned yet)
+                    const firstSymbol = document.querySelector('.map-symbol');
+                    const isInitialLoad = !firstSymbol || !firstSymbol.style.left;
+
+                    if (isInitialLoad) {
+                        // Initial load: filter, position, then render
+                        this.filterAndShowElements();
+                        this.repositionElements();
+                        this.render();
+                    } else {
+                        // Preset change: render first, then reposition
+                        this.render();
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                this.filterAndShowElements();
+                                this.repositionElements();
+                            });
+                        });
+                    }
+                }
+
+                toggleFullscreen() {
+                    this.isFullscreen = !this.isFullscreen;
+
+                    if (this.isFullscreen) {
+                        this.mapContainer.classList.add('fullscreen');
+                        document.getElementById('fullscreenBtn').title = 'Exit Fullscreen';
+                    } else {
+                        this.mapContainer.classList.remove('fullscreen');
+                        document.getElementById('fullscreenBtn').title = 'Toggle Fullscreen';
+                    }
+
+                    // Wait for CSS changes to take effect before repositioning
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            this.goToPreset(this.currentPreset, true);
+                        });
+                    });
+                }
+
+                handleResize() {
+                    // Debounce resize events
+                    clearTimeout(this.resizeTimeout);
+                    this.resizeTimeout = setTimeout(() => {
+                        const preset = this.MAP_PRESETS[this.currentPreset];
+                        if (preset) {
+                            const translation = this.calculateTranslationFromCenter(preset.centerX, preset.centerY, this.currentZoom);
+                            this.translateX = translation.translateX;
+                            this.translateY = translation.translateY;
+                            this.constrainTranslation();
+
+                            requestAnimationFrame(() => {
+                                this.repositionElements();
+                                this.render();
+                            });
+                        }
+                    }, 100);
+                }
+
+                // ===========================
+                // EVENT HANDLING
+                // ===========================
+
+                setupEventListeners() {
+                    this.setupZoomControls();
+                    this.setupMapInteraction();
+                    this.setupPresetButtons();
+                    this.setupFilterControls();
+                    this.setupSymbolInteraction();
+
+                    window.addEventListener('resize', () => this.handleResize());
+
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape' && this.isFullscreen) {
+                            this.toggleFullscreen();
+                        }
+                    });
+                }
+
+                setupZoomControls() {
+                    document.getElementById('zoomIn').addEventListener('click', () => {
+                        this.zoomIn();
+                        this.render();
+                    });
+
+                    document.getElementById('zoomOut').addEventListener('click', () => {
+                        this.zoomOut();
+                        this.render();
+                    });
+
+                    document.getElementById('resetZoom').addEventListener('click', () => {
+                        this.resetZoom();
+                    });
+
+                    document.getElementById('fullscreenBtn').addEventListener('click', () => {
+                        this.toggleFullscreen();
+                    });
+                }
+
+                setupMapInteraction() {
+                    let isDragging = false;
+                    let startX = 0;
+                    let startY = 0;
+
+                    // Mouse wheel zoom
+                    this.mapContainer.addEventListener('wheel', (e) => {
+                        e.preventDefault();
+
+                        const rect = this.mapContainer.getBoundingClientRect();
+                        const mouseX = e.clientX - rect.left;
+                        const mouseY = e.clientY - rect.top;
+                        const oldZoom = this.currentZoom;
+
+                        if (e.deltaY < 0) {
+                            this.zoomIn();
+                        } else {
+                            this.zoomOut();
+                        }
+
+                        if (this.currentZoom !== oldZoom) {
+                            const zoomPointX = mouseX - this.translateX;
+                            const zoomPointY = mouseY - this.translateY;
+                            const scaleDiff = this.currentZoom - oldZoom;
+
+                            this.translateX -= zoomPointX * scaleDiff / oldZoom;
+                            this.translateY -= zoomPointY * scaleDiff / oldZoom;
+
+                            this.constrainTranslation();
+                            this.render();
+                        }
+                    });
+
+                    // Mouse drag
+                    this.mapContainer.addEventListener('mousedown', (e) => {
+                        isDragging = true;
+                        startX = e.clientX - this.translateX;
+                        startY = e.clientY - this.translateY;
+                        this.mapContainer.style.cursor = 'grabbing';
+                        e.preventDefault();
+                    });
+
+                    document.addEventListener('mousemove', (e) => {
+                        if (isDragging) {
+                            this.translateX = e.clientX - startX;
+                            this.translateY = e.clientY - startY;
+                            this.constrainTranslation();
+                            this.render();
+                        }
+                    });
+
+                    document.addEventListener('mouseup', () => {
+                        if (isDragging) {
+                            isDragging = false;
+                            this.mapContainer.style.cursor = 'grab';
+                        }
+                    });
+
+                    // Touch handling
+                    let lastTouchDistance = 0;
+
+                    this.mapContainer.addEventListener('touchstart', (e) => {
+                        if (e.touches.length === 1) {
+                            isDragging = true;
+                            startX = e.touches[0].clientX - this.translateX;
+                            startY = e.touches[0].clientY - this.translateY;
+                        } else if (e.touches.length === 2) {
+                            isDragging = false;
+                            const touch1 = e.touches[0];
+                            const touch2 = e.touches[1];
+                            lastTouchDistance = Math.sqrt(
+                                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                                Math.pow(touch2.clientY - touch1.clientY, 2)
+                            );
+                        }
+                        e.preventDefault();
+                    });
+
+                    this.mapContainer.addEventListener('touchmove', (e) => {
+                        if (e.touches.length === 1 && isDragging) {
+                            this.translateX = e.touches[0].clientX - startX;
+                            this.translateY = e.touches[0].clientY - startY;
+                            this.constrainTranslation();
+                            this.render();
+                        } else if (e.touches.length === 2) {
+                            const touch1 = e.touches[0];
+                            const touch2 = e.touches[1];
+                            const currentDistance = Math.sqrt(
+                                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                                Math.pow(touch2.clientY - touch1.clientY, 2)
+                            );
+
+                            if (lastTouchDistance > 0) {
+                                const deltaDistance = currentDistance - lastTouchDistance;
+                                if (deltaDistance > 0) {
+                                    this.currentZoom = Math.min(this.maxZoom, this.currentZoom + this.zoomStep * 0.5);
+                                } else {
+                                    this.currentZoom = Math.max(this.minZoom, this.currentZoom - this.zoomStep * 0.5);
+                                }
+                                this.constrainTranslation();
+                                this.render();
+                            }
+                            lastTouchDistance = currentDistance;
+                        }
+                        e.preventDefault();
+                    });
+
+                    this.mapContainer.addEventListener('touchend', () => {
+                        isDragging = false;
+                        lastTouchDistance = 0;
+                    });
+                }
+
+                setupPresetButtons() {
+                    document.getElementById('airDefenceBtn').addEventListener('click', () => this.goToPreset('airDefence'));
+                    document.getElementById('superMezBtn').addEventListener('click', () => this.goToPreset('superMez'));
+                    document.getElementById('strategicBtn').addEventListener('click', () => this.goToPreset('strategic'));
+                    document.getElementById('blueforBtn').addEventListener('click', () => this.goToPreset('bluefor'));
+                }
+
+                setupFilterControls() {
+                    const strategicFilters = document.getElementById('strategicFilters');
+                    const checkboxes = strategicFilters.querySelectorAll('input[type="checkbox"]');
+
+                    checkboxes.forEach(checkbox => {
+                        checkbox.addEventListener('change', () => {
+                            this.updateSelectedStrategicTypes();
+                            this.filterAndShowElements();
+                        });
+                    });
+                }
+
+                updateSelectedStrategicTypes() {
+                    const strategicFilters = document.getElementById('strategicFilters');
+                    const checkboxes = strategicFilters.querySelectorAll('input[type="checkbox"]:checked');
+                    this.selectedStrategicTypes = Array.from(checkboxes).map(cb => cb.value);
+                }
+
+                setupSymbolInteraction() {
+                    document.querySelectorAll('.map-symbol').forEach(symbol => {
+                        symbol.addEventListener('mouseenter', (e) => this.showTooltip(symbol, e));
+                        symbol.addEventListener('mouseleave', () => this.hideTooltip());
+                        symbol.addEventListener('mousemove', (e) => this.updateTooltipPosition(e));
+                        symbol.addEventListener('mousedown', (e) => this.handleSymbolClick(symbol, e));
+                        symbol.addEventListener('auxclick', (e) => this.handleSymbolAuxClick(symbol, e));
+                    });
+                }
+
+                showTooltip(symbol, e) {
+                    const id = symbol.getAttribute('data-id');
+                    const comment = symbol.getAttribute('data-comment');
+                    const lat = symbol.getAttribute('data-lat');
+                    const lon = symbol.getAttribute('data-lon');
+                    const brc = symbol.getAttribute('data-brc');
+                    const bda = symbol.getAttribute('data-bda');
+                    const type = symbol.getAttribute('data-type');
+                    const debriefId = symbol.getAttribute('data-debrief-id');
+                    const packageUrl = symbol.getAttribute('data-package-url');
+
+                    let tooltipContent = '';
+                    const displayText = comment || id;
+                    tooltipContent += `<div class="tooltip-comment">${displayText}</div>`;
+
+                    if (displayText === comment) {
+                        tooltipContent += `<div class="tooltip-comment">${type !== 'BLUE' ? id + '-01' : id}</div>`;
+                    }
+
+                    if (bda && bda !== 'None' && bda !== '') {
+                        tooltipContent += `<div style="color: #90cdf4; font-weight: bold; margin-bottom: 4px;">BDA: ${bda}</div>`;
+                    }
+
+                    if (debriefId && debriefId !== 'None' && debriefId !== '') {
+                        tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Report</div>`;
+                    }
+
+                    if (packageUrl) {
+                        tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Target Package</div>`;
+                    }
+
+                    if (brc) {
+                        tooltipContent += `<div class="tooltip-coords">BRC: ${Math.floor(brc)}°T</div>`;
+                    }
+
+                    if (lat && lon) {
+                        tooltipContent += `<div class="tooltip-coords">LAT: ${lat}<br>LON: ${lon}</div>`;
+                    }
+
+                    this.symbolTooltip.innerHTML = tooltipContent;
+                    this.symbolTooltip.classList.add('show');
+                    this.updateTooltipPosition(e);
+                }
+
+                hideTooltip() {
+                    this.symbolTooltip.classList.remove('show');
+                }
+
+                updateTooltipPosition(e) {
+                    const rect = this.mapContainer.getBoundingClientRect();
+                    const x = e.clientX - rect.left + 15;
+                    const y = e.clientY - rect.top - 10;
+
+                    this.symbolTooltip.style.left = x + 'px';
+                    this.symbolTooltip.style.top = y + 'px';
+                }
+
+                handleSymbolClick(symbol, e) {
+                    e.stopPropagation();
+
+                    const debriefId = symbol.getAttribute('data-debrief-id');
+                    const packageUrl = symbol.getAttribute('data-package-url');
+
+                    let targetUrl = null;
+                    if (debriefId && debriefId !== 'None' && debriefId !== '') {
+                        targetUrl = `/debrief/${debriefId}`;
+                    } else if (packageUrl) {
+                        targetUrl = packageUrl;
+                    }
+
+                    if (targetUrl) {
+                        if (e.button === 1) {
+                            e.preventDefault();
+                            window.open(targetUrl, '_blank');
+                        } else if (e.button === 0) {
+                            window.location.href = targetUrl;
+                        }
+                    }
+                }
+
+                handleSymbolAuxClick(symbol, e) {
+                    if (e.button === 1) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const debriefId = symbol.getAttribute('data-debrief-id');
+                        const packageUrl = symbol.getAttribute('data-package-url');
+
+                        let targetUrl = null;
+                        if (debriefId && debriefId !== 'None' && debriefId !== '') {
+                            targetUrl = `/debrief/${debriefId}`;
+                        } else if (packageUrl) {
+                            targetUrl = packageUrl;
+                        }
+
+                        if (targetUrl) {
+                            window.open(targetUrl, '_blank');
+                        }
+                    }
+                }
+            }
+
+            // ===========================
+            // INITIALIZE MAP RENDERER
+            // ===========================
+
+            const mapRenderer = new MapRenderer();
+
+            // ===========================
+            // BDA IMAGE LOADING (unchanged)
+            // ===========================
 
             const bdaImages = document.querySelectorAll('.bda-img[data-src]');
 
@@ -889,835 +1673,43 @@
                 unloadObserver.observe(img);
             });
 
-            const mapContainer = document.getElementById('mapContainer');
-            const mapImage = document.getElementById('mapImage');
-            const mapSymbols = document.getElementById('mapSymbols');
-            const symbolTooltip = document.getElementById('symbolTooltip');
-            const zoomInBtn = document.getElementById('zoomIn');
-            const zoomOutBtn = document.getElementById('zoomOut');
-            const resetZoomBtn = document.getElementById('resetZoom');
-            const fullscreenBtn = document.getElementById('fullscreenBtn');
-            const zoomLevelDisplay = document.getElementById('zoomLevel');
-            const airDefenceBtn = document.getElementById('airDefenceBtn');
-            const superMezBtn = document.getElementById('superMezBtn');
-            const strategicBtn = document.getElementById('strategicBtn');
-            const blueforBtn = document.getElementById('blueforBtn');
-            const strategicFilters = document.getElementById('strategicFilters');
+            // ===========================
+            // PRESENTATION LOADING (unchanged)
+            // ===========================
 
-            let currentZoom = 1;
-            let isDragging = false;
-            let startX = 0;
-            let startY = 0;
-            let translateX = 0;
-            let translateY = 0;
-            let isFullscreen = false;
-            let currentFilter = 'SAD';
-            let currentPreset = 'airDefence'
-            let selectedStrategicTypes = ['C', 'L', 'CCC', 'E', 'O', 'RR', 'A', 'N', 'MS', 'SC', 'RG'];
+            document.getElementById('loadPresentationBtn').addEventListener('click', function() {
+                const container = document.getElementById('presentationContainer');
+                const loadWrapper = document.getElementById('presentationLoadWrapper');
 
-            const MAP_PRESETS = {
-                airDefence: {
-                    zoom: 1.5,
-                    centerX: 0.08,
-                    centerY: 0.45,
-                    filter: 'SAD'
-                },
-                superMez: {
-                    zoom: 2.9,
-                    centerX: 0.22,
-                    centerY: 0.47,
-                    filter: 'SAD'
-                },
-                strategic: {
-                    zoom: 1.5,
-                    centerX: 0.08,
-                    centerY: 0.45,
-                    filter: 'strategic'
-                },
-                bluefor: {
-                    zoom: 1,
-                    centerX: 0,
-                    centerY: 0,
-                    filter: 'BLUE'
-                }
-            };
+                loadWrapper.innerHTML = `
+                        <div class="presentation-loading">
+                            <div class="loading-spinner"></div>
+                            <span>Loading presentation...</span>
+                        </div>
+                    `;
 
-            const minZoom = 1;
-            const maxZoom = 8;
-            const zoomStep = 0.2;
-            const map = 'sinai'
+                const iframe = document.createElement('iframe');
+                iframe.className = 'presentation-iframe';
+                iframe.src = 'https://docs.google.com/presentation/d/e/2PACX-1vQj-u5rSo59uLiGQ7QZNyXvuv4T4xxB5Z9NgLyJNbAfE7vR7mjxe6avClPAfzW1r-ZVFfD4jU75OkLi/pubembed?start=false&loop=false&delayms=3000';
+                iframe.frameBorder = '0';
+                iframe.allowFullscreen = true;
+                iframe.mozAllowFullScreen = true;
+                iframe.webkitAllowFullscreen = true;
 
-            // NEW: Function to create labels for matching symbols
-            function createSymbolLabels() {
-                // Remove existing labels
-                document.querySelectorAll('.map-symbol-label').forEach(label => label.remove());
-
-                const symbols = document.querySelectorAll('.map-symbol');
-                symbols.forEach(symbol => {
-                    const comment = symbol.getAttribute('data-comment') || '';
-                    const dataId = symbol.getAttribute('data-id') || '';
-
-                    // Check if comment contains any of the keywords
-                    const shouldShowLabel = LABEL_KEYWORDS.some(keyword =>
-                        comment.toUpperCase().includes(keyword.toUpperCase())
-                    );
-
-                    if (shouldShowLabel && dataId) {
-                        const label = document.createElement('div');
-                        label.className = 'map-symbol-label hidden';
-                        label.textContent = dataId;
-                        label.setAttribute('data-symbol-id', dataId);
-
-                        // Insert the label into the map symbols container
-                        mapSymbols.appendChild(label);
-                    }
-                });
-            }
-
-            // NEW: Function to position symbol labels
-            function positionSymbolLabels() {
-                const labels = document.querySelectorAll('.map-symbol-label');
-                const naturalWidth = mapImage.naturalWidth;
-                const naturalHeight = mapImage.naturalHeight;
-
-                if (!naturalWidth || !naturalHeight) return;
-
-                let displayWidth, displayHeight, offsetX = 0, offsetY = 0;
-
-                const containerRect = mapContainer.getBoundingClientRect();
-                const imageRect = mapImage.getBoundingClientRect();
-
-                if (isFullscreen) {
-                    const containerWidth = containerRect.width;
-                    displayWidth = containerWidth;
-                    displayHeight = (containerWidth / naturalWidth) * naturalHeight;
-                    offsetX = 0;
-                    offsetY = 0;
-                } else {
-                    displayWidth = mapImage.offsetWidth;
-                    displayHeight = mapImage.offsetHeight;
-                    offsetX = imageRect.left - containerRect.left;
-                    offsetY = imageRect.top - containerRect.top;
-                }
-
-                const baseScaleX = displayWidth / naturalWidth;
-                const baseScaleY = displayHeight / naturalHeight;
-
-                labels.forEach(label => {
-                    const symbolId = label.getAttribute('data-symbol-id');
-                    const correspondingSymbol = document.querySelector(`[data-id="${symbolId}"]`);
-
-                    if (correspondingSymbol) {
-                        const x = correspondingSymbol.getAttribute('data-x');
-                        const y = correspondingSymbol.getAttribute('data-y');
-
-                        const dataX = parseFloat(x);
-                        const dataY = parseFloat(y);
-
-                        // Calculate the actual symbol size after scaling
-                        const baseSymbolSize = 36; // Base symbol size
-                        const symbolScale = 0.8; // Same scale applied to symbols in updateTransform
-                        const scaledSymbolSize = (baseSymbolSize * symbolScale) / currentZoom;
-                        const symbolHalfWidth = scaledSymbolSize / 2;
-
-                        // Calculate offsets for initial positioning (will be overridden by updateTransform)
-                        const labelOffsetX = symbolHalfWidth; // Right at symbol edge
-                        const labelOffsetY = -symbolHalfWidth; // Vertically centered with symbol
-
-                        // Position at symbol center - offsets will be handled in updateTransform
-                        const displayX = (dataX * baseScaleX + offsetX) * currentZoom + translateX;
-                        const displayY = (dataY * baseScaleY + offsetY) * currentZoom + translateY;
-
-                        label.style.left = displayX + 'px';
-                        label.style.top = displayY + 'px';
-
-                        // Initial scaling and positioning - will be overridden by updateTransform
-                        const labelScale = 1.3 / currentZoom;
-                        label.style.transform = `translate(${labelOffsetX}px, ${labelOffsetY}px) scale(${labelScale})`;
-
-                        if (label.style.visibility === 'hidden') {
-                            label.style.visibility = 'visible';
+                iframe.addEventListener('load', function() {
+                    setTimeout(() => {
+                        if (loadWrapper && loadWrapper.parentNode) {
+                            loadWrapper.remove();
                         }
-                    }
-                });
-            }
-
-            // NEW: Function to filter and show symbol labels
-            function filterAndShowSymbolLabels() {
-                const labels = document.querySelectorAll('.map-symbol-label');
-
-                labels.forEach(label => {
-                    const symbolId = label.getAttribute('data-symbol-id');
-                    const correspondingSymbol = document.querySelector(`[data-id="${symbolId}"]`);
-
-                    if (correspondingSymbol) {
-                        const symbolStyle = window.getComputedStyle(correspondingSymbol);
-                        const symbolVisible = symbolStyle.display !== 'none' && symbolStyle.visibility !== 'hidden';
-
-                        if (symbolVisible) {
-                            label.classList.remove('hidden');
-                        } else {
-                            label.classList.add('hidden');
-                        }
-                    } else {
-                        label.classList.add('hidden');
-                    }
-                });
-            }
-
-            function repositionSymbols() {
-                const oldZoom = currentZoom;
-                const oldTranslateX = translateX;
-                const oldTranslateY = translateY;
-
-                currentZoom = 1;
-                translateX = 0;
-                translateY = 0;
-                updateTransform();
-
-                requestAnimationFrame(() => {
-                    positionSymbols();
-                    positionSymbolLabels(); // NEW: Position labels too
-
-                    currentZoom = oldZoom;
-                    translateX = oldTranslateX;
-                    translateY = oldTranslateY;
-
-                    constrainTranslation();
-                    updateTransform();
-                });
-            }
-
-            function filterAndShowSymbols() {
-                const symbols = document.querySelectorAll('.map-symbol');
-                const rings = document.querySelectorAll('.map-ring');
-
-                symbols.forEach(symbol => {
-                    const symbolComment = symbol.getAttribute('data-comment');
-                    let symbolType = symbol.getAttribute('data-type');
-                    let typeMatches = false;
-
-                    if (currentFilter === 'strategic') {
-                        if (symbolComment.includes('EWR'))
-                            symbolType = 'CCC'
-                        typeMatches = selectedStrategicTypes.includes(symbolType);
-                    } else if (currentFilter === 'BLUE') {
-                        typeMatches = symbolType === 'BLUE' || symbolType === 'SAD';
-                    } else {
-                        typeMatches = currentFilter === '' || symbolType === currentFilter;
-                    }
-
-                    symbol.style.display = typeMatches ? 'block' : 'none';
+                    }, 500);
                 });
 
-                rings.forEach(ring => {
-                    const ringType = ring.getAttribute('data-type');
-                    let typeMatches = false;
-
-                    if (currentFilter === 'strategic') {
-                        typeMatches = selectedStrategicTypes.includes(ringType);
-                    } else if (currentFilter === 'BLUE') {
-                        typeMatches = ringType === 'BLUE' || ringType === 'SAD';
-                    } else {
-                        typeMatches = currentFilter === '' || ringType === currentFilter;
-                    }
-
-                    ring.style.display = typeMatches ? 'block' : 'none';
-                });
-
-                // NEW: Filter labels based on symbol visibility
-                filterAndShowSymbolLabels();
-            }
-
-            function calculateTranslationFromCenter(centerX, centerY, zoom) {
-                const containerRect = mapContainer.getBoundingClientRect();
-                let imageWidth, imageHeight;
-
-                if (isFullscreen) {
-                    const naturalWidth = mapImage.naturalWidth;
-                    const naturalHeight = mapImage.naturalHeight;
-                    const containerWidth = containerRect.width;
-
-                    imageWidth = containerWidth;
-                    imageHeight = (containerWidth / naturalWidth) * naturalHeight;
-                } else {
-                    imageWidth = mapImage.offsetWidth;
-                    imageHeight = mapImage.offsetHeight;
-                }
-
-                const scaledWidth = imageWidth * zoom;
-                const scaledHeight = imageHeight * zoom;
-
-                const centerPixelX = scaledWidth * centerX;
-                const centerPixelY = scaledHeight * centerY;
-
-                const translateX = -centerPixelX
-                const translateY = (containerRect.height / 2) - centerPixelY;
-
-                return { translateX, translateY };
-            }
-
-            function goToPreset(presetName, skipBtn = false) {
-                const preset = MAP_PRESETS[presetName];
-
-                currentZoom = preset.zoom;
-                const translation = calculateTranslationFromCenter(preset.centerX, preset.centerY, preset.zoom);
-                translateX = translation.translateX;
-                translateY = translation.translateY;
-
-                constrainTranslation();
-
-                currentFilter = preset.filter;
-                currentPreset = presetName;
-
-                updateTransform();
-
-                filterAndShowSymbols();
-
-                if (!skipBtn) {
-                    document.querySelectorAll('.map-selector-btn').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    event.currentTarget.classList.add('active');
-                }
-
-                strategicFilters.style.display = presetName === 'strategic' ? 'block' : 'none';
-            }
-
-            airDefenceBtn.addEventListener('click', () => goToPreset('airDefence'));
-            superMezBtn.addEventListener('click', () => goToPreset('superMez'));
-            strategicBtn.addEventListener('click', () => goToPreset('strategic'));
-            blueforBtn.addEventListener('click', () => goToPreset('bluefor'));
-
-            function setupFilterAutoApply() {
-                const checkboxes = strategicFilters.querySelectorAll('input[type="checkbox"]');
-                checkboxes.forEach(checkbox => {
-                    checkbox.addEventListener('change', function() {
-                        updateSelectedStrategicTypes();
-                        filterAndShowSymbols();
-                    });
-                });
-            }
-
-            function updateSelectedStrategicTypes() {
-                const checkboxes = strategicFilters.querySelectorAll('input[type="checkbox"]:checked');
-                selectedStrategicTypes = Array.from(checkboxes).map(cb => cb.value);
-            }
-
-            setupFilterAutoApply();
-
-            function positionSymbols() {
-                const symbols = document.querySelectorAll('.map-symbol');
-                const rings = document.querySelectorAll('.map-ring');
-
-                const naturalWidth = mapImage.naturalWidth;
-                const naturalHeight = mapImage.naturalHeight;
-
-                if (!naturalWidth || !naturalHeight) return;
-
-                let displayWidth, displayHeight, offsetX = 0, offsetY = 0;
-
-                const containerRect = mapContainer.getBoundingClientRect();
-                const imageRect = mapImage.getBoundingClientRect();
-
-                if (isFullscreen) {
-                    const containerWidth = containerRect.width;
-
-                    displayWidth = containerWidth;
-                    displayHeight = (containerWidth / naturalWidth) * naturalHeight;
-
-                    offsetX = 0;
-                    offsetY = 0;
-                } else {
-                    displayWidth = mapImage.offsetWidth;
-                    displayHeight = mapImage.offsetHeight;
-
-                    offsetX = imageRect.left - containerRect.left;
-                    offsetY = imageRect.top - containerRect.top;
-                }
-
-                const baseScaleX = displayWidth / naturalWidth;
-                const baseScaleY = displayHeight / naturalHeight;
-
-                symbols.forEach(symbol => {
-                    const x = symbol.getAttribute('data-x');
-                    const y = symbol.getAttribute('data-y');
-
-                    const dataX = parseFloat(x);
-                    const dataY = parseFloat(y);
-
-                    const displayX = (dataX * baseScaleX + offsetX) * currentZoom + translateX;
-                    const displayY = (dataY * baseScaleY + offsetY) * currentZoom + translateY;
-
-                    symbol.style.left = displayX + 'px';
-                    symbol.style.top = displayY + 'px';
-                    symbol.style.transform = `translate(-50%, -50%)`;
-                    if (symbol.style.visibility === 'hidden') {
-                        symbol.style.visibility = 'visible';
-                    }
-                });
-
-                rings.forEach(ring => {
-                    const x = ring.getAttribute('data-x');
-                    const y = ring.getAttribute('data-y');
-                    const radius_px = ring.getAttribute('data-radius-px');
-
-                    const dataX = parseFloat(x);
-                    const dataY = parseFloat(y);
-                    const radius = parseFloat(radius_px);
-
-                    const displayX = (dataX * baseScaleX + offsetX) * currentZoom + translateX;
-                    const displayY = (dataY * baseScaleY + offsetY) * currentZoom + translateY;
-
-                    ring.style.left = displayX + 'px';
-                    ring.style.top = displayY + 'px';
-
-                    const scaledRadius = radius * baseScaleX;
-                    ring.style.width = (scaledRadius * 2) + 'px';
-                    ring.style.height = (scaledRadius * 2) + 'px';
-
-                    const scaleRatio = baseScaleX / baseScaleY;
-                    ring.style.transform = `translate(-50%, -50%) scaleY(${1/scaleRatio})`;
-
-                    if (ring.style.visibility === 'hidden') {
-                        ring.style.visibility = 'visible';
-                    }
-
-                });
-
-                // NEW: Position labels after positioning symbols
-                positionSymbolLabels();
-            }
-
-            function removeHidden() {
-                document.querySelectorAll('.map-symbol').forEach(sym => {
-                    sym.classList.remove('hidden');
-                });
-                document.querySelectorAll('.map-ring').forEach(ring => {
-                    ring.classList.remove('hidden');
-                });
-                // NEW: Remove hidden class from labels
-                document.querySelectorAll('.map-symbol-label').forEach(label => {
-                    label.classList.remove('hidden');
-                });
-            }
-
-            if (mapImage.complete) {
-                createSymbolLabels(); // NEW: Create labels
-                filterAndShowSymbols();
-                repositionSymbols();
-                removeHidden();
-                requestAnimationFrame(() => {
-                    goToPreset('airDefence', true);
-                });
-            }
-            mapImage.addEventListener('load', function() {
-                createSymbolLabels(); // NEW: Create labels
-                filterAndShowSymbols();
-                repositionSymbols();
-                removeHidden();
-                requestAnimationFrame(() => {
-                    goToPreset('airDefence', true);
-                });
+                container.appendChild(iframe);
             });
 
-            function handleResize() {
-                const preset = MAP_PRESETS[currentPreset];
-                if (preset) {
-                    const translation = calculateTranslationFromCenter(preset.centerX, preset.centerY, currentZoom);
-                    translateX = translation.translateX;
-                    translateY = translation.translateY;
-                    constrainTranslation();
-                    updateTransform();
-                }
-                repositionSymbols();
-            }
-
-            window.addEventListener('resize', handleResize);
-
-            function updateTransform() {
-                mapImage.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
-                mapSymbols.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
-
-                const symbolScale = 0.8;
-                const symbols = document.querySelectorAll('.map-symbol');
-                symbols.forEach(symbol => {
-                    symbol.style.transform = `translate(-50%, -50%) scale(${1/currentZoom*symbolScale})`;
-                });
-
-                // NEW: Update label scaling and position during transform
-                const labels = document.querySelectorAll('.map-symbol-label');
-                labels.forEach(label => {
-                    const labelScale = 1.3 / currentZoom;
-
-                    // Calculate the actual offset needed - no extra offset, just symbol edge
-                    const baseSymbolSize = 36;
-                    const scaledSymbolSize = (baseSymbolSize * symbolScale) / currentZoom;
-                    const symbolHalfWidth = scaledSymbolSize / 2;
-
-                    // Position right at the symbol's edge
-                    const totalOffsetX = symbolHalfWidth;
-                    const offsetY = -symbolHalfWidth; // Vertically centered with symbol
-
-                    // Apply the complete transform with proper offset and scaling
-                    label.style.transform = `translate(${totalOffsetX}px, ${offsetY}px) scale(${labelScale})`;
-                });
-
-                const rings = document.querySelectorAll('.map-ring');
-                rings.forEach(ring => {
-                    const currentTransform = ring.style.transform;
-                    const scaleYMatch = currentTransform.match(/scaleY\(([^)]+)\)/);
-                    const scaleYValue = scaleYMatch ? scaleYMatch[1] : '1';
-                    if (isFullscreen)
-                        ring.style.borderWidth = `2px`;
-                    else
-                        ring.style.borderWidth = `1px`;
-
-                    ring.style.transform = `translate(-50%, -50%) scaleY(${scaleYValue})`;
-                });
-
-                zoomLevelDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
-            }
-
-            function constrainTranslation() {
-                const containerRect = mapContainer.getBoundingClientRect();
-                let imageWidth, imageHeight;
-
-                if (isFullscreen) {
-                    const naturalWidth = mapImage.naturalWidth;
-                    const naturalHeight = mapImage.naturalHeight;
-                    const containerWidth = containerRect.width;
-
-                    imageWidth = containerWidth;
-                    imageHeight = (containerWidth / naturalWidth) * naturalHeight;
-
-                    imageWidth *= currentZoom;
-                    imageHeight *= currentZoom;
-                } else {
-                    imageWidth = mapImage.offsetWidth * currentZoom;
-                    imageHeight = mapImage.offsetHeight * currentZoom;
-                }
-
-                if (translateX > 0)
-                    translateX = 0;
-                if (translateY > 0)
-                    translateY = 0;
-                if (translateY < -(imageHeight - containerRect.height))
-                    translateY = -(imageHeight - containerRect.height);
-                if (translateX < -(imageWidth - containerRect.width))
-                    translateX = -(imageWidth - containerRect.width);
-
-                if (imageHeight <= containerRect.height)
-                    translateY = 0;
-                if (imageWidth <= containerRect.width)
-                    translateX = 0;
-            }
-
-            function zoomIn() {
-                if (currentZoom < maxZoom) {
-                    currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
-                    constrainTranslation();
-                }
-            }
-
-            function zoomOut() {
-                if (currentZoom > minZoom) {
-                    currentZoom = Math.max(minZoom, currentZoom - zoomStep);
-                    constrainTranslation();
-                }
-            }
-
-            function resetZoom() {
-                currentZoom = 1;
-                translateX = 0;
-                translateY = 0;
-                updateTransform();
-            }
-
-            function toggleFullscreen() {
-                isFullscreen = !isFullscreen;
-
-                if (isFullscreen) {
-                    mapContainer.classList.add('fullscreen');
-                    fullscreenBtn.title = 'Exit Fullscreen';
-                } else {
-                    mapContainer.classList.remove('fullscreen');
-                    fullscreenBtn.title = 'Toggle Fullscreen';
-                }
-
-                requestAnimationFrame(() => {
-                    goToPreset(currentPreset, true)
-                    repositionSymbols();
-                });
-            }
-
-            function showTooltip(symbol, e) {
-                const id = symbol.getAttribute('data-id');
-                const comment = symbol.getAttribute('data-comment');
-                const lat = symbol.getAttribute('data-lat');
-                const lon = symbol.getAttribute('data-lon');
-                const brc = symbol.getAttribute('data-brc');
-                const bda = symbol.getAttribute('data-bda');
-                const type = symbol.getAttribute('data-type');
-                const debriefId = symbol.getAttribute('data-debrief-id');
-                const packageUrl = symbol.getAttribute('data-package-url');
-
-                let tooltipContent = '';
-
-                const displayText = comment || id;
-                tooltipContent += `<div class="tooltip-comment">${displayText}</div>`;
-                if (displayText === comment) {
-                    if (type !== 'BLUE')
-                        tooltipContent += `<div class="tooltip-comment">${id}-01</div>`;
-                    else
-                        tooltipContent += `<div class="tooltip-comment">${id}</div>`;
-                }
-
-                if (bda && bda !== 'None' && bda !== '') {
-                    tooltipContent += `<div style="color: #90cdf4; font-weight: bold; margin-bottom: 4px;">BDA: ${bda}</div>`;
-                }
-
-                if (debriefId && debriefId !== 'None' && debriefId !== '') {
-                    tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Report</div>`;
-                }
-
-                if (packageUrl) {
-                    tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Target Package</div>`;
-                }
-
-                if (brc) {
-                    tooltipContent += `<div class="tooltip-coords">BRC: ${Math.floor(brc)}°T</div>`;
-                }
-
-                if (lat && lon) {
-                    tooltipContent += `<div class="tooltip-coords">LAT: ${lat}<br>LON: ${lon}</div>`;
-                }
-
-                symbolTooltip.innerHTML = tooltipContent;
-                symbolTooltip.classList.add('show');
-
-                const rect = mapContainer.getBoundingClientRect();
-                const x = e.clientX - rect.left + 15;
-                const y = e.clientY - rect.top - 10;
-
-                symbolTooltip.style.left = x + 'px';
-                symbolTooltip.style.top = y + 'px';
-            }
-
-            function hideTooltip() {
-                symbolTooltip.classList.remove('show');
-            }
-
-            document.querySelectorAll('.map-symbol').forEach(symbol => {
-                symbol.addEventListener('mouseenter', function(e) {
-                    showTooltip(this, e);
-                });
-
-                symbol.addEventListener('mouseleave', hideTooltip);
-
-                symbol.addEventListener('mousemove', function(e) {
-                    const rect = mapContainer.getBoundingClientRect();
-                    const x = e.clientX - rect.left + 15;
-                    const y = e.clientY - rect.top - 10;
-
-                    symbolTooltip.style.left = x + 'px';
-                    symbolTooltip.style.top = y + 'px';
-                });
-
-                symbol.addEventListener('mousedown', function(e) {
-                    e.stopPropagation();
-
-                    const debriefId = this.getAttribute('data-debrief-id');
-                    const packageUrl = this.getAttribute('data-package-url');
-
-                    let targetUrl = null;
-
-                    if (debriefId && debriefId !== 'None' && debriefId !== '') {
-                        targetUrl = `/debrief/${debriefId}`;
-                    } else if (packageUrl) {
-                        targetUrl = packageUrl;
-                    }
-
-                    if (targetUrl) {
-                        if (e.button === 1) {
-                            e.preventDefault();
-                            window.open(targetUrl, '_blank');
-                        } else if (e.button === 0) {
-                            window.location.href = targetUrl;
-                        }
-                    }
-                });
-
-                symbol.addEventListener('auxclick', function(e) {
-                    if (e.button === 1) {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        const debriefId = this.getAttribute('data-debrief-id');
-                        const packageUrl = this.getAttribute('data-package-url');
-
-                        let targetUrl = null;
-
-                        if (debriefId && debriefId !== 'None' && debriefId !== '') {
-                            targetUrl = `/debrief/${debriefId}`;
-                        } else if (packageUrl) {
-                            targetUrl = packageUrl;
-                        }
-
-                        if (targetUrl) {
-                            window.open(targetUrl, '_blank');
-                        }
-                    }
-                });
-
-                symbol.addEventListener('mouseenter', function() {
-                    const debriefId = this.getAttribute('data-debrief-id');
-                    const packageUrl = this.getAttribute('data-package-url');
-
-                    if ((debriefId && debriefId !== 'None' && debriefId !== '') || packageUrl) {
-                        this.style.cursor = 'pointer';
-                    }
-                });
-            });
-
-            zoomInBtn.addEventListener('click', function() {
-                zoomIn();
-                updateTransform();
-            });
-
-            zoomOutBtn.addEventListener('click', function() {
-                zoomOut();
-                updateTransform();
-            });
-
-            resetZoomBtn.addEventListener('click', resetZoom);
-            fullscreenBtn.addEventListener('click', toggleFullscreen);
-
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && isFullscreen) {
-                    toggleFullscreen();
-                }
-            });
-
-            mapContainer.addEventListener('wheel', function(e) {
-                e.preventDefault();
-
-                const rect = mapContainer.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-
-                const oldZoom = currentZoom;
-
-                if (e.deltaY < 0) {
-                    zoomIn();
-                } else {
-                    zoomOut();
-                }
-
-                if (currentZoom !== oldZoom) {
-                    const zoomPointX = mouseX - translateX;
-                    const zoomPointY = mouseY - translateY;
-
-                    const scaleDiff = currentZoom - oldZoom;
-                    const moveX = zoomPointX * scaleDiff / oldZoom;
-                    const moveY = zoomPointY * scaleDiff / oldZoom;
-
-                    translateX -= moveX;
-                    translateY -= moveY;
-
-                    constrainTranslation();
-                    updateTransform();
-                    updateCursor();
-                }
-            });
-
-            mapContainer.addEventListener('mousedown', function(e) {
-                isDragging = true;
-                startX = e.clientX - translateX;
-                startY = e.clientY - translateY;
-                mapContainer.style.cursor = 'grabbing';
-                e.preventDefault();
-            });
-
-            document.addEventListener('mousemove', function(e) {
-                if (isDragging) {
-                    translateX = e.clientX - startX;
-                    translateY = e.clientY - startY;
-                    constrainTranslation();
-                    updateTransform();
-                }
-            });
-
-            document.addEventListener('mouseup', function() {
-                if (isDragging) {
-                    isDragging = false;
-                    mapContainer.style.cursor = currentZoom > 1 ? 'grab' : 'default';
-                }
-            });
-
-            function updateCursor() {
-                mapContainer.style.cursor = isDragging ? 'grabbing' : 'grab';
-            }
-
-            let lastTouchDistance = 0;
-            let lastTouchX = 0;
-            let lastTouchY = 0;
-
-            mapContainer.addEventListener('touchstart', function(e) {
-                if (e.touches.length === 1) {
-                    isDragging = true;
-                    startX = e.touches[0].clientX - translateX;
-                    startY = e.touches[0].clientY - translateY;
-                } else if (e.touches.length === 2) {
-                    isDragging = false;
-                    const touch1 = e.touches[0];
-                    const touch2 = e.touches[1];
-                    lastTouchDistance = Math.sqrt(
-                        Math.pow(touch2.clientX - touch1.clientX, 2) +
-                        Math.pow(touch2.clientY - touch1.clientY, 2)
-                    );
-                    lastTouchX = (touch1.clientX + touch2.clientX) / 2;
-                    lastTouchY = (touch1.clientY + touch2.clientY) / 2;
-                }
-                e.preventDefault();
-            });
-
-            mapContainer.addEventListener('touchmove', function(e) {
-                if (e.touches.length === 1 && isDragging) {
-                    translateX = e.touches[0].clientX - startX;
-                    translateY = e.touches[0].clientY - startY;
-                    constrainTranslation();
-                    updateTransform();
-                } else if (e.touches.length === 2) {
-                    const touch1 = e.touches[0];
-                    const touch2 = e.touches[1];
-                    const currentDistance = Math.sqrt(
-                        Math.pow(touch2.clientX - touch1.clientX, 2) +
-                        Math.pow(touch2.clientY - touch1.clientY, 2)
-                    );
-
-                    if (lastTouchDistance > 0) {
-                        const deltaDistance = currentDistance - lastTouchDistance;
-
-                        if (deltaDistance > 0) {
-                            currentZoom = Math.min(maxZoom, currentZoom + zoomStep * 0.5);
-                        } else {
-                            currentZoom = Math.max(minZoom, currentZoom - zoomStep * 0.5);
-                        }
-
-                        constrainTranslation();
-                        updateTransform();
-                    }
-
-                    lastTouchDistance = currentDistance;
-                }
-                e.preventDefault();
-            });
-
-            mapContainer.addEventListener('touchend', function(e) {
-                isDragging = false;
-                lastTouchDistance = 0;
-            });
+            // ===========================
+            // DOWNLOAD FUNCTIONALITY
+            // ===========================
 
             async function captureVisibleArea(symbolSizeMultiplier = 1.0) {
                 const mapContainer = document.getElementById('mapContainer');
@@ -1754,7 +1746,6 @@
                             const style = window.getComputedStyle(ring);
                             return style.display !== 'none' && style.visibility !== 'hidden';
                         });
-                    // NEW: Include visible labels in capture
                     const visibleLabels = Array.from(document.querySelectorAll('.map-symbol-label'))
                         .filter(label => {
                             const style = window.getComputedStyle(label);
@@ -1773,7 +1764,7 @@
 
                     let contentX, contentY, contentWidth, contentHeight;
 
-                    if (isFullscreen) {
+                    if (mapRenderer.isFullscreen) {
                         const naturalWidth = img.naturalWidth;
                         const naturalHeight = img.naturalHeight;
                         const containerWidth = imageRect.width;
@@ -1838,7 +1829,7 @@
 
                         ctx.strokeStyle = window.getComputedStyle(ring).borderColor || '#ff0000';
                         const currentBorderWidth = parseFloat(window.getComputedStyle(ring).borderWidth) || 2;
-                        ctx.lineWidth = currentBorderWidth * currentZoom;
+                        ctx.lineWidth = currentBorderWidth * mapRenderer.currentZoom;
 
                         ctx.globalAlpha = 0.7;
                         ctx.beginPath();
@@ -1880,18 +1871,18 @@
                         ctx.restore();
                     }
 
-                    // NEW: Draw symbol labels
+                    // Draw symbol labels
                     for (const label of visibleLabels) {
                         const labelRect = label.getBoundingClientRect();
                         const relativeX = labelRect.left - containerRect.left;
                         const relativeY = labelRect.top - containerRect.top;
 
                         let labelScale = 3;
-                        if (isFullscreen)
+                        if (mapRenderer.isFullscreen)
                             labelScale = 2;
 
-                        // Set font properties for labels - 3x bigger for capture
-                        const baseFontSize = 9 * labelScale; // 3x bigger than CSS font-size
+                        // Set font properties for labels
+                        const baseFontSize = 9 * labelScale;
                         const scaledFontSize = baseFontSize / outputScale;
                         ctx.font = `bold ${scaledFontSize}px monospace`;
                         ctx.textAlign = 'left';
@@ -1900,11 +1891,10 @@
                         // Draw label background
                         const text = label.textContent;
                         const textMetrics = ctx.measureText(text);
-                        const padding = (2 * labelScale) / outputScale; // 3x bigger padding to match
+                        const padding = (2 * labelScale) / outputScale;
                         const backgroundWidth = textMetrics.width + (padding * 2);
                         const backgroundHeight = scaledFontSize + (padding * 2);
 
-                        // Position at top-left of where the label appears
                         const labelX = relativeX;
                         const labelY = relativeY;
 
@@ -1912,7 +1902,7 @@
                         ctx.fillStyle = 'rgba(31, 31, 31, 0.95)';
                         ctx.fillRect(labelX, labelY, backgroundWidth, backgroundHeight);
 
-                        // Draw border - 3x thicker
+                        // Draw border
                         ctx.strokeStyle = '#4f545c';
                         ctx.lineWidth = (labelScale / outputScale);
                         ctx.strokeRect(labelX, labelY, backgroundWidth, backgroundHeight);
@@ -1944,7 +1934,6 @@
                     };
 
                     const timezoneName = isDST(now) ? 'CEST' : 'CET';
-
                     const missionName = '{{msn}}';
 
                     const headerText = 'CVW-17 TARGET INTELLIGENCE CELL';
@@ -2008,49 +1997,16 @@
             if (downloadBtn) {
                 downloadBtn.addEventListener('click', async function() {
                     try {
-                        if (!isFullscreen)
+                        if (!mapRenderer.isFullscreen)
                             await captureVisibleArea(0.6);
                         else
                             await captureVisibleArea(1.2);
                     } catch (error) {
-                        console.error('Canvas capture failed, falling back to simplified method:', error);
+                        console.error('Canvas capture failed:', error);
                         alert('Failed to capture image. Please try again.');
                     }
                 });
             }
-
-            updateTransform();
-            updateCursor();
-        });
-
-        document.getElementById('loadPresentationBtn').addEventListener('click', function() {
-            const container = document.getElementById('presentationContainer');
-            const loadWrapper = document.getElementById('presentationLoadWrapper');
-
-            loadWrapper.innerHTML = `
-                    <div class="presentation-loading">
-                        <div class="loading-spinner"></div>
-                        <span>Loading presentation...</span>
-                    </div>
-                `;
-
-            const iframe = document.createElement('iframe');
-            iframe.className = 'presentation-iframe';
-            iframe.src = 'https://docs.google.com/presentation/d/e/2PACX-1vQj-u5rSo59uLiGQ7QZNyXvuv4T4xxB5Z9NgLyJNbAfE7vR7mjxe6avClPAfzW1r-ZVFfD4jU75OkLi/pubembed?start=false&loop=false&delayms=3000';
-            iframe.frameBorder = '0';
-            iframe.allowFullscreen = true;
-            iframe.mozAllowFullScreen = true;
-            iframe.webkitAllowFullscreen = true;
-
-            iframe.addEventListener('load', function() {
-                setTimeout(() => {
-                    if (loadWrapper && loadWrapper.parentNode) {
-                        loadWrapper.remove();
-                    }
-                }, 500);
-            });
-
-            container.appendChild(iframe);
         });
     </script>
 </body>
