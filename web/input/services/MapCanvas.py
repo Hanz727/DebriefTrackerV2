@@ -147,16 +147,6 @@ class MapCanvas:
         end_time_minutes = 135  # extend to 2 hours ahead (adjust as needed)
         interval_minutes = 15  # 15-minute intervals
 
-        # Font setup
-        font_size = int(10 * scale_factor)
-        try:
-            font = ImageFont.truetype("arial.ttf", font_size)
-        except:
-            try:
-                font = ImageFont.truetype("Arial.ttf", font_size)
-            except:
-                font = ImageFont.load_default()
-
         # Calculate heading components (note: heading is typically from north, clockwise)
         dx_per_meter = math.sin(heading) / mpp * scale_factor  # x component per meter
         dy_per_meter = -math.cos(
@@ -186,46 +176,3 @@ class MapCanvas:
         # Draw the main courseline FIRST
         if len(courseline_points) > 1:
             draw.line(courseline_points, fill=color_line, width=max(1, int(2 * scale_factor)))
-
-        # Draw markers and timestamps AFTER the line
-        marker_size = 3 * scale_factor
-
-        for marker in marker_data:
-            pos_x, pos_y = marker['pos']
-            t_minutes = marker['time_minutes']
-
-            # Draw small circle marker
-            draw.ellipse([
-                pos_x - marker_size, pos_y - marker_size,
-                pos_x + marker_size, pos_y + marker_size
-            ], fill=color_dot, outline=color_dot, width=2)
-
-            minutes_from_courseline_start = t_minutes - start_time_minutes
-
-            if minutes_from_courseline_start < 60:
-                time_label = str(minutes_from_courseline_start)
-            else:
-                hours = minutes_from_courseline_start // 60
-                remaining_minutes = minutes_from_courseline_start % 60
-                if remaining_minutes == 0:
-                    time_label = str(hours)
-                else:
-                    time_label = f"{hours}+{remaining_minutes}"
-
-
-            # Draw timestamp text
-            try:
-                # Try to get text size for better positioning
-                bbox = draw.textbbox((0, 0), time_label)
-                text_width = bbox[2] - bbox[0]
-                text_height = bbox[3] - bbox[1]
-            except:
-                # Fallback if textbbox not available
-                text_width = len(time_label) * 6
-                text_height = 12
-
-            # Position text offset from marker
-            text_x = pos_x + marker_size + 5
-            text_y = pos_y - text_height // 2
-
-            draw.text((text_x, text_y), time_label, fill='white', font=font, stroke_fill='black')

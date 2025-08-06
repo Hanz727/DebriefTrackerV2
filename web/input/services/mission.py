@@ -1,3 +1,4 @@
+import math
 import re
 import zipfile
 from pathlib import Path
@@ -109,6 +110,42 @@ class Mission:
         except Exception as e:
             print(f"Error parsing mission file: {e}")
             return {}
+
+    @classmethod
+    def __get_course_line(cls):
+        cvn73 = Mission.get_msn_unit('CVN_73')[0]
+        heading = cvn73['heading']
+
+        units = []
+
+        speed_kts = 20
+        speed_mps = speed_kts * 0.514444
+
+        start_time_minutes = 30  # start 30 minutes ahead
+        end_time_minutes = 135  # extend to 2 hours ahead (adjust as needed)
+        interval_minutes = 15  # 15-minute intervals
+
+        dx_per_meter = math.cos(heading)
+        dy_per_meter = math.sin(heading)
+
+        for t_minutes in range(start_time_minutes, end_time_minutes + 1, interval_minutes):
+            t_seconds = t_minutes * 60
+            distance_meters = speed_mps * t_seconds
+
+            minutes_from_courseline_start = t_minutes - start_time_minutes
+            hours = minutes_from_courseline_start // 60
+            remaining_minutes = minutes_from_courseline_start % 60
+            if remaining_minutes == 0:
+                time_label = str(hours)
+            else:
+                time_label = f"{hours}+{remaining_minutes}"
+
+            units.append({"x": cvn73['x'] + dx_per_meter * distance_meters,
+                          "y": cvn73['y'] + dy_per_meter * distance_meters,
+                          "type": 'COURSE LINE',
+                          "name": "T" + time_label})
+
+        return units
 
     @classmethod
     def get_miz_tanker_data(cls) -> dict:
@@ -224,5 +261,6 @@ class Mission:
 
         units.extend(cls.__get_unit_data(msn_content, 'Patriot str'))
         units.extend(cls.__get_unit_data(msn_content, 'KC135MPRS'))
+        units.extend(cls.__get_course_line())
 
         return units

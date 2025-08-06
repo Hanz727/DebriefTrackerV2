@@ -106,7 +106,10 @@ def get_draw_dmpis():
                 render_ring = name_info.get('render_ring', False)
                 radius_meters = name_info.get('radius_meters', 0)
                 symbol = name_info.get('symbol', '')
-                type_ = name.replace('-','').strip()
+
+                type_ = name_info.get('type')
+                if not type_:
+                    type_ = name.replace('-','').strip()
 
         dmpi['draw'] = {
             "x": x,
