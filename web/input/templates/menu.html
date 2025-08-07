@@ -904,7 +904,11 @@
                         const currentTransform = symbol.style.transform;
                         const translateMatch = currentTransform.match(/translate\([^)]+\)/);
                         const translatePart = translateMatch ? translateMatch[0] : 'translate(-50%, -50%)';
-                        symbol.style.transform = `${translatePart} scale(${this.symbolScale / this.currentZoom})`;
+                        let finalScale = this.symbolScale;
+                        if (symbol.getAttribute('data-comment') === "COURSE LINE") {
+                            finalScale = 0.5*this.symbolScale;
+                        }
+                        symbol.style.transform = `${translatePart} scale(${finalScale / this.currentZoom})`;
                     });
 
                     // Update label scaling
@@ -915,7 +919,11 @@
 
                         if (correspondingSymbol) {
                             const baseSymbolSize = 36;
-                            const scaledSymbolSize = (baseSymbolSize * this.symbolScale) / this.currentZoom;
+                            let finalScale = this.symbolScale;
+                            if (correspondingSymbol.getAttribute('data-comment') === "COURSE LINE") {
+                                finalScale = 0.5*this.symbolScale;
+                            }
+                            const scaledSymbolSize = (baseSymbolSize * finalScale) / this.currentZoom;
                             const symbolHalfWidth = scaledSymbolSize / 2;
                             const labelScale = 1.3 / this.currentZoom;
 
@@ -1005,7 +1013,12 @@
 
                         symbol.style.left = displayX + 'px';
                         symbol.style.top = displayY + 'px';
-                        symbol.style.transform = `translate(-50%, -50%) scale(${this.symbolScale / this.currentZoom})`;
+
+                        let finalScale = this.symbolScale;
+                        if (symbol.getAttribute('data-comment') === "COURSE LINE") {
+                            finalScale = 0.5*this.symbolScale;
+                        }
+                        symbol.style.transform = `translate(-50%, -50%) scale(${finalScale / this.currentZoom})`;
                         symbol.style.visibility = 'visible';
                     });
                 }
@@ -1053,7 +1066,11 @@
 
                         // Calculate label positioning relative to symbol
                         const baseSymbolSize = 36;
-                        const scaledSymbolSize = (baseSymbolSize * this.symbolScale) / this.currentZoom;
+                        let finalScale = this.symbolScale;
+                        if (correspondingSymbol.getAttribute('data-comment') === "COURSE LINE") {
+                            finalScale = 0.5*this.symbolScale;
+                        }
+                        const scaledSymbolSize = (baseSymbolSize * finalScale) / this.currentZoom;
                         const symbolHalfWidth = scaledSymbolSize / 2;
                         const labelScale = 1.3 / this.currentZoom;
 
@@ -1871,32 +1888,55 @@
                         ctx.restore();
                     }
 
-                    // Draw symbol labels
                     for (const label of visibleLabels) {
-                        const labelRect = label.getBoundingClientRect();
-                        const relativeX = labelRect.left - containerRect.left;
-                        const relativeY = labelRect.top - containerRect.top;
+                        // Find the corresponding symbol for this label
+                        const symbolId = label.getAttribute('data-symbol-id');
+                        const correspondingSymbol = visibleSymbols.find(s => s.getAttribute('data-id') === symbolId);
 
-                        let labelScale = 3;
-                        if (mapRenderer.isFullscreen)
-                            labelScale = 2;
+                        if (!correspondingSymbol) continue;
+
+                        const symbolRect = correspondingSymbol.getBoundingClientRect();
+
+                        // Calculate symbol position and size
+                        const symbolRelativeX = symbolRect.left - containerRect.left;
+                        const symbolRelativeY = symbolRect.top - containerRect.top;
+
+                        const originalSymbolWidth = symbolRect.width;
+                        const originalSymbolHeight = symbolRect.height;
+                        const scaledSymbolWidth = originalSymbolWidth * symbolSizeMultiplier;
+                        const scaledSymbolHeight = originalSymbolHeight * symbolSizeMultiplier;
+
+                        const symbolCenterX = symbolRelativeX + originalSymbolWidth / 2;
+                        const symbolCenterY = symbolRelativeY + originalSymbolHeight / 2;
+
+                        // Calculate scaled symbol bounds
+                        const scaledSymbolRight = symbolCenterX + scaledSymbolWidth / 2;
+                        const scaledSymbolTop = symbolCenterY - scaledSymbolHeight / 2;
+
+                        // Calculate label height as 75% of symbol height
+                        const labelHeight = scaledSymbolHeight * 0.75;
+                        const fontSize = labelHeight * 0.6; // Font size as 60% of label height for padding
 
                         // Set font properties for labels
-                        const baseFontSize = 9 * labelScale;
-                        const scaledFontSize = baseFontSize / outputScale;
-                        ctx.font = `bold ${scaledFontSize}px monospace`;
+                        ctx.font = `bold ${fontSize}px monospace`;
                         ctx.textAlign = 'left';
-                        ctx.textBaseline = 'top';
+                        ctx.textBaseline = 'middle';
 
-                        // Draw label background
+                        // Get text metrics
                         const text = label.textContent;
                         const textMetrics = ctx.measureText(text);
-                        const padding = (2 * labelScale) / outputScale;
-                        const backgroundWidth = textMetrics.width + (padding * 2);
-                        const backgroundHeight = scaledFontSize + (padding * 2);
 
-                        const labelX = relativeX;
-                        const labelY = relativeY;
+                        // Calculate padding based on label height
+                        const verticalPadding = (labelHeight - fontSize) / 2;
+                        const horizontalPadding = verticalPadding * 1.2;
+
+                        const backgroundWidth = textMetrics.width + (horizontalPadding * 2);
+                        const backgroundHeight = labelHeight;
+
+                        // Position label at right side of symbol, vertically centered
+                        const offset = scaledSymbolWidth * 0.05; // 5% offset from symbol edge
+                        const labelX = scaledSymbolRight + offset;
+                        const labelY = symbolCenterY - (backgroundHeight / 2); // Center vertically with symbol
 
                         // Draw background
                         ctx.fillStyle = 'rgba(31, 31, 31, 0.95)';
@@ -1904,12 +1944,12 @@
 
                         // Draw border
                         ctx.strokeStyle = '#4f545c';
-                        ctx.lineWidth = (labelScale / outputScale);
+                        ctx.lineWidth = Math.max(1 / outputScale, backgroundHeight * 0.02);
                         ctx.strokeRect(labelX, labelY, backgroundWidth, backgroundHeight);
 
-                        // Draw text
+                        // Draw text (centered vertically in the label)
                         ctx.fillStyle = '#ffffff';
-                        ctx.fillText(text, labelX + padding, labelY + padding);
+                        ctx.fillText(text, labelX + horizontalPadding, labelY + backgroundHeight / 2);
                     }
 
                     // Add watermark

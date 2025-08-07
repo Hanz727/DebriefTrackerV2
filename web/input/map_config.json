@@ -197,56 +197,56 @@
             "render_icon": true,
             "render_ring": false,
             "radius_meters": 0,
-            "symbol": "/static/img/nato-ff.png",
+            "symbol": "/static/img/courseline.png",
             "type": "BLUE"
         },
         "T0+15": {
             "render_icon": true,
             "render_ring": false,
             "radius_meters": 0,
-            "symbol": "/static/img/nato-ff.png",
+            "symbol": "/static/img/courseline.png",
             "type": "BLUE"
         },
         "T0+30": {
             "render_icon": true,
             "render_ring": false,
             "radius_meters": 0,
-            "symbol": "/static/img/nato-ff.png",
+            "symbol": "/static/img/courseline.png",
             "type": "BLUE"
         },
         "T0+45": {
             "render_icon": true,
             "render_ring": false,
             "radius_meters": 0,
-            "symbol": "/static/img/nato-ff.png",
+            "symbol": "/static/img/courseline.png",
             "type": "BLUE"
         },
         "T1": {
             "render_icon": true,
             "render_ring": false,
             "radius_meters": 0,
-            "symbol": "/static/img/nato-ff.png",
+            "symbol": "/static/img/courseline.png",
             "type": "BLUE"
         },
         "T1+15": {
             "render_icon": true,
             "render_ring": false,
             "radius_meters": 0,
-            "symbol": "/static/img/nato-ff.png",
+            "symbol": "/static/img/courseline.png",
             "type": "BLUE"
         },
         "T1+30": {
             "render_icon": true,
             "render_ring": false,
             "radius_meters": 0,
-            "symbol": "/static/img/nato-ff.png",
+            "symbol": "/static/img/courseline.png",
             "type": "BLUE"
         },
         "T1+45": {
             "render_icon": true,
             "render_ring": false,
             "radius_meters": 0,
-            "symbol": "/static/img/nato-ff.png",
+            "symbol": "/static/img/courseline.png",
             "type": "BLUE"
         }
     }
