@@ -552,7 +552,6 @@ def file_report():
 
     return render_template('submit.html')
 
-
 def get_data_hash():
     bdas = get_bda_list()
     drawables = get_draw_dmpis()
@@ -584,12 +583,11 @@ def custom_minify(input_str):
 
 @lru_cache(maxsize=256)
 def render_and_minify_cached(data_hash, bdas_json, drawables_json):
-    bdas = json.loads(bdas_json)
-    drawables = json.loads(drawables_json)
+    draw_dynamic_map_threaded()
+    bdas = get_bda_list()
+    drawables = get_draw_dmpis()
 
     html = render_template('menu.html', bdas=bdas, drawables=drawables, msn=Mission.get_path().name)
-    print('new hash')
-
     return custom_minify(html)
 
 @app.route('/')
@@ -597,7 +595,6 @@ def home():
     if session.get('authed', False) or config.bypass_auth_debug:
         bdas = get_bda_list()
         drawables = get_draw_dmpis()
-
         data_hash = get_data_hash()
 
         bdas_json = json.dumps(bdas, sort_keys=True, default=str)

@@ -1,3 +1,5 @@
+import logging
+import os
 from datetime import timedelta
 
 from flask import Flask
@@ -15,6 +17,7 @@ from web.input.routes.home import home_blueprint
 from web.input.routes.msn_data import msn_data_blueprint
 from web.input.routes.reports import reports_blueprint
 
+logger = logging.getLogger(__name__)
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
@@ -27,6 +30,13 @@ def create_app():
 
     app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
 
+    os.makedirs('logs', exist_ok=True)
+    logging.basicConfig(
+        filename='logs/input-log.txt',
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     #app.config['SESSION_USE_SIGNER'] = True
     #app.config['SESSION_REDIS'] = redis.StrictRedis(host='localhost', port=6379)
 
@@ -41,6 +51,7 @@ def create_app():
 
     draw_dynamic_map_threaded()
 
+    logger.info('app created')
     return app
 
 if __name__ == '__main__':

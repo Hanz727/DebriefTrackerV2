@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import os
 import re
@@ -20,6 +21,7 @@ config = WebConfigSingleton.get_instance()
 map_config = InteractiveMapConfigSingleton.get_instance()
 
 app = dmpi_db_blueprint
+logger = logging.getLogger(__name__)
 
 _OVERRIDES_FILE = Path('overrides.txt')
 _TARGET_PACKAGE_FILE = Path('target_package.json')
@@ -132,7 +134,7 @@ def _get_dmpis():
     if _dmpi_cache != {}:
         return _dmpi_cache
 
-    print('calculating dmpis')
+    logger.info('calculating dmpis')
 
     # Load DMPIs from mission file
     _load_dmpis_from_mission(dmpis)
@@ -310,7 +312,7 @@ def _apply_overrides(dmpis):
             dmpis[dmpi_name]['collision'] = True
 
     except Exception as e:
-        print(f"Error applying overrides: {e}")
+        logger.error(f"Error applying overrides: {e}")
 
 def load_overrides():
     try:
@@ -321,7 +323,7 @@ def load_overrides():
         else:
             return ""
     except Exception as e:
-        print(f"Error reading overrides file: {e}")
+        logger.error(f"Error reading overrides file: {e}")
         return ""
 
 def save_overrides(overrides_text):
@@ -333,7 +335,7 @@ def save_overrides(overrides_text):
             f.write(cleaned_text)
         return True
     except Exception as e:
-        print(f"Error saving overrides file: {e}")
+        logger.error(f"Error saving overrides file: {e}")
         return False
 
 def _load_target_packages():
@@ -343,7 +345,7 @@ def _load_target_packages():
             with open(_TARGET_PACKAGE_FILE, 'r') as f:
                 return json.load(f)
         except (json.JSONDecodeError, IOError) as e:
-            print(f"Error loading target packages: {e}")
+            logger.error(f"Error loading target packages: {e}")
             return {}
     return {}
 
@@ -354,7 +356,7 @@ def _save_target_packages(packages):
             json.dump(packages, f, indent=2)
         return True
     except IOError as e:
-        print(f"Error saving target packages: {e}")
+        logger.error(f"Error saving target packages: {e}")
         return False
 
 @app.route('/target-package', methods=['POST'])
@@ -395,7 +397,7 @@ def target_package():
             return "Failed to save target package", 500
 
     except Exception as e:
-        print(f"Error in target_package route: {e}")
+        logger.error(f"Error in target_package route: {e}")
         return "Internal server error", 500
 
 
@@ -431,7 +433,7 @@ def dmpi_override():
             }), 500
 
     except Exception as e:
-        print(f"Error processing DMPI override: {e}")
+        logger.error(f"Error processing DMPI override: {e}")
         return jsonify({
             'success': False,
             'message': 'Failed to process override data'
