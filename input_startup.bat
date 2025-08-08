@@ -1,3 +1,4 @@
 @echo off
 title Input
-python -m web.input.main
+waitress-serve --host=0.0.0.0 --port=5000 --threads=6 --call web.input.main:create_app
+pause
