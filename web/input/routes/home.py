@@ -170,7 +170,7 @@ def ag_weapon_to_row(data, ag_weapon, debrief_id) -> (dict,CVW17DatabaseRow):
 
     row = CVW17DatabaseRow(
         get_submission_date(data) or None,
-        data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
+        data.get('form_metadata', {}).get('discord_nick') or None,
         MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(aircrew.get('modex')), Squadrons.NONE).value or None,
         aircrew.get('rio', "").strip().lower() or None,
         aircrew.get('pilot', "").strip().lower() or None,
@@ -205,7 +205,7 @@ def aa_weapon_to_row(data, aa_weapon, debrief_id) -> (dict | None,CVW17DatabaseR
 
     row = CVW17DatabaseRow(
         get_submission_date(data) or None,
-        data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
+        data.get('form_metadata', {}).get('discord_nick') or None,
         MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(aircrew.get('modex')), Squadrons.NONE).value or None,
         aircrew.get('rio', '').strip().lower() or None,
         aircrew.get('pilot', '').strip().lower() or None,
@@ -232,7 +232,7 @@ def aa_weapon_to_row(data, aa_weapon, debrief_id) -> (dict | None,CVW17DatabaseR
 def aircrew_to_empty_row(data, aircrew, debrief_id) -> CVW17DatabaseRow:
     return CVW17DatabaseRow(
         get_submission_date(data) or None,
-        data.get('aircrew', [{}])[0].get('pilot', '').strip().lower() or None,
+        data.get('form_metadata', {}).get('discord_nick') or None,
         MODEX_TO_SQUADRON.get(DataHandler.get_hundreth(aircrew.get('modex')), Squadrons.NONE).value or None,
         aircrew.get('rio', '').strip().lower() or None,
         aircrew.get('pilot', '').strip().lower() or None,
@@ -281,7 +281,6 @@ def insert_tracker_data(data, debrief_id):
 
         if InputDataHandler.validate_row(row):
             postgres_client.insert(row)
-
 
 def remove_tracker_data(debrief_id):
     postgres_client.update_local()
@@ -442,6 +441,12 @@ def edit_report(debrief_id):
         else:
             data['form_metadata']['discord_uid'] = session['discord_uid']
 
+        old_nick = old_data.get('form_metadata', {}).get('discord_nick')
+        if old_nick:
+            data['form_metadata']['discord_nick'] = old_nick
+        else:
+            data['form_metadata']['discord_nick'] = session['discord_nick']
+
         with open(DEBRIEFS_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
             json.dump(data, f, indent=2)
 
@@ -478,6 +483,7 @@ def submit_report():
         save_images(data, debrief_id)
 
         data['form_metadata']['discord_uid'] = session['discord_uid']
+        data['form_metadata']['discord_nick'] = session['discord_nick']
 
         os.makedirs(DEBRIEFS_PATH, exist_ok=True)
         with open(DEBRIEFS_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:

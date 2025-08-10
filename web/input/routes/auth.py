@@ -3,9 +3,11 @@ from flask import Blueprint, request, redirect, session, jsonify
 
 from web.input._constants import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, TOKEN_URL, AUTH_URL, DISCORD_API_BASE_URL, GUILD_ID, \
     DISCORD_BOT_TOKEN, ROLE_ID
+from web.input.config.config import WebConfigSingleton
 
 auth_blueprint = Blueprint('auth', __name__)
 app = auth_blueprint
+config = WebConfigSingleton.get_instance()
 
 def _get_access_token():
     code = request.args.get('code')
@@ -65,6 +67,10 @@ def callback():
         if ROLE_ID in user_roles:
             session['authed'] = True
             session['discord_uid'] = uid
+            session['discord_nick'] = member_data.get('nick')
+            if session['discord_nick'] is None or session['discord_nick'].strip() == '':
+                session['discord_nick'] = member_data.get('user', {}).get('global_name')
+
             return redirect('/')
 
     return redirect('/login_failed')
@@ -74,3 +80,10 @@ def callback():
 def login_failed():
     return "You do not have the permission to write a debrief, contact Oscar or Kroner to get you authenticated!"
 
+@app.route('/reset-session')
+def reset_session():
+    if not session.get('discord_uid') in config.admin_uids:
+        return "400 Unauthorized"
+
+    session.clear()
+    return redirect('/')
