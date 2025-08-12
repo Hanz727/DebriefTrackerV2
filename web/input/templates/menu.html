@@ -1540,9 +1540,7 @@
 
                     if (debriefId && debriefId !== 'None' && debriefId !== '') {
                         tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Report</div>`;
-                    }
-
-                    if (packageUrl) {
+                    } else if (packageUrl) {
                         tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Target Package</div>`;
                     }
 
