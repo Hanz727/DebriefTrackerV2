@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import shutil
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,6 +37,7 @@ ThreadPoolClient.create_task_loop(postgres_client.update_local, 30)
 
 home_blueprint = Blueprint('home', __name__)
 app = home_blueprint
+logger = logging.getLogger(__name__)
 
 _minify_lib = ctypes.CDLL((BASE_DIR / 'minifier.dll').as_posix())
 
@@ -471,6 +474,11 @@ def submit_report():
     if not (session.get('authed', False) or config.bypass_auth_debug):
         return redirect('/login')
 
+    if not (session.get('discord_uid') and session.get('discord_nick')):
+        return redirect('/login')
+
+    debrief_id = None
+    data = None
     try:
         data = request.get_json()
 
@@ -501,6 +509,11 @@ def submit_report():
 
     except Exception as e:
         print(f"Error processing request: {str(e)}")
+        logging.error(f"Error processing request: {str(e)}")
+        if debrief_id and os.path.exists(DEBRIEFS_PATH / str(debrief_id)):
+            shutil.rmtree(DEBRIEFS_PATH / str(debrief_id))
+        print("data: ", data)
+        logging.error("data: ", data)
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/get_db')
