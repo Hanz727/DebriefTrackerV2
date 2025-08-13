@@ -219,9 +219,11 @@ class EmbedCreator:
             file = discord.File(DEBRIEFS_PATH / str(debrief.debrief_id) / img, filename='bda' + ext)
             break
 
-        fl = debrief.posted_by.strip().capitalize()
-        if len(fl) == 2:
-            fl = fl.upper()
+        fl = debrief.posted_by.strip()
+        if "\"" in fl:
+            fl = fl.split("\"")[0].strip()
+        if "-" in fl:
+            fl = fl.split("-")[0].strip()
 
         embed = discord.Embed(title=f"{data.get('callsign', '')}1  |  {debrief.msn_name}  |  {debrief.msn_nr}  |  {fl}  |  "
                                     f"{debrief.event_nr}",

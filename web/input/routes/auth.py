@@ -1,3 +1,5 @@
+import logging
+
 import requests
 from flask import Blueprint, request, redirect, session, jsonify
 
@@ -8,6 +10,7 @@ from web.input.config.config import WebConfigSingleton
 auth_blueprint = Blueprint('auth', __name__)
 app = auth_blueprint
 config = WebConfigSingleton.get_instance()
+logger = logging.getLogger(__name__)
 
 def _get_access_token():
     code = request.args.get('code')
@@ -70,6 +73,10 @@ def callback():
             session['discord_nick'] = member_data.get('nick')
             if session['discord_nick'] is None or session['discord_nick'].strip() == '':
                 session['discord_nick'] = member_data.get('user', {}).get('global_name')
+
+            if session['discord_nick'].strip() == '' or session['discord_nick'] is None:
+                print('discord nick is None or empty')
+                logger.error(f'discord nick empty or None, data: {member_data}')
 
             return redirect('/')
 

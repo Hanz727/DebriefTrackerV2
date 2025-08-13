@@ -513,7 +513,7 @@ def submit_report():
         if debrief_id and os.path.exists(DEBRIEFS_PATH / str(debrief_id)):
             shutil.rmtree(DEBRIEFS_PATH / str(debrief_id))
         print("data: ", data)
-        logging.error("data: ", data)
+        logging.error(f"data: {data}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/get_db')
