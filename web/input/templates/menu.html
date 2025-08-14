@@ -1546,7 +1546,7 @@
                         tooltipContent += `<div style="color: #90cdf4; font-weight: bold; margin-bottom: 4px;">BDA: ${bda}</div>`;
                     }
 
-                    if (debriefId && debriefId !== 'None' && debriefId !== '' && destroyed) {
+                    if (debriefId && debriefId !== 'None' && debriefId !== '' && (destroyed || !packageUrl)) {
                         tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Report</div>`;
                     } else if (packageUrl) {
                         tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Target Package</div>`;
@@ -1586,7 +1586,7 @@
                     const destroyed = symbol.getAttribute('data-destroyed');
 
                     let targetUrl = null;
-                    if (debriefId && debriefId !== 'None' && debriefId !== '' && destroyed) {
+                    if (debriefId && debriefId !== 'None' && debriefId !== '' && (destroyed || !packageUrl)) {
                         targetUrl = `/debrief/${debriefId}`;
                     } else if (packageUrl) {
                         targetUrl = packageUrl;
@@ -1609,9 +1609,10 @@
 
                         const debriefId = symbol.getAttribute('data-debrief-id');
                         const packageUrl = symbol.getAttribute('data-package-url');
+                        const destroyed = symbol.getAttribute('data-destroyed');
 
                         let targetUrl = null;
-                        if (debriefId && debriefId !== 'None' && debriefId !== '') {
+                        if (debriefId && debriefId !== 'None' && debriefId !== '' && (destroyed || !packageUrl)) {
                             targetUrl = `/debrief/${debriefId}`;
                         } else if (packageUrl) {
                             targetUrl = packageUrl;
