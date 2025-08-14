@@ -559,6 +559,9 @@ def file_report():
     if not (session.get('authed', False) or config.bypass_auth_debug):
         return redirect('/login')
 
+    if not (session.get('discord_uid') and session.get('discord_nick')):
+        return redirect('/login')
+
     debrief_id = request.args.get('id')
     if debrief_id:
         with open(DEBRIEFS_PATH / str(debrief_id) / 'submit-data.json') as f:

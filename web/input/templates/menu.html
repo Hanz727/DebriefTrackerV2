@@ -674,13 +674,20 @@
                                         {% endif %}
 
                                         <!-- Generate one symbol element per drawable with coordinate data only -->
-                                        {% if drawable_data.draw.render_icon %}
-                                            <img class="map-symbol hidden {% if not drawable_data.collision and drawable_data.package_url %}package{% endif %} {% if drawable_data.collision %}collision{% endif %} {% if drawable_data.aim_points and drawable_data.aim_points["01"].debrief_id %}clickable{% endif %} {% if drawable_data.collision and drawable_data.aim_points and not drawable_data.aim_points["01"].debrief_id %}collision-no-report{% endif %}"
+                                        {% if drawable_data.draw.render_icon and drawable_data.aim_points and drawable_data.aim_points["01"] %}
+                                            {% if drawable_data.aim_points["01"].bda %}
+                                                {% set bda_code = drawable_data.aim_points["01"].bda[0] | int %}
+                                            {% else %}
+                                                {% set bda_code = 9 %}
+                                            {% endif %}
+                                            {% set destroyed = bda_code <= 2 and drawable_data.collision %}
+                                            <img class="map-symbol hidden {% if not destroyed and drawable_data.package_url %}package{% endif %} {% if destroyed %}collision{% endif %} {% if destroyed and not drawable_data.aim_points["01"].debrief_id %}collision-no-report{% endif %}"
                                                  data-id="{{ drawable_id }}"
                                                  src="{{ drawable_data.draw.symbol }}"
                                                  data-comment="{{ drawable_data.comment or '' }}"
                                                  data-type="{{ drawable_data.draw.type or '' }}"
                                                  data-bda="{{ drawable_data.aim_points["01"].bda}}"
+                                                 {% if destroyed %} data-destroyed="1" {% endif %}
                                                  data-debrief-id="{{ drawable_data.aim_points["01"].debrief_id}}"
                                                  data-lat="{{ drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lat or '' }}"
                                                  data-lon="{{ drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].lon or '' }}"
@@ -1523,6 +1530,7 @@
                     const brc = symbol.getAttribute('data-brc');
                     const bda = symbol.getAttribute('data-bda');
                     const type = symbol.getAttribute('data-type');
+                    const destroyed = symbol.getAttribute('data-destroyed');
                     const debriefId = symbol.getAttribute('data-debrief-id');
                     const packageUrl = symbol.getAttribute('data-package-url');
 
@@ -1538,7 +1546,7 @@
                         tooltipContent += `<div style="color: #90cdf4; font-weight: bold; margin-bottom: 4px;">BDA: ${bda}</div>`;
                     }
 
-                    if (debriefId && debriefId !== 'None' && debriefId !== '') {
+                    if (debriefId && debriefId !== 'None' && debriefId !== '' && destroyed) {
                         tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Report</div>`;
                     } else if (packageUrl) {
                         tooltipContent += `<div style="color: #98fb98; font-weight: bold; margin-bottom: 4px;">📋 Click for Target Package</div>`;
@@ -1575,9 +1583,10 @@
 
                     const debriefId = symbol.getAttribute('data-debrief-id');
                     const packageUrl = symbol.getAttribute('data-package-url');
+                    const destroyed = symbol.getAttribute('data-destroyed');
 
                     let targetUrl = null;
-                    if (debriefId && debriefId !== 'None' && debriefId !== '') {
+                    if (debriefId && debriefId !== 'None' && debriefId !== '' && destroyed) {
                         targetUrl = `/debrief/${debriefId}`;
                     } else if (packageUrl) {
                         targetUrl = packageUrl;

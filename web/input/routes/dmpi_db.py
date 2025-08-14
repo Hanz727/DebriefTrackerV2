@@ -52,7 +52,7 @@ def get_draw_dmpis():
 
         lat, lon = Coords.convert_xy_to_ddm(unit['y'], unit['x'])
         dmpi['aim_points']['01']['lat'] = lat
-        dmpi['aim_points']['01']['lon'] = lat
+        dmpi['aim_points']['01']['lon'] = lon
 
         if unit['type'] == 'CVN_73':
             dmpi['heading'] = unit.get('heading',0)*180/math.pi
