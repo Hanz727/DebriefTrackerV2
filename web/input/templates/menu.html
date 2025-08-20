@@ -663,8 +663,15 @@
                             {% if drawables %}
                                 {% for drawable_id, drawable_data in drawables.items() %}
                                     {% if drawable_data and drawable_data.draw %}
+                                        {% if drawable_data.aim_points and drawable_data.aim_points["01"] and drawable_data.aim_points["01"].bda %}
+                                            {% set bda_code = drawable_data.aim_points["01"].bda[0] | int %}
+                                        {% else %}
+                                            {% set bda_code = 9 %}
+                                        {% endif %}
+                                        {% set destroyed = bda_code <= 2 and drawable_data.collision %}
+
                                         <!-- Generate one ring element per drawable with coordinate data only -->
-                                        {% if drawable_data.draw.render_ring and drawable_data.draw.radius_px > 0 and not drawable_data.collision %}
+                                        {% if drawable_data.draw.render_ring and drawable_data.draw.radius_px > 0 and not drawable_data.destroyed %}
                                             <div class="map-ring hidden {% if drawable_data.draw.type == "BLUE" %}blue{% endif %}"
                                                  data-type="{{ drawable_data.draw.type or '' }}"
                                                  data-x="{{ drawable_data.draw.x }}"
@@ -675,12 +682,6 @@
 
                                         <!-- Generate one symbol element per drawable with coordinate data only -->
                                         {% if drawable_data.draw.render_icon and drawable_data.aim_points and drawable_data.aim_points["01"] %}
-                                            {% if drawable_data.aim_points["01"].bda %}
-                                                {% set bda_code = drawable_data.aim_points["01"].bda[0] | int %}
-                                            {% else %}
-                                                {% set bda_code = 9 %}
-                                            {% endif %}
-                                            {% set destroyed = bda_code <= 2 and drawable_data.collision %}
                                             <img class="map-symbol hidden {% if not destroyed and drawable_data.package_url %}package{% endif %} {% if destroyed %}collision{% endif %} {% if destroyed and not drawable_data.aim_points["01"].debrief_id %}collision-no-report{% endif %}"
                                                  data-id="{{ drawable_id }}"
                                                  src="{{ drawable_data.draw.symbol }}"
