@@ -671,7 +671,7 @@
                                         {% set destroyed = bda_code <= 2 and drawable_data.collision %}
 
                                         <!-- Generate one ring element per drawable with coordinate data only -->
-                                        {% if drawable_data.draw.render_ring and drawable_data.draw.radius_px > 0 and not drawable_data.destroyed %}
+                                        {% if drawable_data.draw.render_ring and drawable_data.draw.radius_px > 0 and not destroyed %}
                                             <div class="map-ring hidden {% if drawable_data.draw.type == "BLUE" %}blue{% endif %}"
                                                  data-type="{{ drawable_data.draw.type or '' }}"
                                                  data-x="{{ drawable_data.draw.x }}"
