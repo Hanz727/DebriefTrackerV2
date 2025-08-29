@@ -266,6 +266,9 @@ def insert_tracker_data(data, debrief_id):
         if aircrew is None or row is None:
             continue
 
+        if ag_weapon.get('bda_result') and ag_weapon['bda_result'].strip().startswith('7'):
+            continue
+
         if InputDataHandler.validate_row(row):
             if aircrew in aircrew_presence:
                 aircrew_presence.remove(aircrew)
@@ -450,6 +453,10 @@ def edit_report(debrief_id):
         else:
             data['form_metadata']['discord_nick'] = session['discord_nick']
 
+        for i, ag_weapon in enumerate(data.get('ag_weapons', [])):
+            if ag_weapon.get('target_value') and ag_weapon.get('target_type') == 'dmpi':
+                data['ag_weapons'][i]['target_value'] = ag_weapon['target_value'].replace(' ', '')
+
         with open(DEBRIEFS_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
             json.dump(data, f, indent=2)
 
@@ -492,6 +499,10 @@ def submit_report():
 
         data['form_metadata']['discord_uid'] = session['discord_uid']
         data['form_metadata']['discord_nick'] = session['discord_nick']
+
+        for i, ag_weapon in enumerate(data.get('ag_weapons', [])):
+            if ag_weapon.get('target_value') and ag_weapon.get('target_type') == 'dmpi':
+                data['ag_weapons'][i]['target_value'] = ag_weapon['target_value'].replace(' ', '')
 
         os.makedirs(DEBRIEFS_PATH, exist_ok=True)
         with open(DEBRIEFS_PATH / Path(str(debrief_id)) / Path("submit-data.json"), "w") as f:
