@@ -1010,6 +1010,10 @@ function loadDataFromJSON(jsonData) {
                 const targetInput = document.getElementById(`target-input-${pilotNumber}-${weaponId}`);
 
                 if (weaponNameInput) weaponNameInput.value = entry.WEAPON_NAME ?? '';
+
+                if (weaponNameInput && weaponNameInput.value.startsWith("CBU-99"))
+                    weaponNameInput.value = "CBU-99";
+
                 if (entry.TGT_NAME === "NONE")
                     entry.TGT_NAME = ''
                 if (entry.TGT_TNAME === "NONE")
@@ -1287,6 +1291,9 @@ function loadDataByModex(pilotId) {
             const targetInput = document.getElementById(`target-input-${pilotId}-${weaponId}`);
 
             if (weaponNameInput) weaponNameInput.value = entry.WEAPON_NAME ?? '';
+
+            if (weaponNameInput && weaponNameInput.value.startsWith("CBU-99"))
+                weaponNameInput.value = "CBU-99";
 
             // Clean up target data - set to empty string if "NONE"
             if (entry.TGT_NAME === "NONE") entry.TGT_NAME = '';
