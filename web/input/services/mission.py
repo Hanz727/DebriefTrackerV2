@@ -31,7 +31,7 @@ class Mission:
     def __get_msn_content(cls) -> str:
         try:
             with zipfile.ZipFile(cls.get_path(), 'r') as miz_archive:
-                return miz_archive.read('mission').decode('utf-8')
+                return miz_archive.read('mission').decode('utf-8', errors='replace')
         except Exception as e:
             print(e)
             return ""
