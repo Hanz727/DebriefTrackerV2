@@ -113,7 +113,12 @@ class Mission:
 
     @classmethod
     def __get_course_line(cls):
-        cvn73 = Mission.get_msn_unit('CVN_73')[0]
+        cvn73s = Mission.get_msn_unit('CVN_73')
+        if len(cvn73s) == 0:
+            print('No CVN-73 found in miz')
+            return []
+
+        cvn73 = cvn73s[0]
         heading = cvn73['heading']
 
         units = []
